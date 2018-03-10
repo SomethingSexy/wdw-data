@@ -1,13 +1,15 @@
 {
   "name": "wdw-data",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "description": "API for accessing WDW data.",
   "main": "./modules/index.js",
   "typings": "./index.d.ts",
   "scripts": {
     "build": "tsc --outDir ./modules",
-    "test": "mocha --opts test/mocha.opts"
+    "postversion": "git push && git push --tags",
+    "test": "mocha --opts test/mocha.opts",
+    "version": "npm run build && git add -A modules"
   },
   "repository": {
     "type": "git",
