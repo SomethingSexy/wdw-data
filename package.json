@@ -1,6 +1,6 @@
 {
   "name": "wdw-data",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "description": "API for accessing WDW data.",
   "main": "./modules/index.js",
