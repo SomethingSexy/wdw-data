@@ -1,14 +1,8 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-import * as cheerio from 'cheerio';
-import * as moment from 'moment';
-import api from './api';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const cheerio = require("cheerio");
+const moment = require("moment");
+const api_1 = require("./api");
 const FORMAT = 'YYYY-MM-DD';
 const parks = [
     'magic-kingdom',
@@ -54,7 +48,7 @@ const getDayInfo = (rawDay) => {
  * @param months - how many months we should fetch
  * @param date - if we should we start at a specific date, defaults to current date
  */
-export const list = (months = 1, date) => __awaiter(this, void 0, void 0, function* () {
+exports.list = async (months = 1, date) => {
     // use passed in date or set to month to handle current date
     let mDate;
     if (date) {
@@ -73,12 +67,12 @@ export const list = (months = 1, date) => __awaiter(this, void 0, void 0, functi
     }
     const toFetch = dates.map(dateToFetch => {
         if (moment(dateToFetch).month() === thisMonth) {
-            return api('calendars/month');
+            return api_1.default('calendars/month');
         }
-        return api(`calendars/month/${dateToFetch}`);
+        return api_1.default(`calendars/month/${dateToFetch}`);
     });
     // array of raw html
-    const responses = yield Promise.all(toFetch);
+    const responses = await Promise.all(toFetch);
     // response per month
     const hoursByDate = responses
         .map((rawMonth, index) => {
@@ -100,5 +94,5 @@ export const list = (months = 1, date) => __awaiter(this, void 0, void 0, functi
         return allDates.concat(month);
     }, []);
     return hoursByDate;
-});
+};
 //# sourceMappingURL=hours.js.map

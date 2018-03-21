@@ -1,7 +1,8 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "target": "es2015",
+    "target": "ES2017",
+    "module": "commonjs",
     "moduleResolution": "node",
     "pretty": true,
     "newLine": "LF",

@@ -1,15 +1,9 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-import * as cheerio from 'cheerio';
-import 'fetch-everywhere';
-export const list = () => __awaiter(this, void 0, void 0, function* () {
-    const response = yield fetch('https://disneyworld.disney.go.com/dining/', {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const cheerio = require("cheerio");
+require("fetch-everywhere");
+exports.list = async () => {
+    const response = await fetch('https://disneyworld.disney.go.com/dining/', {
         headers: {
             Accept: '*/*',
             'Accept-Language': 'en-US,en;q=0.8',
@@ -21,7 +15,7 @@ export const list = () => __awaiter(this, void 0, void 0, function* () {
         },
         method: 'get'
     });
-    const text = yield response.text();
+    const text = await response.text();
     const $ = cheerio(text);
     const dinning = $.find('li.card').map(({}, card) => {
         const $card = cheerio(card);
@@ -35,5 +29,5 @@ export const list = () => __awaiter(this, void 0, void 0, function* () {
         };
     }).get();
     return dinning;
-});
+};
 //# sourceMappingURL=dinning.js.map
