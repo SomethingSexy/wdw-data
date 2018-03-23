@@ -15,18 +15,18 @@ import ThemeParkType from './ThemePark';
 // });
 
 const PlaceType =  new GraphQLInterfaceType({
-  name: 'Place',
   description: 'A character in the Star Wars Trilogy',
   fields: () => ({
     id: {
-      type: new GraphQLNonNull(GraphQLString),
       description: 'The id of the character.',
+      type: new GraphQLNonNull(GraphQLString)
     },
     type: {
-      type: GraphQLString,
       description: 'The name of the character.',
+      type: GraphQLString
     },
   }),
+  name: 'Place',
   resolveType(character) {
     if (character.type === 'themePark') {
       return ThemeParkType;

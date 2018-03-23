@@ -9,12 +9,12 @@ const themeParkType = new GraphQLObjectType({
       type: new GraphQLNonNull(GraphQLString)
     },
     type: {
-      type: GraphQLString,
       description: 'The name of the character.',
+      type: GraphQLString
     },
   }),
-  name: 'ThemePark',
-  interfaces: () => [PlaceType]
+  interfaces: () => [PlaceType],
+  name: 'ThemePark'
 });
 
 export default themeParkType;

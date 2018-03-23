@@ -16,8 +16,8 @@ describe('schema', () => {
       const result = await graphql(schema, query);
       expect(result).to.deep.equal({
         data: {
-          hero: {
-            name: 'R2-D2',
+          place: {
+            id: 'balls',
           },
         },
       });
