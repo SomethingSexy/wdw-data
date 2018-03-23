@@ -12,8 +12,8 @@
       "trailing-comma": false,
       "import-name": false,
       "jsx-boolean-value": "never",
-      "no-implicit-dependencies": [true, "dev"],
-      "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-pascal-case"]
+      "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-pascal-case"],
+      "no-implicit-dependencies": [true, "dev"]
     },
     "rulesDirectory": []
 }

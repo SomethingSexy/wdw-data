@@ -7,6 +7,7 @@
   "typings": "./index.d.ts",
   "scripts": {
     "build": "tsc --outDir ./modules",
+    "build:data": "ts-node ./scripts/data.ts",
     "postversion": "git push && git push --tags",
     "test": "mocha --opts test/mocha.opts",
     "version": "npm run build && git add -A modules"
@@ -21,15 +22,21 @@
   },
   "homepage": "https://github.com/SomethingSexy/wdw-data#readme",
   "dependencies": {
+    "@types/graphql": "^0.12.5",
     "cheerio": "^1.0.0-rc.2",
     "fetch-everywhere": "^1.0.5",
-    "moment": "^2.21.0"
+    "graphql": "^0.13.2",
+    "moment": "^2.21.0",
+    "uuid": "^3.2.1"
   },
   "devDependencies": {
     "@types/chai": "^4.1.2",
     "@types/cheerio": "^0.22.7",
+    "@types/fs-extra": "^5.0.1",
     "@types/mocha": "^2.2.48",
+    "@types/uuid": "^3.4.3",
     "chai": "^4.1.2",
+    "fs-extra": "^5.0.0",
     "mocha": "^5.0.1",
     "ts-loader": "^3.2.0",
     "ts-node": "^5.0.1",

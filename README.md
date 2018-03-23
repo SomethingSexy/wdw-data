@@ -1,2 +1,2 @@
 # wdw-data
-API for getting access to WDW entertaining and attraction data.
+API for getting access to WDW entertaining and attraction data.  Places data is cached locally to this package and can be accessed through the core api.  This should work in the browser and node environments.  Accessing realtime data will not work in the browser.
