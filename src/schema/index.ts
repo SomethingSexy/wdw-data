@@ -1,12 +1,13 @@
 import {
-  graphql,
-  GraphQLInterfaceType,
+  GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString
 } from 'graphql';
 import placeModel from '../model/place';
+import AttractionType from './Attraction';
+import DiningType from './Dining';
 import PlaceType from './Place';
 import ThemeParkType from './ThemePark';
 
@@ -19,10 +20,16 @@ const queryType = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLString),
         },
       },
-      resolve: (root, { id }) => {
+      resolve: (_, { id }) => {
         return placeModel.get(id);
       },
       type: PlaceType,
+    },
+    places: {
+      resolve: _ => {
+        return placeModel.getAll();
+      },
+      type: new GraphQLList(PlaceType),
     }
   }),
   name: 'Query'
@@ -30,5 +37,5 @@ const queryType = new GraphQLObjectType({
 
 export default new GraphQLSchema({
   query: queryType,
-  types: [ThemeParkType],
+  types: [AttractionType, DiningType, ThemeParkType],
 });

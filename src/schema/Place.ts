@@ -1,4 +1,6 @@
 import { GraphQLInterfaceType, GraphQLNonNull, GraphQLString } from 'graphql';
+import AttractionType from './Attraction';
+import DiningType from './Dining';
 import ThemeParkType from './ThemePark';
 
 // const PlaceType = new GraphQLUnionType({
@@ -27,10 +29,25 @@ const PlaceType =  new GraphQLInterfaceType({
     },
   }),
   name: 'Place',
-  resolveType(character) {
-    if (character.type === 'themePark') {
+  resolveType(place) {
+    if (place.type === 'themePark'
+      || place.type === 'waterPark'
+      || place.type === 'venue'
+    ) {
       return ThemeParkType;
     }
+
+    // TODO: normalize these
+    if (place.type === 'restaurant'
+      || place.type === 'Dining'
+      || place.type === 'Dinner') {
+      return DiningType;
+    }
+
+    if (place.type === 'Attraction') {
+      return AttractionType;
+    }
+    throw new Error(`Missing type for ${place.type}`);
   },
 });
 

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { list } from '../src/dinning';
+import { list } from '../src/dining';
 
 describe('dinning', () => {
   describe('list', () => {

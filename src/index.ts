@@ -1,5 +1,5 @@
 import { list  as aList } from './attractions';
-import { list as dList } from './dinning';
+import { list as dList } from './dining';
 import { list as hList } from './hours';
 
 // these should have the same api

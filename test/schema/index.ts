@@ -22,5 +22,20 @@ describe('schema', () => {
         },
       });
     });
+
+    it('should fetch all places', async () => {
+      const query = `
+        query PlacesQuery {
+          places {
+            id
+          }
+        }
+      `;
+      const result = await graphql(schema, query);
+      expect(result).to.be.a('object');
+      expect(result.data).to.be.a('object');
+      expect(result.data.places).to.be.a('array');
+      expect(result.data.places.length > 0).to.equal(true);
+    });
   });
 });
