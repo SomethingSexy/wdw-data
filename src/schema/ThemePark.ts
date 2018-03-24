@@ -5,11 +5,11 @@ const themeParkType = new GraphQLObjectType({
   description: 'A themepark in WDW.',
   fields: () => ({
     id: {
-      description: 'The id of the human.',
+      description: 'The id of the park',
       type: new GraphQLNonNull(GraphQLString)
     },
     type: {
-      description: 'The name of the character.',
+      description: 'The type of the place.',
       type: GraphQLString
     },
   }),

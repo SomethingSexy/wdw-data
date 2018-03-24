@@ -6,6 +6,7 @@ import {
   GraphQLSchema,
   GraphQLString
 } from 'graphql';
+import placeModel from '../model/place';
 import PlaceType from './Place';
 import ThemeParkType from './ThemePark';
 
@@ -19,7 +20,7 @@ const queryType = new GraphQLObjectType({
         },
       },
       resolve: (root, { id }) => {
-        return { id: 'balls', type: 'themePark' };
+        return placeModel.get(id);
       },
       type: PlaceType,
     }

@@ -5,10 +5,10 @@ import schema from '../../src/schema/index';
 
 describe('schema', () => {
   describe('place', () => {
-    it.only('should fetch a single place by id', async () => {
+    it('should fetch a single place by id', async () => {
       const query = `
         query PlaceQuery {
-          place(id: "balls") {
+          place(id: "f2b7e336-e180-4fd5-afb9-a781d29de684") {
             id
           }
         }
@@ -17,7 +17,7 @@ describe('schema', () => {
       expect(result).to.deep.equal({
         data: {
           place: {
-            id: 'balls',
+            id: 'f2b7e336-e180-4fd5-afb9-a781d29de684',
           },
         },
       });

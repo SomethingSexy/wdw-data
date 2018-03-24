@@ -18,11 +18,11 @@ const PlaceType =  new GraphQLInterfaceType({
   description: 'A character in the Star Wars Trilogy',
   fields: () => ({
     id: {
-      description: 'The id of the character.',
+      description: 'The id of the place.',
       type: new GraphQLNonNull(GraphQLString)
     },
     type: {
-      description: 'The name of the character.',
+      description: 'The type of the place',
       type: GraphQLString
     },
   }),
@@ -31,8 +31,6 @@ const PlaceType =  new GraphQLInterfaceType({
     if (character.type === 'themePark') {
       return ThemeParkType;
     }
-
-    return ThemeParkType;
   },
 });
 
