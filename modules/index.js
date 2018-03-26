@@ -1,8 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const graphql_1 = require("graphql");
 const attractions_1 = require("./attractions");
 const dining_1 = require("./dining");
 const hours_1 = require("./hours");
+const index_1 = require("./schema/index");
+// TODO: put this someplace else
+exports.api = query => {
+    return graphql_1.graphql(index_1.default, query);
+};
 // these should have the same api
 // save off external id, but generate our own internal id
 exports.attractions = { list: attractions_1.list };

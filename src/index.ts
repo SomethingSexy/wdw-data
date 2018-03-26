@@ -1,6 +1,14 @@
+import { graphql } from 'graphql';
 import { list  as aList } from './attractions';
 import { list as dList } from './dining';
 import { list as hList } from './hours';
+
+import schema from './schema/index';
+
+// TODO: put this someplace else
+export const api = query => {
+  return graphql(schema, query);
+};
 
 // these should have the same api
 // save off external id, but generate our own internal id
