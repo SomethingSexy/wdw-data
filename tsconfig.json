@@ -18,5 +18,5 @@
     "rootDir": "./src",
     "noImplicitAny": false
   },
-  "exclude": ["node_modules", "modules", "test"]
+  "exclude": ["node_modules", "modules", "test", "scripts"]
 }
