@@ -8,6 +8,10 @@ const themeParkType = new GraphQLObjectType({
       description: 'The id of the park',
       type: new GraphQLNonNull(GraphQLString)
     },
+    name: {
+      description: 'The name of the place',
+      type: GraphQLString
+    },
     type: {
       description: 'The type of the place.',
       type: GraphQLString

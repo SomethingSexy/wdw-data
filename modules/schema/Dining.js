@@ -9,6 +9,10 @@ const diningType = new graphql_1.GraphQLObjectType({
             description: 'The id of the park',
             type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)
         },
+        name: {
+            description: 'The name of the place',
+            type: graphql_1.GraphQLString
+        },
         type: {
             description: 'The type of the place.',
             type: graphql_1.GraphQLString

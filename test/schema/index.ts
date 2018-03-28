@@ -9,7 +9,9 @@ describe('schema', () => {
       const query = `
         query PlaceQuery {
           place(id: "f2b7e336-e180-4fd5-afb9-a781d29de684") {
-            id
+            id,
+            name,
+            type
           }
         }
       `;
@@ -18,6 +20,8 @@ describe('schema', () => {
         data: {
           place: {
             id: 'f2b7e336-e180-4fd5-afb9-a781d29de684',
+            name: 'Magic Kingdom Park',
+            type: 'themePark'
           },
         },
       });
@@ -27,7 +31,9 @@ describe('schema', () => {
       const query = `
         query PlacesQuery {
           places {
-            id
+            id,
+            name,
+            type
           }
         }
       `;
@@ -36,6 +42,12 @@ describe('schema', () => {
       expect(result.data).to.be.a('object');
       expect(result.data.places).to.be.a('array');
       expect(result.data.places.length > 0).to.equal(true);
+      const place = result.data.places.find(p => p.id === 'f2b7e336-e180-4fd5-afb9-a781d29de684');
+      expect(place).to.deep.equal({
+        id: 'f2b7e336-e180-4fd5-afb9-a781d29de684',
+        name: 'Magic Kingdom Park',
+        type: 'themePark'
+      });
     });
   });
 });
