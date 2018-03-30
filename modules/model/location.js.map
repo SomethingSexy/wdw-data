@@ -1,0 +1,1 @@
+{"version":3,"file":"location.js","sourceRoot":"","sources":["../../src/model/location.ts"],"names":[],"mappings":";;AAAA,+CAA+C;AAE/C,MAAM,SAAS,GAAI,IAAY,CAAC;AAEhC,kBAAe;IACb,GAAG,CAAC,EAAE;QACJ,MAAM,CAAC,SAAS,CAAC,IAAI,CAAC,KAAK,CAAC,EAAE,CAAC,KAAK,CAAC,EAAE,KAAK,EAAE,CAAC,CAAC;IAClD,CAAC;IACD,MAAM;QACJ,MAAM,CAAC,SAAS,CAAC;IACnB,CAAC;CACF,CAAC"}

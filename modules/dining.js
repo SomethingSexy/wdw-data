@@ -20,12 +20,12 @@ exports.list = async () => {
     const dinning = $.find('li.card').map(({}, card) => {
         const $card = cheerio(card);
         const id = $card.attr('data-entityid');
-        const type = new RegExp(/\d+;entityType=(\w+)/, 'g').exec(id);
+        // const type = new RegExp(/\d+;entityType=(\w+)/, 'g').exec(id);
         return {
             id,
             location: $card.find('span[aria-label=location]').text(),
             name: $card.find('.cardName').text(),
-            type: type ? type[1] : ''
+            type: 'restaurant' // return them all as resturant for now
         };
     }).get();
     return dinning;

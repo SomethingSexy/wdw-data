@@ -50,4 +50,23 @@ describe('schema', () => {
       });
     });
   });
+
+  describe('locations', () => {
+    it('should fetch all locations', async () => {
+      const query = `
+        query LocationsQuery {
+          locations {
+            areas,
+            id,
+            name
+          }
+        }
+      `;
+      const result = await graphql(schema, query);
+      expect(result).to.be.a('object');
+      expect(result.data).to.be.a('object');
+      expect(result.data.locations).to.be.a('array');
+      expect(result.data.locations.length > 0).to.equal(true);
+    });
+  });
 });

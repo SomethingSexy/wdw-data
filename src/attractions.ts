@@ -25,7 +25,7 @@ export const list = async () => {
       id,
       location: $card.find('span[aria-label=location]').text(),
       name: $card.find('.cardName').text(),
-      type: type ? type[1] : ''
+      type: type ? type[1].toLowerCase() : ''
     };
   }).get();
 

@@ -5,14 +5,22 @@ import {
   GraphQLSchema,
   GraphQLString
 } from 'graphql';
+import locationModel from '../model/location';
 import placeModel from '../model/place';
 import AttractionType from './Attraction';
 import DiningType from './Dining';
+import LocationType from './Location';
 import PlaceType from './Place';
 import ThemeParkType from './ThemePark';
 
 const queryType = new GraphQLObjectType({
   fields: () => ({
+    locations: {
+      resolve: _ => {
+        return locationModel.getAll();
+      },
+      type: new GraphQLList(LocationType),
+    },
     place: {
       args: {
         id: {
@@ -37,5 +45,5 @@ const queryType = new GraphQLObjectType({
 
 export default new GraphQLSchema({
   query: queryType,
-  types: [AttractionType, DiningType, ThemeParkType],
+  types: [AttractionType, DiningType, LocationType, ThemeParkType],
 });

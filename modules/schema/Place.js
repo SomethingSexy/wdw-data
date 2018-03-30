@@ -44,7 +44,7 @@ const PlaceType = new graphql_1.GraphQLInterfaceType({
             || place.type === 'Dinner') {
             return Dining_1.default;
         }
-        if (place.type === 'Attraction') {
+        if (place.type === 'attraction') {
             return Attraction_1.default;
         }
         throw new Error(`Missing type for ${place.type}`);
