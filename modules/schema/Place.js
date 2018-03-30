@@ -22,6 +22,10 @@ const PlaceType = new graphql_1.GraphQLInterfaceType({
             description: 'The id of the place.',
             type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)
         },
+        location: {
+            description: 'The id of the location',
+            type: graphql_1.GraphQLString
+        },
         name: {
             description: 'The name of the place',
             type: graphql_1.GraphQLString

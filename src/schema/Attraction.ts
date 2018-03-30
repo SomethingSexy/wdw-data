@@ -8,6 +8,10 @@ const attractionType = new GraphQLObjectType({
       description: 'The id of the park',
       type: new GraphQLNonNull(GraphQLString)
     },
+    location: {
+      description: 'The id of the location',
+      type: GraphQLString
+    },
     name: {
       description: 'The name of the place',
       type: GraphQLString
