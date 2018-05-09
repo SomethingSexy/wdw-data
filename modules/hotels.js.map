@@ -1,1 +1,1 @@
-{"version":3,"file":"hotels.js","sourceRoot":"","sources":["../src/hotels.ts"],"names":[],"mappings":";;AAAA,MAAM,MAAM,GAAG,EAAE,CAAC;AAEL,QAAA,IAAI,GAAG,GAAG,EAAE;IACvB,MAAM,CAAC,MAAM,CAAC;AAChB,CAAC,CAAC"}
+{"version":3,"file":"hotels.js","sourceRoot":"","sources":["../src/hotels.ts"],"names":[],"mappings":";;AAAA,MAAM,MAAM,GAAG,EAAE,CAAC;AAEL,QAAA,IAAI,GAAG,GAAG,EAAE;IACvB,OAAO,MAAM,CAAC;AAChB,CAAC,CAAC"}

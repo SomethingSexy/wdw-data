@@ -5,8 +5,16 @@ const Place_1 = require("./Place");
 const diningType = new graphql_1.GraphQLObjectType({
     description: 'Dining in WDW.',
     fields: () => ({
+        cost: {
+            description: 'The average cost of the dining',
+            type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)
+        },
+        cuisine: {
+            description: 'The type of cuisine',
+            type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)
+        },
         id: {
-            description: 'The id of the park',
+            description: 'The id of the dining',
             type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)
         },
         location: {
@@ -18,9 +26,13 @@ const diningType = new graphql_1.GraphQLObjectType({
             type: graphql_1.GraphQLString
         },
         type: {
-            description: 'The type of the place.',
+            description: 'The type of the place',
             type: graphql_1.GraphQLString
         },
+        typeDescription: {
+            description: 'The description of the dining experience',
+            type: graphql_1.GraphQLString
+        }
     }),
     interfaces: () => [Place_1.default],
     name: 'Dining'

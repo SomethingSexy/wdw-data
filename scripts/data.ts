@@ -10,13 +10,15 @@ import { IAttraction, IDining, IPlace } from '../src/types';
 const runDining = () => {
   return dining.list().then((results: any) => {
     return results;
-  });
+  })
+  .catch(e => console.log(e)); // tslint:disable-line no-console
 };
 
 const runAttractions = () => {
   return attractions.list().then((results: any) => {
     return results;
-  });
+  })
+  .catch(e => console.log(e)); // tslint:disable-line no-console
 };
 
 // const runHours = () => {
@@ -99,4 +101,5 @@ Promise.all(
   writeJsonSync('./src/data/places.json', places);
 
   process.exit();
-});
+})
+.catch(e => console.log(e)); // tslint:disable-line no-console
