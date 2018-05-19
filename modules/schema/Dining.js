@@ -13,6 +13,10 @@ const diningType = new graphql_1.GraphQLObjectType({
             description: 'The type of cuisine',
             type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)
         },
+        description: {
+            description: 'The description of the dining experience',
+            type: graphql_1.GraphQLString
+        },
         id: {
             description: 'The id of the dining',
             type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)
@@ -27,10 +31,6 @@ const diningType = new graphql_1.GraphQLObjectType({
         },
         type: {
             description: 'The type of the place',
-            type: graphql_1.GraphQLString
-        },
-        typeDescription: {
-            description: 'The description of the dining experience',
             type: graphql_1.GraphQLString
         }
     }),

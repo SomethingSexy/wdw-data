@@ -4,6 +4,10 @@ import PlaceType from './Place';
 const attractionType = new GraphQLObjectType({
   description: 'An attraction in WDW.',
   fields: () => ({
+    description: {
+      description: 'The description of the attraction',
+      type: GraphQLString
+    },
     id: {
       description: 'The id of the park',
       type: new GraphQLNonNull(GraphQLString)

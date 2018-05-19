@@ -18,6 +18,10 @@ const ThemePark_1 = require("./ThemePark");
 const PlaceType = new graphql_1.GraphQLInterfaceType({
     description: 'A character in the Star Wars Trilogy',
     fields: () => ({
+        description: {
+            description: 'The description of the place.',
+            type: graphql_1.GraphQLString
+        },
         id: {
             description: 'The id of the place.',
             type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString)

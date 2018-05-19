@@ -28,10 +28,10 @@ exports.list = async () => {
             cost,
             cuisine,
             id,
+            description: $card.find('span[aria-label="dining type"]').text(),
             location: $card.find('span[aria-label=location]').text(),
             name: $card.find('.cardName').text(),
             type: 'restaurant',
-            typeDescription: $card.find('span[aria-label="dining type"]').text(),
         };
     }).get();
     return dinning;

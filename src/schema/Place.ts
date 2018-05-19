@@ -19,6 +19,10 @@ import ThemeParkType from './ThemePark';
 const PlaceType =  new GraphQLInterfaceType({
   description: 'A character in the Star Wars Trilogy',
   fields: () => ({
+    description: {
+      description: 'The description of the place.',
+      type: GraphQLString
+    },
     id: {
       description: 'The id of the place.',
       type: new GraphQLNonNull(GraphQLString)
