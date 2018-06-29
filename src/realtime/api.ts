@@ -1,7 +1,7 @@
 import 'fetch-everywhere';
 
 export default async (path: string) => {
-  const response = await fetch(`https://disneyworld.disney.go.com/${path}/`, {
+  const response = await fetch(path, {
     headers: {
       Accept: '*/*',
       'Accept-Language': 'en-US,en;q=0.8',

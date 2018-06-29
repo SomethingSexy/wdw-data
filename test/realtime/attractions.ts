@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { list } from '../src/attractions';
+import { list } from '../../src/realtime/attractions';
 
 describe('attractions', () => {
   describe('list', () => {

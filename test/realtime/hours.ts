@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { list } from '../src/hours';
+import { list } from '../../src/realtime/hours';
 
 describe('hours', () => {
   describe('list', () => {

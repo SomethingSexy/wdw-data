@@ -1,18 +1,12 @@
 import * as cheerio from 'cheerio';
 import * as moment from 'moment';
-import api from './realtime/api';
+import api from './api';
 
-export interface IDate {
-  date: string;
-  parks: {
-    hours: string;
-    name: string;
-    extraMagic?: string | undefined;
-  };
-}
+const calendarPath = 'https://disneyworld.disney.go.com/calendars/month/';
 
 const FORMAT = 'YYYY-MM-DD';
 
+// TODO: Pull from parks first
 const parks = [
   'magic-kingdom',
   'epcot',
@@ -87,10 +81,10 @@ export const list = async (months: number = 1, date?: string | undefined) => {
 
   const toFetch = dates.map(dateToFetch => {
     if (moment(dateToFetch).month() === thisMonth) {
-      return api('calendars/month');
+      return api(calendarPath);
     }
 
-    return api(`calendars/month/${dateToFetch}`);
+    return api(`${calendarPath}/${dateToFetch}`);
   });
 
   // array of raw html

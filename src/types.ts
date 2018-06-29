@@ -12,6 +12,17 @@ export interface IAttraction {
   type: string;
 }
 
+export interface IHotel {
+  // internal id
+  id?: string;
+  extId: string;
+  extRefName: string;
+  location: string;
+  name: string;
+  type: string;
+  url: string;
+}
+
 export interface IPlace {
   areas?: string[];
   extId: string;
@@ -19,4 +30,13 @@ export interface IPlace {
   location: string;
   name: string;
   type: string;
+}
+
+export interface IDate {
+  date: string;
+  parks: {
+    hours: string;
+    name: string;
+    extraMagic?: string | undefined;
+  };
 }
