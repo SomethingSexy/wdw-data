@@ -1,6 +1,7 @@
 import { writeJsonSync } from 'fs-extra';
 import { uniq } from 'lodash';
 import { v4 } from 'uuid';
+import diningModel from '../src/model/dining';
 import * as attractions from '../src/realtime/attractions';
 import * as dining from '../src/realtime/dining';
 import * as entertainment from '../src/realtime/entertainment';
@@ -126,15 +127,19 @@ Promise.all(
     }));
 
   // Locations should be all places that have "addresses", parks and hotels I guess
+  // TODO: Convert this to models
   writeJsonSync('./src/data/locations.json', locations);
-  // TODO: This probably goes away
   writeJsonSync('./src/data/places.json', places);
   writeJsonSync('./src/data/attractions.json', attractionsWithIds);
-  writeJsonSync('./src/data/dining.json', diningWithIds);
   writeJsonSync('./src/data/parks.json', parksWithIds);
   writeJsonSync('./src/data/hotels.json', hotelsWithIds);
   writeJsonSync('./src/data/entertainment.json', entertainmentWithIds);
 
-  process.exit();
+  // need to match new data with current data, then update
+  diningModel
+    .updateAll(diningWithIds, true)
+    .then(() => {
+      process.exit();
+    });
 })
 .catch(e => console.log(e)); // tslint:disable-line no-console

@@ -7,3 +7,7 @@ declare module "*/data/places.json" {
 declare module "*/data/locations.json" {
   export default {}[];
 }
+
+declare module "*/data/dining.json" {
+  export default {}[];
+}

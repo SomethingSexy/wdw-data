@@ -6,7 +6,7 @@ describe('hotels', () => {
   describe('list', () => {
     it('should fetch a list of hotel options', async () => {
       return list()
-        .then(response => console.log(response));
+        .then(response => expect(response.length > 0).to.equal(true));
     });
   });
 });
