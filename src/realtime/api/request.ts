@@ -1,6 +1,10 @@
 import 'fetch-everywhere';
 
-export default async (path: string) => {
+/**
+ * Retrieves the HTML for a screen.
+ * @param path
+ */
+export const screen = async (path: string) => {
   const response = await fetch(path, {
     headers: {
       Accept: '*/*',

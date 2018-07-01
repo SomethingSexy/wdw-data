@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 import * as moment from 'moment';
-import api from './realtime/api';
+import api from './realtime/api/request';
 
 export interface IDate {
   date: string;

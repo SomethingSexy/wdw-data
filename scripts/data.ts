@@ -1,11 +1,12 @@
 import { writeJsonSync } from 'fs-extra';
 import { uniq } from 'lodash';
 import { v4 } from 'uuid';
-import parks from '../src/data/parks';
 import * as attractions from '../src/realtime/attractions';
 import * as dining from '../src/realtime/dining';
+import * as entertainment from '../src/realtime/entertainment';
 import * as hotels from '../src/realtime/hotels';
-import { IAttraction, IDining, IPlace } from '../src/types';
+import * as parks from '../src/realtime/parks';
+import { IAttraction, IDining, IPark, IPlace } from '../src/types';
 
 // Fetch all data, group together and save
 
@@ -30,47 +31,54 @@ const runHotels = () => {
   .catch(e => console.log(e)); // tslint:disable-line no-console
 };
 
+const runParks = () => {
+  return parks.list().then((results: any) => {
+    return results;
+  })
+  .catch(e => console.log(e)); // tslint:disable-line no-console
+};
+
+const runEntertainment = () => {
+  return entertainment.list().then((results: any) => {
+    return results;
+  })
+  .catch(e => console.log(e)); // tslint:disable-line no-console
+};
+
 // const runHours = () => {
 //   return hours.list().then((results: any) => {
 //     writeJsonSync('./src/data/hours.json', results);
 //   });
 // };
 
+const addId = (place: any) => {
+  return {
+    ...place,
+    id: v4()
+  };
+};
+
 Promise.all(
-  [runDining(), runAttractions(), runHotels()]
-).then(([fetchedDining = [], fetchedAttractions = [], fetchedHotels = []]) => {
+  [runDining(), runAttractions(), runHotels(), runParks(), runEntertainment()]
+).then(([
+  fetchedDining = [],
+  fetchedAttractions = [],
+  fetchedHotels = [],
+  fetchedParks = [],
+  fetchedEntertainment = []
+]) => {
   // start with parks and then add
-  const attractionsWithIds = fetchedAttractions
-    .map((place: IAttraction) => {
-      return {
-        ...place,
-        extId: place.id,
-        id: v4()
-      };
-    });
+  const parksWithIds = fetchedParks.map(addId);
+  const attractionsWithIds = fetchedAttractions.map(addId);
+  const diningWithIds = fetchedDining.map(addId);
+  const hotelsWithIds = fetchedHotels.map(addId);
+  const entertainmentWithIds = fetchedEntertainment.map(addId);
 
-  const diningWithIds = fetchedDining
-    .map((place: IDining) => {
-      return {
-        ...place,
-        extId: place.id,
-        id: v4()
-      };
-    });
-
-  const hotelsWithIds = fetchedHotels
-    .map((place: any) => {
-      return {
-        ...place,
-        extId: place.id,
-        id: v4()
-      };
-    });
-
-  let places: IPlace[] = parks
+  let places: IPlace[] = parksWithIds
     .concat(diningWithIds)
     .concat(attractionsWithIds)
-    .concat(hotelsWithIds);
+    .concat(hotelsWithIds)
+    .concat(entertainmentWithIds);
 
   // build locations from the data set
   let locations = places
@@ -121,10 +129,11 @@ Promise.all(
   writeJsonSync('./src/data/locations.json', locations);
   // TODO: This probably goes away
   writeJsonSync('./src/data/places.json', places);
-  // Attractions are things you can do at the parks, rides, events, games, character meets
   writeJsonSync('./src/data/attractions.json', attractionsWithIds);
-
   writeJsonSync('./src/data/dining.json', diningWithIds);
+  writeJsonSync('./src/data/parks.json', parksWithIds);
+  writeJsonSync('./src/data/hotels.json', hotelsWithIds);
+  writeJsonSync('./src/data/entertainment.json', entertainmentWithIds);
 
   process.exit();
 })

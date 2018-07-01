@@ -1,10 +1,10 @@
 
-export const parseLocation = location => {
-  if (!location || location === '') {
+export const parseLocation = raw => {
+  if (!raw || raw === '') {
     return null;
   }
 
-  const groups = location.split(',');
+  const groups = raw.split(',');
 
   if (groups.length === 0 || (groups.length === 1 && groups[0] === '')) {
     return null;
@@ -17,4 +17,13 @@ export const parseLocation = location => {
   }
 
   return { area, location: main };
+};
+
+export const parseExternal = raw => {
+  if (!raw) {
+    return null;
+  }
+  const type = new RegExp(/\d+;entityType=(\w+)/, 'g').exec(raw);
+
+  return { type: type ? type[1].toLowerCase() : '', extId: raw };
 };

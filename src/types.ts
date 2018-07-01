@@ -40,3 +40,13 @@ export interface IDate {
     extraMagic?: string | undefined;
   };
 }
+
+export interface IPark {
+  // internal id
+  id?: string;
+  extId: string;
+  extRefName: string;
+  name: string;
+  type: string;
+  url: string;
+}

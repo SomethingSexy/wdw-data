@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 import * as moment from 'moment';
-import api from './api';
+import { screen } from './api/request';
 
 const calendarPath = 'https://disneyworld.disney.go.com/calendars/month/';
 
@@ -81,10 +81,10 @@ export const list = async (months: number = 1, date?: string | undefined) => {
 
   const toFetch = dates.map(dateToFetch => {
     if (moment(dateToFetch).month() === thisMonth) {
-      return api(calendarPath);
+      return screen(calendarPath);
     }
 
-    return api(`${calendarPath}/${dateToFetch}`);
+    return screen(`${calendarPath}/${dateToFetch}`);
   });
 
   // array of raw html
