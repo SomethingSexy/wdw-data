@@ -7,6 +7,7 @@
     "moduleResolution": "node",
     "pretty": true,
     "newLine": "LF",
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "noUnusedLocals": true,
