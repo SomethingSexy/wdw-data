@@ -1,6 +1,6 @@
 import createDebug from 'debug';
 import invariant from 'invariant';
-import { post, session } from './api/request';
+import { finder, session } from './api/request';
 import { grab } from './api/screen';
 
 const debug = createDebug('dining');
@@ -26,10 +26,18 @@ export const list = async () => {
 };
 
 /**
- * Retrieves available reservations for a resturante
- * 
+ * Retrieves available reservations for a restaurant.
+ *
+ * TODO: Add support for multiple.
+ *
  */
-export const reservations = async (dining, date, time, size) => {
+export const reservations = async (
+  dining: { id: string, url: string },
+  date: string,
+  time: string,
+  size: number
+) => {
+  invariant(dining, 'Dining object is required when checking reservations.');
   invariant(date, 'Date is required when checking reservations.');
   invariant(time, 'Time is required when checking reservations.');
   invariant(size, 'Party size is required when checking reservations.');
@@ -47,22 +55,18 @@ export const reservations = async (dining, date, time, size) => {
   }
 
   const postData = {
-    searchDate: date,
-    skipPricing: true,
-    searchTime: localTime,
-    partySize: size,
     id: dining.id,
+    partySize: size,
+    searchDate: date,
+    searchTime: localTime,
+    skipPricing: true,
     type: 'dining'
   };
 
   const auth = await session(dining.url);
-  const response = await post(
-    'https://disneyworld.disney.go.com/finder/dining-availability/',
-    postData,
+  return finder(
     dining.url,
+    postData,
     auth
   );
-
-  console.log('fuck', response);
-  return 'balls';
 };

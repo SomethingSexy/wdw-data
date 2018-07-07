@@ -2,12 +2,15 @@ import { writeJSON } from 'fs-extra';
 import { resolve } from 'path';
 import * as data from '../data/dining.json';
 
-const dining = (data as any);
+const dining = (data.default as any);
 
 const save = async json => {
   return writeJSON(resolve(__dirname, '../data/dining.json'), json);
 };
 
+/**
+ * Model for retrieving persisted information about dining.
+ */
 export default {
   async findBy(name, value) {
     return dining.find(place => place[name] === value);

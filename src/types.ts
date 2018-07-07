@@ -50,3 +50,8 @@ export interface IPark {
   type: string;
   url: string;
 }
+
+export interface IAvailability {
+  link: string;
+  time: string;
+}

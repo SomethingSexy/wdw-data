@@ -9,5 +9,5 @@ declare module "*/data/locations.json" {
 }
 
 declare module "*/data/dining.json" {
-  export default {}[];
+  export default [];
 }

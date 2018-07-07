@@ -1,4 +1,4 @@
-import * as cheerio from 'cheerio';
+import cheerio from 'cheerio';
 import { parseExternal, parseLocation } from '../utils';
 import { screen } from './request';
 

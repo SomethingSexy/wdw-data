@@ -1,8 +1,9 @@
-import * as cheerio from 'cheerio';
+import cheerio from 'cheerio';
 import createDebug from 'debug';
 import https from 'https';
 import fetch from 'node-fetch';
 import querystring from 'querystring';
+import { IAvailability } from '../../types';
 
 const debug = createDebug('request');
 
@@ -62,11 +63,11 @@ export const session = async url => {
   debug(`Retrieved session for ${url}`);
   return {
     csrfToken,
-    cookie: sessionId
+    cookie: sessionId // tslint:disable-line
   };
 };
 
-export const post = async (url, data, referer, auth) => {
+export const finder = async (url, data, auth) => {
   let postData = data;
   if (auth) {
     postData = {
@@ -79,50 +80,63 @@ export const post = async (url, data, referer, auth) => {
 
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: 'disneyworld.disney.go.com',
-      path: '/finder/dining-availability/',
-      method: 'POST',
       headers: {
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.8',
+        'Content-Length': postData.length,
+        'Content-Type': 'application/x-www-form-urlencoded',
         // these are the two things you definitely need
-        // the s_vi one looks like it just needs to have been created at some point, keep alive is a couple years so don't need to try and get it each time
-        'Cookie': 'PHPSESSID=' + auth.cookie + '; s_vi=[CS]v1|2AE01B6C05012E2B-4000013760054F62[CE];',
+        // the s_vi one looks like it just needs to have been created at some point
+        // keep alive is a couple years so don't need to try and get it each time
+        Cookie: `PHPSESSID=${auth.cookie}; s_vi=[CS]v1|2AE01B6C05012E2B-4000013760054F62[CE];`,
         // need these otherwise it 302
         Host: 'disneyworld.disney.go.com',
         Origin: 'https://disneyworld.disney.go.com',
-        Referer: referer,
-        // end need
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': postData.length,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36',
-        Accept: '*/*',
-        // TODO: figure out how we can accept gzipping to be nice
-        // 'Accept-Encoding':'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.8',
+        Referer: url,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36', // tslint:disable-line
         'X-Requested-With': 'XMLHttpRequest'
-      }
+      },
+      hostname: 'disneyworld.disney.go.com',
+      method: 'POST',
+      path: '/finder/dining-availability/'
     };
-  
-    const callback = (response) => {
-      let str = '';
-      response.on('data', (chunk) => {
-        str += chunk;
-      });
-      response.on('end', () => {
-        console.log(response.statusCode); // eslint-disable-line no-console
-        // add the raw response to the reservation data
-        resolve(str);
-      });
-    };
-  
-    const wdwReq = https
-      .request(options, callback)
-      .on('error', function reservationRequestError(err) {
-        console.log(err); // eslint-disable-line no-console
+
+    const request = https
+      .request(options, response => {
+        let str = '';
+        response.on('data', chunk => {
+          str += chunk;
+        });
+        response.on('end', () => {
+          debug('Fetched availability');
+          // This API returns the html directly, so turn it into something
+          // that looks like an api.
+          const $ = cheerio.load(str);
+          if (!$('#diningAvailabilityFlag').data('hasavailability')) {
+            resolve(false);
+          } else {
+            // assuming there are some times available
+            // now grab the actual available times
+            const times: IAvailability[] = [];
+            $('.pillLink', '.ctaAvailableTimesContainer')
+              .get()
+              .forEach(el => {
+                times.push({
+                  link: $(el).attr('href'),
+                  time: $('.buttonText', el).text()
+                });
+              });
+            resolve(times);
+          }
+        });
+      })
+      .on('error', err => {
+        debug('Error in fetching availability', err);
         reject(err);
       });
-  
+
     // This is the data we are posting, it needs to be a string or a buffer
-    wdwReq.write(postData);
-    wdwReq.end();
+    request.write(postData);
+    request.end();
   });
 };
