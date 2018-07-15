@@ -12,7 +12,9 @@ describe('attractions', () => {
   describe('get', () => {
     it('should detailed information', async () => {
       return get({ extId: '18904172;entityType=Attraction' })
-        .then(response => console.log(response));
+        .then(response => {
+          expect(response.extId).to.equal('18904172;entityType=Attraction');
+        });
     });
   });
 });

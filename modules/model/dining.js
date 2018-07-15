@@ -34,10 +34,10 @@ exports.default = {
         return dining;
     },
     async update(item) {
-        if (!dining) {
+        if (!item) {
             return null;
         }
-        if (!dining.id) {
+        if (!item.id) {
             throw new Error('Id is required when updating dining.');
         }
         // this is probably slow right now.
@@ -61,7 +61,7 @@ exports.default = {
             if (!flattened[diner[key]]) {
                 return diner;
             }
-            return Object.assign({}, diner, flattened[diner.id]);
+            return Object.assign({}, diner, flattened[diner[key]], { id: diner.id });
         });
         await save(updated);
         return items;

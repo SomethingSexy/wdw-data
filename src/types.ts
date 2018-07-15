@@ -65,3 +65,12 @@ export interface IScreenItem {
   type: string;
   url: string;
 }
+
+export interface ISchedule {
+  date: string;
+  type: string;
+  closing: string;
+  isHoliday: boolean | string;
+  isSpecialHours: boolean;
+  opening: string;
+}

@@ -9,44 +9,59 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_extra_1 = require("fs-extra");
 const path_1 = require("path");
-const data = __importStar(require("../data/attractions.json"));
-const attractions = data.default;
+const data = __importStar(require("../data/parks.json"));
+const parks = data.default;
 const save = async (json) => {
-    return fs_extra_1.writeJSON(path_1.resolve(__dirname, '../data/attractions.json'), json);
+    return fs_extra_1.writeJSON(path_1.resolve(__dirname, '../data/parks.json'), json);
 };
 /**
  * Model for retrieving and updating data about attractions
  */
 exports.default = {
+    /**
+     * Add an array of schedules by date.
+     * @param id - id of park
+     * @param schedule - schedule to add
+     */
+    async addSchedule(id, schedule) {
+        // If there is a current date already, just replace.
+        let park = await this.get(id);
+        if (!park.hours) {
+            park = Object.assign({}, park, { hours: {} });
+        }
+        park = Object.assign({}, park, { hours: Object.assign({}, park.hours, schedule) });
+        return this.update(park);
+    },
     async findBy(name, value) {
-        return attractions.find(place => place[name] === value);
+        return parks.find(place => place[name] === value);
     },
     async findAllBy(name, values = []) {
         // just looping once to find, instead of starting over
-        return attractions.filter((place) => {
+        return parks.filter((place) => {
             return values.includes(place[name]);
         });
     },
     async get(id) {
-        return attractions.find(place => place.id === id);
+        return parks.find(place => place.id === id);
     },
     async getAll() {
-        return attractions;
+        return parks;
     },
     async update(item) {
         if (!item) {
             return null;
         }
         if (!item.id) {
-            throw new Error('Id is required when updating an attraction.');
+            throw new Error('Id is required when updating a park.');
         }
         // this is probably slow right now.
-        const updated = attractions.map(diner => {
-            if (diner.id !== item.id) {
-                return diner;
+        const updated = parks.map(park => {
+            if (park.id !== item.id) {
+                return park;
             }
-            return Object.assign({}, diner, item);
+            return Object.assign({}, park, item);
         });
+        console.log(updated);
         await save(updated);
         return item;
     },
@@ -57,14 +72,14 @@ exports.default = {
             return Object.assign({}, all, { [item[key]]: item });
         }, {}); // tslint:disable-line
         // also fucking slow -__-
-        const updated = attractions.map(attraction => {
-            if (!flattened[attraction[key]]) {
-                return attraction;
+        const updated = parks.map(park => {
+            if (!flattened[park[key]]) {
+                return park;
             }
-            return Object.assign({}, attraction, flattened[attraction[key]], { id: attraction.id });
+            return Object.assign({}, park, flattened[park[key]], { id: park.id });
         });
         await save(updated);
         return items;
     }
 };
-//# sourceMappingURL=attraction.js.map
+//# sourceMappingURL=park.js.map

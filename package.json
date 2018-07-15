@@ -7,7 +7,8 @@
   "typings": "./index.d.ts",
   "scripts": {
     "build": "tsc --outDir ./modules && copyfiles -u 1 './src/**/*.json' modules",
-    "build:data": "ts-node ./scripts/data.ts",
+    "service:data": "ts-node ./scripts/data.ts",
+    "service:hours": "ts-node ./scripts/hours.ts",
     "postversion": "git push && git push --tags",
     "test": "mocha --opts test/mocha.opts",
     "version": "npm run build && git add -A modules"
@@ -43,6 +44,7 @@
     "@types/fs-extra": "^5.0.2",
     "@types/invariant": "^2.2.29",
     "@types/mocha": "^2.2.48",
+    "@types/moment-holiday": "^1.5.0",
     "@types/uuid": "^3.4.3",
     "chai": "^4.1.2",
     "copyfiles": "^2.0.0",

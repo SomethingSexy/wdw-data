@@ -30,15 +30,18 @@ exports.get = async (attraction) => {
         coordinates = response.coordinates['Guest Entrance'];
     }
     // console.log(response);
-    const { admissionRequired, facets } = response;
+    const { admissionRequired, descriptions, facets } = response;
     const allowServiceAnimals = !facetHasId(facets.serviceAnimals, NO_SERVICE_ANIMALS_ID);
     const wheelchairTransfer = facetHasId(facets.mobilityDisabilities, MUST_TRANSFER_WHEELCHAIR);
     // TODO: figure out if there are multiple
     const age = facets.age && facets.age[0].value;
     const height = facets.height && facets.height[0].value;
     const thrillFactor = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
+    const description = descriptions.shortDescriptionMobile
+        ? descriptions.shortDescriptionMobile.text : '';
     return Object.assign({}, attraction, { coordinates,
-        thrillFactor, description: response.descriptions.shortDescriptionMobile.text, 
+        description,
+        thrillFactor, 
         // disneyOperated: response.disneyOperated,
         // disneyOwned: response.disneyOwned,
         extId: response.id, extRefName: response.urlFriendlyId, fastPassPlus: response.fastPassPlus, fastPass: response.fastPass, name: response.name, links: {

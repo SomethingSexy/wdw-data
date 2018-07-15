@@ -28,11 +28,11 @@ export default {
     return dining;
   },
   async update(item) {
-    if (!dining) {
+    if (!item) {
       return null;
     }
 
-    if (!dining.id) {
+    if (!item.id) {
       throw new Error('Id is required when updating dining.');
     }
 
@@ -70,7 +70,8 @@ export default {
 
       return {
         ...diner,
-        ...flattened[diner.id]
+        ...flattened[diner[key]],
+        id: diner.id
       };
     });
 

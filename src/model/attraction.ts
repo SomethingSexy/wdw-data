@@ -28,12 +28,12 @@ export default {
     return attractions;
   },
   async update(item) {
-    if (!attractions) {
+    if (!item) {
       return null;
     }
 
-    if (!attractions.id) {
-      throw new Error('Id is required when updating dining.');
+    if (!item.id) {
+      throw new Error('Id is required when updating an attraction.');
     }
 
     // this is probably slow right now.
@@ -70,7 +70,8 @@ export default {
 
       return {
         ...attraction,
-        ...flattened[attraction.id]
+        ...flattened[attraction[key]],
+        id: attraction.id
       };
     });
 

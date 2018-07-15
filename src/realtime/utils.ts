@@ -23,7 +23,7 @@ export const parseExternal = raw => {
   if (!raw) {
     return null;
   }
-  const type = new RegExp(/\d+;entityType=(\w+)/, 'g').exec(raw);
+  const type = new RegExp(/\d+;entityType=([\w-]+)/, 'g').exec(raw);
 
   return {
     extId: raw,

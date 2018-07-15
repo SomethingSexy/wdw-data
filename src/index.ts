@@ -4,13 +4,13 @@ export const parks = {
     // use model
     return {
       /**
-       * Retrieve the hours for all parks
+       * Retrieves the hours for a park
        */
       hours: () => {
         // 
       },
       /**
-       * retrieve the wait times for all parks
+       * Retrieves the wait times for a park by date
        */
       waitTimes: () => {}
     };
@@ -22,3 +22,7 @@ export const parks = {
     // model
   },
 };
+
+export const realtime = {
+
+}

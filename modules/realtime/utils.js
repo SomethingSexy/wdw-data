@@ -19,7 +19,11 @@ exports.parseExternal = raw => {
     if (!raw) {
         return null;
     }
-    const type = new RegExp(/\d+;entityType=(\w+)/, 'g').exec(raw);
-    return { type: type ? type[1].toLowerCase() : '', extId: raw };
+    const type = new RegExp(/\d+;entityType=([\w-]+)/, 'g').exec(raw);
+    return {
+        extId: raw,
+        id: type ? type[0] : '',
+        type: type ? type[1].toLowerCase() : ''
+    };
 };
 //# sourceMappingURL=utils.js.map

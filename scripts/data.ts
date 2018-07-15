@@ -3,6 +3,7 @@ import { uniq } from 'lodash';
 import { v4 } from 'uuid';
 import attractionModel from '../src/model/attraction';
 import diningModel from '../src/model/dining';
+import parkModel from '../src/model/park';
 import * as attractions from '../src/realtime/attractions';
 import * as dining from '../src/realtime/dining';
 import * as entertainment from '../src/realtime/entertainment';
@@ -132,7 +133,7 @@ Promise.all(
   writeJsonSync('./src/data/locations.json', locations);
   writeJsonSync('./src/data/places.json', places);
   // writeJsonSync('./src/data/attractions.json', attractionsWithIds);
-  writeJsonSync('./src/data/parks.json', parksWithIds);
+  // writeJsonSync('./src/data/parks.json', parksWithIds);
   writeJsonSync('./src/data/hotels.json', hotelsWithIds);
   writeJsonSync('./src/data/entertainment.json', entertainmentWithIds);
 
@@ -143,7 +144,11 @@ Promise.all(
       return attractionModel
         .updateAll(attractionsWithIds, true)
         .then(() => {
-          process.exit();
+          return parkModel
+            .updateAll(parksWithIds, true)
+            .then(() => {
+              process.exit();
+            });
         });
     });
 })

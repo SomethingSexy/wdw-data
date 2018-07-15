@@ -15,3 +15,7 @@ declare module "*/data/dining.json" {
 declare module "*/data/attractions.json" {
   export default [];
 }
+
+declare module "*/data/parks.json" {
+  export default [];
+}

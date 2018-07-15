@@ -1,6 +1,6 @@
 import createDebug from 'debug';
 import invariant from 'invariant';
-import { finder, get as requestGet, getAccessToken, getWebSession } from './api/request';
+import { finder, getWebSession } from './api/request';
 import { grab } from './api/screen';
 
 const debug = createDebug('dining');
