@@ -1,9 +1,9 @@
 import { writeJsonSync } from 'fs-extra';
 import { uniq } from 'lodash';
 import { v4 } from 'uuid';
-import attractionModel from '../src/model/attraction';
-import diningModel from '../src/model/dining';
-import parkModel from '../src/model/park';
+import attractionModel from '../src/attraction';
+import diningModel from '../src/dining';
+import parkModel from '../src/park';
 import * as attractions from '../src/realtime/attractions';
 import * as dining from '../src/realtime/dining';
 import * as entertainment from '../src/realtime/entertainment';

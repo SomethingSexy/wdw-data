@@ -1,12 +1,12 @@
 import { writeJSON } from 'fs-extra';
 import { resolve } from 'path';
-import * as data from '../data/parks.json';
-import { ISchedule } from '../types';
+import * as data from './data/parks.json';
+import { ISchedule } from './types';
 
 const parks = (data.default as any);
 
 const save = async json => {
-  return writeJSON(resolve(__dirname, '../data/parks.json'), json);
+  return writeJSON(resolve(__dirname, './data/parks.json'), json);
 };
 
 /**
@@ -73,7 +73,7 @@ export default {
         ...item
       };
     });
-    console.log(updated);
+
     await save(updated);
 
     return item;

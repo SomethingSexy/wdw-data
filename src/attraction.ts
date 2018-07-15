@@ -1,31 +1,31 @@
 import { writeJSON } from 'fs-extra';
 import { resolve } from 'path';
-import * as data from '../data/dining.json';
+import * as data from './data/attractions.json';
 
-const dining = (data.default as any);
+const attractions = (data.default as any);
 
 const save = async json => {
-  return writeJSON(resolve(__dirname, '../data/dining.json'), json);
+  return writeJSON(resolve(__dirname, './data/attractions.json'), json);
 };
 
 /**
- * Model for retrieving persisted information about dining.
+ * Model for retrieving and updating data about attractions
  */
 export default {
   async findBy(name, value) {
-    return dining.find(place => place[name] === value);
+    return attractions.find(place => place[name] === value);
   },
   async findAllBy(name, values: string[] = []) {
     // just looping once to find, instead of starting over
-    return dining.filter((place: any) => {
+    return attractions.filter((place: any) => {
       return values.includes(place[name]);
     });
   },
   async get(id) {
-    return dining.find(place => place.id === id);
+    return attractions.find(place => place.id === id);
   },
   async getAll() {
-    return dining;
+    return attractions;
   },
   async update(item) {
     if (!item) {
@@ -33,11 +33,11 @@ export default {
     }
 
     if (!item.id) {
-      throw new Error('Id is required when updating dining.');
+      throw new Error('Id is required when updating an attraction.');
     }
 
     // this is probably slow right now.
-    const updated = dining.map(diner => {
+    const updated = attractions.map(diner => {
       if (diner.id !== item.id) {
         return diner;
       }
@@ -63,15 +63,15 @@ export default {
       }, {}); // tslint:disable-line
 
     // also fucking slow -__-
-    const updated = dining.map(diner => {
-      if (!flattened[diner[key]]) {
-        return diner;
+    const updated = attractions.map(attraction => {
+      if (!flattened[attraction[key]]) {
+        return attraction;
       }
 
       return {
-        ...diner,
-        ...flattened[diner[key]],
-        id: diner.id
+        ...attraction,
+        ...flattened[attraction[key]],
+        id: attraction.id
       };
     });
 

@@ -1,4 +1,4 @@
-import * as data from '../data/locations.json';
+import * as data from './data/locations.json';
 
 const locations = (data as any);
 

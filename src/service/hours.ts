@@ -1,5 +1,5 @@
 import moment from 'moment';
-import model from '../model/park';
+import model from '../park';
 import { hours } from '../realtime/parks';
 
 /**

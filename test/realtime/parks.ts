@@ -14,7 +14,7 @@ describe('parks', () => {
   describe('hours', () => {
     it('should fetch hours for a given park', async () => {
       const opening = moment().format('YYYY-MM-DD');
-      return hours({ extId: '80007944;entityType=theme-park' }, opening)
+      return hours({ extId: '80007944;entityType=theme-park', type: 'theme-park' }, opening)
         .then(response => {
           expect(response).to.be.a('object');
           expect(response[opening]).to.be.a('array');
