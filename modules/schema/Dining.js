@@ -1,7 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const graphql_1 = require("graphql");
-const Place_1 = require("./Place");
+const Place_1 = __importDefault(require("./Place"));
 const diningType = new graphql_1.GraphQLObjectType({
     description: 'Dining in WDW.',
     fields: () => ({

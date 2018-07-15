@@ -1,9 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const graphql_1 = require("graphql");
-const Attraction_1 = require("./Attraction");
-const Dining_1 = require("./Dining");
-const ThemePark_1 = require("./ThemePark");
+const Attraction_1 = __importDefault(require("./Attraction"));
+const Dining_1 = __importDefault(require("./Dining"));
+const ThemePark_1 = __importDefault(require("./ThemePark"));
 // const PlaceType = new GraphQLUnionType({
 //   description: 'A location at WDW',
 //   name: 'Place',

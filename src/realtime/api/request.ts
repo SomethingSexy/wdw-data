@@ -1,13 +1,27 @@
 import cheerio from 'cheerio';
 import createDebug from 'debug';
 import https from 'https';
+import invariant from 'invariant';
 import fetch from 'node-fetch';
 import querystring from 'querystring';
+import randomUseragent from 'random-useragent';
 import { IAvailability } from '../../types';
 
 const debug = createDebug('request');
 
 const SESSION_KEY = 'PHPSESSID=';
+
+const ORIGIN = 'https://disneyworld.disney.go.com';
+const SITE_HOST = 'disneyworld.disney.go.com';
+const AUTH_HOST = 'authorization.go.com';
+const APP_ID = 'WDW-MDX-ANDROID-3.4.1';
+const API_HOST = 'api.wdpro.disney.go.com';
+
+const accessTokenURLBody =
+  'grant_type=assertion&assertion_type=public&client_id=WDPRO-MOBILE.MDX.WDW.ANDROID-PROD';
+
+// use the same user-agent for all WDW park requests
+const authUserAgent = randomUseragent.getRandom(ua => ua.osName === 'Android');
 
 /**
  * Retrieves the HTML for a screen.
@@ -19,10 +33,10 @@ export const screen = async (path: string) => {
       Accept: '*/*',
       'Accept-Language': 'en-US,en;q=0.8',
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      Host: 'disneyworld.disney.go.com',
-      Origin: 'https://disneyworld.disney.go.com',
+      Host: SITE_HOST,
+      Origin: ORIGIN,
       'X-Requested-With': 'XMLHttpRequest',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36' // tslint:disable-line
+      'User-Agent': randomUseragent.getRandom() // tslint:disable-line
     },
     method: 'get'
   });
@@ -34,7 +48,7 @@ export const screen = async (path: string) => {
  * Retrieves a session cookie for a url.
  * @param url
  */
-export const session = async url => {
+export const getWebSession = async url => {
   debug(`Requesting session for ${url}`);
 
   const response = await fetch(url);
@@ -90,14 +104,14 @@ export const finder = async (url, data, auth) => {
         // keep alive is a couple years so don't need to try and get it each time
         Cookie: `PHPSESSID=${auth.cookie}; s_vi=[CS]v1|2AE01B6C05012E2B-4000013760054F62[CE];`,
         // need these otherwise it 302
-        Host: 'disneyworld.disney.go.com',
-        Origin: 'https://disneyworld.disney.go.com',
+        Host: SITE_HOST,
+        Origin: ORIGIN,
         Referer: url,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36', // tslint:disable-line
+        'User-Agent': randomUseragent.getRandom(), // tslint:disable-line
         'X-Requested-With': 'XMLHttpRequest'
       },
-      hostname: 'disneyworld.disney.go.com',
-      method: 'POST',
+      hostname: SITE_HOST,
+      method: 'post',
       path: '/finder/dining-availability/'
     };
 
@@ -137,6 +151,95 @@ export const finder = async (url, data, auth) => {
 
     // This is the data we are posting, it needs to be a string or a buffer
     request.write(postData);
+    request.end();
+  });
+};
+
+export const getAccessToken = async () => {
+  return new Promise<string>((resolve, reject) => {
+    const agentOptions = {
+      headers: {
+        'User-Agent': authUserAgent
+      },
+      hostname: AUTH_HOST,
+      method: 'post',
+      path: '/token'
+    };
+
+    const options = {
+      ...agentOptions,
+      agent: new https.Agent(agentOptions)
+    };
+
+    const request = https.request(options, response => {
+      let data = '';
+      response.on('data', b => {
+        data += b;
+      })
+      .on('end', () => {
+        const accessData = JSON.parse(data);
+
+        invariant(accessData.access_token, 'Could not parse access_token.');
+        invariant(accessData.expires_in, 'Could not parse expires_in.');
+
+        const token: string = accessData.access_token;
+        // TODO: Check if it is about to expire
+        // let ttlExpiresIn = parseInt(accessData.expires_in, 10);
+
+        // ttlExpiresIn = Math.ceil(ttlExpiresIn * .90);
+
+        debug(`Fetched new WDW access token ${token}, expires in ${accessData.expires_in}`);
+
+        resolve(token);
+      })
+      .on('error', err => {
+        debug('Error in fetching WDW access token', err);
+        reject(err);
+      });
+    });
+
+    request.write(accessTokenURLBody);
+    request.end();
+  });
+};
+
+export const get = (url: string, params: any, auth: string) => {
+  return new Promise((resolve, reject) => {
+    const agentOptions = {
+      headers: {
+        Accept: 'application/json;apiversion=1',
+        Authorization: `BEARER  ${auth}`,
+        'User-Agent': authUserAgent,
+        'X-App-Id': APP_ID,
+        'X-Conversation-Id': 'WDPRO-MOBILE.MDX.CLIENT-PROD',
+        'X-Correlation-ID': Date.now()
+      },
+      hostname: API_HOST,
+      method: 'get',
+      path: `${url}?${querystring.stringify(params)}`
+    };
+
+    const options = {
+      ...agentOptions,
+      agent: new https.Agent(agentOptions)
+    };
+
+    const request = https.request(options, response => {
+      let data = '';
+      response.on('data', b => {
+        data += b;
+      })
+      .on('end', () => {
+        const rData = JSON.parse(data);
+        resolve(rData);
+      })
+      .on('error', err => {
+        debug(`Error in fetching WDW data from ${url}`, err);
+        reject(err);
+      });
+    });
+
+    request.write(accessTokenURLBody);
     request.end();
   });
 };

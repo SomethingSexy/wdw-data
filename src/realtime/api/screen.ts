@@ -1,4 +1,5 @@
 import cheerio from 'cheerio';
+import { IScreenItem } from '../../types';
 import { parseExternal, parseLocation } from '../utils';
 import { screen } from './request';
 
@@ -7,9 +8,13 @@ export type GetItemsCallback = ($: any, item: {}) => {};
 export const grab = async path => {
   const response = await screen(path);
   const $ = cheerio(response);
-  const $cards = $.find('li.card');
   return {
-    getItems: async (callback?: GetItemsCallback)  => {
+    /**
+     * Returns an array of screen cards.
+     */
+    getItems: async (callback?: GetItemsCallback): Promise<IScreenItem[]> => {
+      const $cards = $.find('li.card');
+
       let items: any = [];
       // .each instead of .map because map().get() in Typescript forces string[]
       $cards.each(({}, card) => {

@@ -55,3 +55,13 @@ export interface IAvailability {
   link: string;
   time: string;
 }
+
+export interface IScreenItem {
+  area: string;
+  extId: string;
+  extRefName: string;
+  location: string;
+  name: string;
+  type: string;
+  url: string;
+}

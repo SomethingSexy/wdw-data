@@ -1,8 +1,18 @@
 "use strict";
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const cheerio = require("cheerio");
-const moment = require("moment");
-const api_1 = require("./api");
+const cheerio = __importStar(require("cheerio"));
+const moment = __importStar(require("moment"));
+const request_1 = __importDefault(require("./realtime/api/request"));
 const FORMAT = 'YYYY-MM-DD';
 const parks = [
     'magic-kingdom',
@@ -67,9 +77,9 @@ exports.list = async (months = 1, date) => {
     }
     const toFetch = dates.map(dateToFetch => {
         if (moment(dateToFetch).month() === thisMonth) {
-            return api_1.default('calendars/month');
+            return request_1.default('calendars/month');
         }
-        return api_1.default(`calendars/month/${dateToFetch}`);
+        return request_1.default(`calendars/month/${dateToFetch}`);
     });
     // array of raw html
     const responses = await Promise.all(toFetch);

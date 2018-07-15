@@ -1,6 +1,6 @@
 import createDebug from 'debug';
 import invariant from 'invariant';
-import { finder, session } from './api/request';
+import { finder, get as requestGet, getAccessToken, getWebSession } from './api/request';
 import { grab } from './api/screen';
 
 const debug = createDebug('dining');
@@ -63,7 +63,7 @@ export const reservations = async (
     type: 'dining'
   };
 
-  const auth = await session(dining.url);
+  const auth = await getWebSession(dining.url);
   return finder(
     dining.url,
     postData,

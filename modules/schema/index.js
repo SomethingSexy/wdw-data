@@ -1,13 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const graphql_1 = require("graphql");
-const location_1 = require("../model/location");
-const place_1 = require("../model/place");
-const Attraction_1 = require("./Attraction");
-const Dining_1 = require("./Dining");
-const Location_1 = require("./Location");
-const Place_1 = require("./Place");
-const ThemePark_1 = require("./ThemePark");
+const location_1 = __importDefault(require("../model/location"));
+const place_1 = __importDefault(require("../model/place"));
+const Attraction_1 = __importDefault(require("./Attraction"));
+const Dining_1 = __importDefault(require("./Dining"));
+const Location_1 = __importDefault(require("./Location"));
+const Place_1 = __importDefault(require("./Place"));
+const ThemePark_1 = __importDefault(require("./ThemePark"));
 const queryType = new graphql_1.GraphQLObjectType({
     fields: () => ({
         locations: {

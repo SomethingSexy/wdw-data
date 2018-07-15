@@ -1,12 +1,18 @@
 import { expect } from 'chai';
 import 'mocha';
-import { list } from '../../src/realtime/attractions';
+import { get, list } from '../../src/realtime/attractions';
 
 describe('attractions', () => {
   describe('list', () => {
     it('should fetch a list of attractions options', async () => {
       return list()
         .then(response => expect(response.length > 0).to.equal(true));
+    });
+  });
+  describe('get', () => {
+    it('should detailed information', async () => {
+      return get({ extId: '18904172;entityType=Attraction' })
+        .then(response => console.log(response));
     });
   });
 });

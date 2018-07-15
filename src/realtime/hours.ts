@@ -1,6 +1,6 @@
 import cheerio from 'cheerio';
 import moment from 'moment';
-import { screen } from './api/request';
+import { grab } from './api/screen';
 
 const calendarPath = 'https://disneyworld.disney.go.com/calendars/month/';
 
@@ -36,7 +36,6 @@ const getParkInfo = ($park: Cheerio) => {
 
 const getDayInfo = (rawDay: any) => {
   const $day = cheerio(rawDay);
-
   if (!$day.has('div.noData').length) {
     const day = $day.find('.dayOfMonth').text();
     // this will contain all of the parks
@@ -81,10 +80,10 @@ export const list = async (months: number = 1, date?: string | undefined) => {
 
   const toFetch = dates.map(dateToFetch => {
     if (moment(dateToFetch).month() === thisMonth) {
-      return screen(calendarPath);
+      return grab(calendarPath);
     }
 
-    return screen(`${calendarPath}/${dateToFetch}`);
+    return grab(`${calendarPath}/${dateToFetch}`);
   });
 
   // array of raw html
@@ -93,9 +92,9 @@ export const list = async (months: number = 1, date?: string | undefined) => {
   // response per month
   const hoursByDate = responses
     .map(
-      (rawMonth, index) => {
+      (screen, index) => {
         // find all entries
-        const availableDates = cheerio(rawMonth)
+        const availableDates = screen.html()
           .find('#monthlyCalendarTable tr.weekRow > td')
           .toArray()
           .map(getDayInfo)

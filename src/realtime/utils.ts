@@ -25,5 +25,9 @@ export const parseExternal = raw => {
   }
   const type = new RegExp(/\d+;entityType=(\w+)/, 'g').exec(raw);
 
-  return { type: type ? type[1].toLowerCase() : '', extId: raw };
+  return {
+    extId: raw,
+    id: type ? type[0] : '',
+    type: type ? type[1].toLowerCase() : ''
+  };
 };

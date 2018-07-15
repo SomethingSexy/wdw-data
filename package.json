@@ -31,7 +31,10 @@
     "invariant": "^2.2.4",
     "lodash": "^4.17.10",
     "moment": "^2.22.1",
+    "moment-holiday": "^1.5.1",
+    "moment-timezone": "^0.5.21",
     "node-fetch": "^2.1.2",
+    "random-useragent": "^0.3.1",
     "uuid": "^3.2.1"
   },
   "devDependencies": {

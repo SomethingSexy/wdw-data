@@ -1,6 +1,7 @@
 import { writeJsonSync } from 'fs-extra';
 import { uniq } from 'lodash';
 import { v4 } from 'uuid';
+import attractionModel from '../src/model/attraction';
 import diningModel from '../src/model/dining';
 import * as attractions from '../src/realtime/attractions';
 import * as dining from '../src/realtime/dining';
@@ -130,7 +131,7 @@ Promise.all(
   // TODO: Convert this to models
   writeJsonSync('./src/data/locations.json', locations);
   writeJsonSync('./src/data/places.json', places);
-  writeJsonSync('./src/data/attractions.json', attractionsWithIds);
+  // writeJsonSync('./src/data/attractions.json', attractionsWithIds);
   writeJsonSync('./src/data/parks.json', parksWithIds);
   writeJsonSync('./src/data/hotels.json', hotelsWithIds);
   writeJsonSync('./src/data/entertainment.json', entertainmentWithIds);
@@ -139,7 +140,11 @@ Promise.all(
   diningModel
     .updateAll(diningWithIds, true)
     .then(() => {
-      process.exit();
+      return attractionModel
+        .updateAll(attractionsWithIds, true)
+        .then(() => {
+          process.exit();
+        });
     });
 })
 .catch(e => console.log(e)); // tslint:disable-line no-console
