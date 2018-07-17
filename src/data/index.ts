@@ -1,5 +1,7 @@
+import moment from 'moment';
+import 'moment-holiday';
 import Sequelize from 'sequelize';
-import { IDate, IPark } from '../types';
+import { IPark, ISchedule } from '../types';
 import date from './model/date';
 import park from './model/park';
 import parkSchedule from './model/parkSchedule';
@@ -37,8 +39,52 @@ export default (connection?: any) => {
   Schedule.sync();
   ParkSchedule.sync();
 
+  // TODO: move
+  const addParkSchedule = async (
+    parkId: string, scheduleDate: string, parkSchedules, transaction
+  ) => {
+    let cacheDate;
+    return Date
+      .findOne({ where: { date: scheduleDate } }, { transaction })
+      .then(d => {
+        if (!d) {
+          const mDate = moment(scheduleDate);
+          const holiday = mDate.isHoliday();
+          return Date.create(
+            {
+              date: scheduleDate,
+              holiday: holiday || null,
+              isHoliday: !!holiday
+            },
+            { transaction }
+          );
+        }
+
+        return Promise.resolve(d);
+      })
+      .then(dateInstance => {
+        cacheDate = dateInstance;
+        return Promise.all(
+          parkSchedules.map(data => Schedule.create(data, { transaction }))
+        );
+      })
+      .then(scheduleInstances => {
+        return Promise.all(
+          scheduleInstances.map(scheduleInstance =>
+            cacheDate.addSchedule(
+              scheduleInstance,
+              {
+                transaction,
+                through: { parkId } // tslint:disable-line
+              }
+            )
+          )
+        );
+      });
+  };
+
   // TODO: Figure out where to put these
-  // probably separate files per "model" that would get passed the sequeilize models
+  // probably separate files per "model" that would get passed the sequeilize models (name them doa)
   return {
     async listAllParks() {
       return Park.all({ raw: true });
@@ -49,22 +95,17 @@ export default (connection?: any) => {
 
       return Promise.all(updatesOrCreates);
     },
-    async addParkSchedules(dateInfo: IDate, schedules) {
+    async addParkSchedules(parkId: string, parkSchedules: {[date: string]: ISchedule[]}) {
       // check if date exists already.
-      sequelize.transaction(t => {
-        return Date
-          .findOne({ where: { date: dateInfo.date } }, { transaction: t })
-          .then(project => {
-            console.log(project, schedules);
-          });
-        // return sequelize.Promise.each(arrToUpdate, function(itemToUpdate){
-        //   model.update(itemToUpdate, { transaction: t })
-        // }).then((updateResult) => {
-        //   return model.bulkCreate(itemsArray, { transaction: t })
-        // }, (err) => {
-        //   // if update throws an error, handle it here.
-        // });
-      });
+      return Promise.all(
+        Object
+          .entries(parkSchedules)
+          .map(([key, value]) => {
+            return sequelize.transaction(t => {
+              return addParkSchedule(parkId, key, value, t);
+            });
+          })
+        );
     }
   };
 };

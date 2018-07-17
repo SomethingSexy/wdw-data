@@ -1,3 +1,3 @@
 import hours from '../src/worker/hours';
 
-hours().then(() => process.exit);
+hours(2).then(() => process.exit);

@@ -59,10 +59,8 @@ export const hours = async(park: { extId: string, type: string }, start: string,
           const opening = moment(`${date} ${startTime}`);
           // type = 'Special Ticketed Event' might be early morning magic, or after hours magic
           const dateSchedule = {
-            date,
             type,
             closing: moment(`${date} ${endTime}`).utc().format(), // tslint:disable-line
-            isHoliday: opening.isHoliday(),
             isSpecialHours: (type !== 'Operating' && type !== 'Closed' && type !== 'Refurbishment'),
             opening: opening.utc().format(),
           };

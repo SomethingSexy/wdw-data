@@ -1,4 +1,5 @@
 import moment from 'moment';
+import 'moment-holiday';
 import data from '../data/index';
 import { hours } from '../realtime/parks';
 
@@ -12,7 +13,6 @@ export default async (days?: number) => {
   const startDate = moment().format('YYYY-MM-DD');
   const endDate = days ? moment().add(days, 'days').format('YYYY-MM-DD') : startDate;
   const parks = await models.listAllParks();
-  console.log(parks);
   const responses: any[] = await Promise.all(
     parks.reduce(
       (all, park) => {
@@ -30,18 +30,12 @@ export default async (days?: number) => {
     )
   );
 
-  // for (const parkSchedule of responses) {
-  //   // console.log(JSON.stringify(parkSchedule, null, 4));
-  //   // TODO this is not going to work right now because of how we are reading/wrting the files
-  //   await model.addSchedule(parkSchedule.id, parkSchedule.schedule);
-  // }
-
-  const date = {
-    date: '2018-07-16',
-    isHoliday: false
-  };
-
-  await models.addParkSchedules(date, []);
+  for (const parkSchedule of responses) {
+    await models.addParkSchedules(
+      parkSchedule.id,
+      parkSchedule.schedule
+    );
+  }
 
   return responses;
 };
