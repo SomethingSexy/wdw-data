@@ -1,3 +1,3 @@
-import hours from '../src/service/hours';
+import hours from '../src/worker/hours';
 
 hours().then(() => process.exit);

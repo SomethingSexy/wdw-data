@@ -34,11 +34,8 @@ export interface IPlace {
 
 export interface IDate {
   date: string;
-  parks: {
-    hours: string;
-    name: string;
-    extraMagic?: string | undefined;
-  };
+  isHoliday: boolean | string;
+  holiday?: string;
 }
 
 export interface IPark {

@@ -7,9 +7,11 @@
   "typings": "./index.d.ts",
   "scripts": {
     "build": "tsc --outDir ./modules && copyfiles -u 1 './src/**/*.json' modules",
+    "postversion": "git push && git push --tags",
+    "start": "ts-node ./src/server.ts",
     "service:data": "ts-node ./scripts/data.ts",
     "service:hours": "ts-node ./scripts/hours.ts",
-    "postversion": "git push && git push --tags",
+    "service:parks": "ts-node ./scripts/parks.ts",
     "test": "mocha --opts test/mocha.opts",
     "version": "npm run build && git add -A modules"
   },
@@ -33,7 +35,10 @@
     "moment-holiday": "^1.5.1",
     "moment-timezone": "^0.5.21",
     "node-fetch": "^2.1.2",
+    "pg": "^7.4.3",
+    "pg-hstore": "^2.3.2",
     "random-useragent": "^0.3.1",
+    "sequelize": "^5.0.0-beta.9",
     "uuid": "^3.2.1"
   },
   "devDependencies": {
@@ -43,6 +48,7 @@
     "@types/invariant": "^2.2.29",
     "@types/mocha": "^2.2.48",
     "@types/moment-holiday": "^1.5.0",
+    "@types/sequelize": "^4.27.24",
     "@types/uuid": "^3.4.3",
     "chai": "^4.1.2",
     "copyfiles": "^2.0.0",

@@ -26,3 +26,5 @@ export const parks = {
 export const realtime = {
 
 }
+
+export const server = () => {};

@@ -1,0 +1,23 @@
+import data from '../data/index';
+import { list } from '../realtime/parks';
+
+const runParks = async () => {
+  return list().then((results: any) => {
+    return results;
+  })
+  .catch(e => console.log(e)); // tslint:disable-line no-console
+};
+
+/**
+ * A service for retrieving and persisting waitimes.
+ */
+export default async () => {
+  // setup our database connection
+  const models = data();
+
+  // grab our realtime park data
+  const parks = await runParks();
+
+  // update the database
+  await models.updateAllParks(parks);
+};
