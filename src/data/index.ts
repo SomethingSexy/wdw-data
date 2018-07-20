@@ -1,43 +1,58 @@
 import moment from 'moment';
 import 'moment-holiday';
 import Sequelize from 'sequelize';
-import { IPark, ISchedule } from '../types';
+import { IHotel, IPark, ISchedule } from '../types';
+import address from './model/address';
 import date from './model/date';
-import park from './model/park';
-import parkSchedule from './model/parkSchedule';
+import hotel from './model/hotel';
+import location from './model/location';
+import locationSchedule from './model/locationSchedule';
 import schedule from './model/schedule';
 
-const upsert = async (Model, values, condition) =>
-  Model
-    .findOne({ where: condition })
+const upsert = async (Model, values, condition, transaction, include?) => {
+  let options: any = { transaction };
+  if (include) {
+    options = {
+      ...options,
+      include
+    };
+  }
+  return Model
+    .findOne({ where: condition }, { transaction })
     .then(obj => {
       if (obj) {
-        return obj.update(values);
+        return obj.update(values, options);
       }
-      return Model.create(values);
+
+      return Model.create(values, options);
     });
+};
 
 export default (connection?: any) => {
   const sequelize = connection
     || new Sequelize({
       database: 'wdw',
       dialect: 'postgres',
-      username: 'tylercvetan'
+      pool: {
+        max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
+      },
+      username: 'tylercvetan',
     });
 
-  const Park = park(sequelize);
-  const ParkSchedule = parkSchedule(sequelize);
+  const Address = address(sequelize);
+  const Location = location(sequelize);
+  const LocationSchedule = locationSchedule(sequelize);
   const Schedule = schedule(sequelize);
   const Date = date(sequelize);
+  const Hotel = hotel(sequelize);
 
-  Date.belongsToMany(Schedule, { through: ParkSchedule });
-  Schedule.belongsToMany(Date, { through: ParkSchedule });
-  ParkSchedule.belongsTo(Park);
+  Date.belongsToMany(Schedule, { through: LocationSchedule });
+  Schedule.belongsToMany(Date, { through: LocationSchedule });
+  LocationSchedule.belongsTo(Location);
+  Hotel.belongsTo(Location);
+  Location.belongsTo(Address);
 
-  Park.sync();
-  Date.sync();
-  Schedule.sync();
-  ParkSchedule.sync();
+  sequelize.sync();
 
   // TODO: move
   const addParkSchedule = async (
@@ -87,13 +102,35 @@ export default (connection?: any) => {
   // probably separate files per "model" that would get passed the sequeilize models (name them doa)
   return {
     async listAllParks() {
-      return Park.all({ raw: true });
+      return Location.all({ raw: true });
+    },
+    async updateAllHotels(items: IHotel[] = []) {
+      return Promise.all(
+        items
+          .map(item => {
+            return sequelize.transaction(async t => {
+              const locationInstance = await upsert(
+                Location, item, { extId: item.extId }, t, [Address]
+              );
+              return upsert(
+                  Hotel,
+                  { tier: item.tier, locationId: locationInstance.get('id') },
+                  { locationId: locationInstance.get('id') },
+                  t
+                );
+            });
+          })
+        );
     },
     async updateAllParks(items: IPark[] = []) {
-      // grab all parks to see if any exist
-      const updatesOrCreates = items.map((item => upsert(Park, item, { extId: item.extId })));
-
-      return Promise.all(updatesOrCreates);
+      return Promise.all(
+        items
+          .map(item => {
+            return sequelize.transaction(t => {
+              return upsert(Location, item, { extId: item.extId }, t);
+            });
+          })
+        );
     },
     async addParkSchedules(parkId: string, parkSchedules: {[date: string]: ISchedule[]}) {
       // check if date exists already.

@@ -14,11 +14,13 @@ export interface IAttraction {
 
 export interface IHotel {
   // internal id
+  address: any;
   id?: string;
   extId: string;
   extRefName: string;
   location: string;
   name: string;
+  tier: string;
   type: string;
   url: string;
 }

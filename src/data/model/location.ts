@@ -1,9 +1,14 @@
 import Sequelize from 'sequelize';
 
+/**
+ * TODO:
+ *  - add address
+ */
 export default sequelize => {
-  const Park = sequelize.define(
-    'park',
+  const Location = sequelize.define(
+    'location',
     {
+      description: Sequelize.TEXT,
       extId: Sequelize.STRING,
       extRefName: Sequelize.STRING,
       id: {
@@ -23,5 +28,5 @@ export default sequelize => {
     }
   );
 
-  return Park;
+  return Location;
 };

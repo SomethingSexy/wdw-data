@@ -11,7 +11,8 @@
     "start": "ts-node ./src/server.ts",
     "service:data": "ts-node ./scripts/data.ts",
     "service:hours": "ts-node ./scripts/hours.ts",
-    "service:parks": "ts-node ./scripts/parks.ts",
+    "service:locations": "ts-node ./scripts/locations.ts",
+    "service:waittimes": "ts-node ./scripts/waittimes.ts",
     "test": "mocha --opts test/mocha.opts",
     "version": "npm run build && git add -A modules"
   },
@@ -35,6 +36,7 @@
     "moment-holiday": "^1.5.1",
     "moment-timezone": "^0.5.21",
     "node-fetch": "^2.1.2",
+    "parse-address": "^1.0.0",
     "pg": "^7.4.3",
     "pg-hstore": "^2.3.2",
     "random-useragent": "^0.3.1",

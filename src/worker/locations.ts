@@ -1,8 +1,16 @@
 import data from '../data/index';
-import { list } from '../realtime/parks';
+import { list as listHotels } from '../realtime/hotels';
+import { list as listParks } from '../realtime/parks';
 
 const runParks = async () => {
-  return list().then((results: any) => {
+  return listParks().then((results: any) => {
+    return results;
+  })
+  .catch(e => console.log(e)); // tslint:disable-line no-console
+};
+
+const runHotels = async () => {
+  return listHotels().then((results: any) => {
     return results;
   })
   .catch(e => console.log(e)); // tslint:disable-line no-console
@@ -18,6 +26,10 @@ export default async () => {
   // grab our realtime park data
   const parks = await runParks();
 
+  const hotels = await runHotels();
+  // console.log(hotels);
+
   // update the database
   await models.updateAllParks(parks);
+  await models.updateAllHotels(hotels);
 };

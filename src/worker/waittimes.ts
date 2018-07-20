@@ -1,17 +1,41 @@
-// import model from '../model/attraction';
-// import { waitTimes } from '../realtime/parks';
+import moment from 'moment';
+import 'moment-holiday';
+import data from '../data/index';
+import { waitTimes } from '../realtime/parks';
 
 /**
- * A service for retrieving and persisting waitimes.
+ * Service for updating hours
  */
-export default () => {
-  return () => {
-    // get the wait times for each park, use this to determine when to start, top
-    // cross reference with attractions and enteraintment
-    // store the waittimes by day and time
+export default async () => {
+  // setup our database connection
+  const models = data();
 
-    // @4am (nothing should be open then) - get park hours for each day.
-    // setup start and end time based on opening
-    // call wait times on each park that are open
-  };
+  const parks = await models.listAllParks();
+  const responses: any[] = await Promise.all(
+    parks.reduce(
+      (all, park) => {
+        // TODO: certain parks with this type cannot get wait times
+        // if (park.type === 'entertainment-venue') {
+        //   return all;
+        // }
+
+        return [
+          ...all,
+          waitTimes(park)
+            .then(waitTimes => ({ waitTimes, id: park.id }))
+        ];
+      },
+      []
+    )
+  );
+
+  console.log(JSON.stringify(responses, null, 4));
+  // for (const parkSchedule of responses) {
+  //   await models.addParkSchedules(
+  //     parkSchedule.id,
+  //     parkSchedule.schedule
+  //   );
+  // }
+
+  return responses;
 };

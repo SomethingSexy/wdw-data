@@ -1,8 +1,8 @@
 import Sequelize from 'sequelize';
 
 export default sequelize => {
-  const ParkSchedules = sequelize.define(
-    'park_schedules',
+  const WaitTime = sequelize.define(
+    'waittime',
     {
       id: {
         defaultValue: Sequelize.UUIDV4,
@@ -12,5 +12,5 @@ export default sequelize => {
     }
   );
 
-  return ParkSchedules;
+  return WaitTime;
 };

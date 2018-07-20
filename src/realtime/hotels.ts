@@ -1,3 +1,4 @@
+import parseAddress from 'parse-address';
 import { grab } from './api/screen';
 
 const path = 'https://disneyworld.disney.go.com/resorts/';
@@ -30,11 +31,7 @@ const details = async ({}, item) => {
     name,
     tier,
     url,
-    address: { // tslint:disable-line
-      // TODO: break this out
-      cityStateZip: addressRest,
-      street: addressLineOne
-    }
+    address: parseAddress.parseLocation(`${addressLineOne}, ${addressRest} `) // tslint:disable-line
   };
 };
 

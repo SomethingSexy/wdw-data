@@ -1,9 +1,16 @@
 import { expect } from 'chai';
 import 'mocha';
 import moment from 'moment';
-import { hours, waitTimes } from '../../src/realtime/parks';
+import { hours, list, waitTimes } from '../../src/realtime/parks';
 
 describe('parks', () => {
+  describe('list', () => {
+    it.only('should fetch parks', async () => {
+      return list()
+        .then(response => expect(response.length > 0).to.equal(true));
+    });
+  });
+
   describe('waitTime', () => {
     it('should fetch wait times', async () => {
       return waitTimes({ extId: '80007944;entityType=theme-park' })
