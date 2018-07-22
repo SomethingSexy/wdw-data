@@ -30,6 +30,6 @@ export default async () => {
   // console.log(hotels);
 
   // update the database
-  await models.updateAllParks(parks);
-  await models.updateAllHotels(hotels);
+  await models.addUpdateParks(parks);
+  await models.addUpdateHotels(hotels);
 };

@@ -7,6 +7,7 @@ export interface IDining {
 
 export interface IAttraction {
   id: string;
+  extId: string;
   location: string;
   name: string;
   type: string;

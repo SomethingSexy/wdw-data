@@ -24,7 +24,8 @@ export default sequelize => {
       indexes: [{
         fields: ['extId'],
         unique: true
-      }]
+      },
+      { fields: ['name'] }]
     }
   );
 
