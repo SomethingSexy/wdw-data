@@ -38,8 +38,12 @@ export default (connection?: any) => {
   Hotel.belongsTo(Location);
   Location.belongsTo(Address);
   Activity.belongsTo(Location);
-  Activity.belongsToMany(ThrillFactor, { through: 'activities_thrill_factors' });
-  ThrillFactor.belongsToMany(Activity, { through: 'activities_thrill_factors' });
+  Activity.belongsToMany(
+    ThrillFactor, { as: 'ThrillFactors', through: 'activities_thrill_factors' }
+  );
+  ThrillFactor.belongsToMany(
+    Activity, { as: 'ThrillFactors', through: 'activities_thrill_factors' }
+  );
 
   sequelize.sync();
 
@@ -96,14 +100,22 @@ export default (connection?: any) => {
     async addUpdateActivities(items: IAttraction[] = []) {
       return syncTransaction(sequelize, items, async (item, t) => {
         const activityItem: any = {
+          admissionRequired: item.restrictions.admissionRequired,
+          age: item.restrictions.age,
+          allowServiceAnimals: item.restrictions.allowServiceAnimals,
           description: item.description,
           extId: item.extId,
           extRefName: item.extRefName,
+          fastPass: item.fastPass,
+          fastPassPlus: item.fastPassPlus,
+          height: item.restrictions.height,
           latitude: item.coordinates ? item.coordinates.gps.latitude : null,
           longitude: item.coordinates ? item.coordinates.gps.longitude : null,
           name: item.name,
+          riderSwapAvailable: item.restrictions.riderSwapAvailable,
           type: item.type,
-          url: item.url
+          url: item.url,
+          wheelchairTransfer: item.restrictions.wheelchairTransfer
         };
         if (item.id) {
           activityItem.id = item.id;
@@ -117,10 +129,23 @@ export default (connection?: any) => {
             { where: { name: item.location } }, { transaction: t }
           );
           if (locationInstance) {
-            await activityInstance.setLocation(locationInstance);
+            await activityInstance.setLocation(locationInstance, { transaction: t });
           }
           // TODO: else log an issue if we cannot find a location
         }
+        // check thrill factors
+        if (item.thrillFactor) {
+          // either sync or async with Promise.all
+          for (const factor of item.thrillFactor) {
+            const thrillInstance = await upsert(
+              ThrillFactor, { name: factor }, { name: factor }, t
+            );
+            if (!await activityInstance.hasThrillFactors(thrillInstance)) {
+              await activityInstance.addThrillFactors(thrillInstance, { transaction: t });
+            }
+          }
+        }
+
         return activityInstance;
       });
     },
