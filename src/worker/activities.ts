@@ -20,4 +20,5 @@ export default async () => {
 
   // update the database
   await models.addUpdateActivities(attractions);
+  // TODO: Entertainment, character meets, etc
 };

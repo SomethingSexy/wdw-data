@@ -11,31 +11,27 @@ export default async () => {
   const models = data();
 
   const parks = await models.listAllParks();
+  // save the same timestamp for all
+  const timeStamp = moment.utc().format();
+
   const responses: any[] = await Promise.all(
     parks.reduce(
       (all, park) => {
-        // TODO: certain parks with this type cannot get wait times
-        // if (park.type === 'entertainment-venue') {
-        //   return all;
-        // }
-
         return [
           ...all,
           waitTimes(park)
-            .then(waitTimes => ({ waitTimes, id: park.id }))
         ];
       },
       []
     )
   );
 
-  console.log(JSON.stringify(responses, null, 4));
-  // for (const parkSchedule of responses) {
-  //   await models.addParkSchedules(
-  //     parkSchedule.id,
-  //     parkSchedule.schedule
-  //   );
-  // }
-
+  for (const waitTime of responses) {
+    await models.addWaitTimes(
+      timeStamp,
+      waitTime
+    );
+  }
+  console.log(timeStamp);
   return responses;
 };

@@ -10,6 +10,7 @@ import location from './model/location';
 import locationSchedule from './model/locationSchedule';
 import schedule from './model/schedule';
 import thrillFactor from './model/thrillFactor';
+import waitTime from './model/waitTime';
 import { asyncTransaction, syncTransaction, upsert } from './utils';
 
 export default (connection?: any) => {
@@ -31,6 +32,7 @@ export default (connection?: any) => {
   const Date = date(sequelize);
   const Hotel = hotel(sequelize);
   const ThrillFactor = thrillFactor(sequelize);
+  const WaitTime = waitTime(sequelize);
 
   Date.belongsToMany(Schedule, { through: LocationSchedule });
   Schedule.belongsToMany(Date, { through: LocationSchedule });
@@ -44,16 +46,16 @@ export default (connection?: any) => {
   ThrillFactor.belongsToMany(
     Activity, { as: 'ThrillFactors', through: 'activities_thrill_factors' }
   );
+  WaitTime.belongsTo(Date);
+  Activity.hasMany(WaitTime);
 
   sequelize.sync();
 
   // TODO: move
-  const addParkSchedule = async (
-    parkId: string, scheduleDate: string, parkSchedules, transaction
-  ) => {
-    let cacheDate;
+  const getDate = async (scheduleDate: string, transaction) => {
+    const localDate = moment(scheduleDate).format('YYYY-MM-DD');
     return Date
-      .findOne({ where: { date: scheduleDate } }, { transaction })
+      .findOne({ where: { date: localDate } }, { transaction })
       .then(d => {
         if (!d) {
           const mDate = moment(scheduleDate);
@@ -69,7 +71,14 @@ export default (connection?: any) => {
         }
 
         return Promise.resolve(d);
-      })
+      });
+  };
+
+  const addParkSchedule = async (
+    locationId: string, scheduleDate: string, parkSchedules, transaction
+  ) => {
+    let cacheDate;
+    return getDate(scheduleDate, transaction)
       .then(dateInstance => {
         cacheDate = dateInstance;
         return Promise.all(
@@ -83,7 +92,7 @@ export default (connection?: any) => {
               scheduleInstance,
               {
                 transaction,
-                through: { parkId } // tslint:disable-line
+                through: { locationId } // tslint:disable-line
               }
             )
           )
@@ -112,7 +121,7 @@ export default (connection?: any) => {
           latitude: item.coordinates ? item.coordinates.gps.latitude : null,
           longitude: item.coordinates ? item.coordinates.gps.longitude : null,
           name: item.name,
-          riderSwapAvailable: item.restrictions.riderSwapAvailable,
+          riderSwapAvailable: item.riderSwapAvailable,
           type: item.type,
           url: item.url,
           wheelchairTransfer: item.restrictions.wheelchairTransfer
@@ -183,6 +192,36 @@ export default (connection?: any) => {
             });
           })
         );
+    },
+    async addWaitTimes(timestamp: string, items = []) {
+      return syncTransaction(sequelize, items, async (item, transaction) => {
+        const { extId, waitTime } = item;
+        const activityInstance = await Activity.findOne(
+          { where: { extId } }, { transaction }
+        );
+
+        if (!activityInstance) {
+          return Promise.resolve(false); // TODO log
+        }
+
+        const dateInstance = await getDate(timestamp, transaction);
+
+        // TODO: Do we want to store another id for the timestamp or
+        // just do find by activityId, dateId and groupby timestamp?
+        return WaitTime.create(
+          {
+            timestamp,
+            activityId: activityInstance.get('id'),
+            dateId: dateInstance.get('id'),
+            fastPassAvailable: waitTime.fastPass.available,
+            singleRider: waitTime.singleRider,
+            status: waitTime.status,
+            statusMessage: waitTime.rollUpStatus,
+            wait: waitTime.postedWaitMinutes,
+            waitMessage: waitTime.rollUpWaitTimeMessage
+          }
+        );
+      });
     }
   };
 };

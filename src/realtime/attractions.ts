@@ -37,7 +37,6 @@ export const get = async (attraction: { extId: string },) => {
     coordinates = response.coordinates['Guest Entrance'];
   }
 
-  // console.log(response);
   const { admissionRequired, descriptions, facets } = response;
   const allowServiceAnimals = !facetHasId(facets.serviceAnimals, NO_SERVICE_ANIMALS_ID);
   const wheelchairTransfer = facetHasId(facets.mobilityDisabilities, MUST_TRANSFER_WHEELCHAIR);
