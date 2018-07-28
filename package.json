@@ -9,10 +9,8 @@
     "build": "tsc --outDir ./modules && copyfiles -u 1 './src/**/*.json' modules",
     "postversion": "git push && git push --tags",
     "start": "ts-node ./src/server.ts",
-    "service:activities": "ts-node ./scripts/activities.ts",
     "service:data": "ts-node ./scripts/data.ts",
     "service:hours": "ts-node ./scripts/hours.ts",
-    "service:locations": "ts-node ./scripts/locations.ts",
     "service:waittimes": "ts-node ./scripts/waittimes.ts",
     "test": "mocha --opts test/mocha.opts",
     "version": "npm run build && git add -A modules"

@@ -1,25 +1,30 @@
-import Sequelize from 'sequelize';
+import moment from 'moment';
+import 'moment-holiday';
 
-export default sequelize => {
-  const Date = sequelize.define(
-    'date',
-    {
-      date: Sequelize.DATEONLY,
-      holiday: Sequelize.STRING,
-      id: {
-        defaultValue: Sequelize.UUIDV4,
-        primaryKey: true,
-        type: Sequelize.UUID,
-      },
-      isHoliday: Sequelize.BOOLEAN
-    },
-    {
-      indexes: [{
-        fields: ['date'],
-        unique: true
-      }]
+export default (sequelize, access) => {
+  return {
+    async get (scheduleDate: string, transaction) {
+      const { Date } = access;
+      const localDate = moment(scheduleDate).format('YYYY-MM-DD');
+
+      return Date
+        .findOne({ where: { date: localDate } }, { transaction })
+        .then(d => {
+          if (!d) {
+            const mDate = moment(scheduleDate);
+            const holiday = mDate.isHoliday();
+            return Date.create(
+              {
+                date: scheduleDate,
+                holiday: holiday || null,
+                isHoliday: !!holiday
+              },
+              { transaction }
+            );
+          }
+
+          return Promise.resolve(d);
+        });
     }
-  );
-
-  return Date;
+  };
 };

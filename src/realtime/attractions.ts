@@ -38,10 +38,12 @@ export const get = async (attraction: { extId: string },) => {
   }
 
   const { admissionRequired, descriptions, facets } = response;
+  const { age, interests } = facets;
+  // console.log(facets);
   const allowServiceAnimals = !facetHasId(facets.serviceAnimals, NO_SERVICE_ANIMALS_ID);
   const wheelchairTransfer = facetHasId(facets.mobilityDisabilities, MUST_TRANSFER_WHEELCHAIR);
-  // TODO: figure out if there are multiple
-  const age = facets.age && facets.age[0].value;
+  const tags = interests && interests.map(interest => interest.value);
+  const ages = age && facets.age.map(a => a.value);
   const height = facets.height && facets.height[0].value;
   const thrillFactor = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
   const description = descriptions.shortDescriptionMobile
@@ -49,8 +51,10 @@ export const get = async (attraction: { extId: string },) => {
 
   return {
     ...attraction,
+    ages,
     coordinates,
     description,
+    tags,
     thrillFactor,
     // disneyOperated: response.disneyOperated,
     // disneyOwned: response.disneyOwned,
@@ -65,7 +69,6 @@ export const get = async (attraction: { extId: string },) => {
     },
     restrictions: {
       admissionRequired,
-      age,
       allowServiceAnimals,
       height,
       wheelchairTransfer

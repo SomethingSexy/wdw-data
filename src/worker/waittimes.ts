@@ -10,7 +10,7 @@ export default async () => {
   // setup our database connection
   const models = data();
 
-  const parks = await models.listAllParks();
+  const parks = await models.location.listAllParks();
   // save the same timestamp for all
   const timeStamp = moment.utc().format();
 
@@ -27,11 +27,11 @@ export default async () => {
   );
 
   for (const waitTime of responses) {
-    await models.addWaitTimes(
+    await models.activity.addWaitTimes(
       timeStamp,
       waitTime
     );
   }
-  console.log(timeStamp);
+
   return responses;
 };

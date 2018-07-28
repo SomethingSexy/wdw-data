@@ -12,7 +12,7 @@ export default async (days?: number) => {
 
   const startDate = moment().format('YYYY-MM-DD');
   const endDate = days ? moment().add(days, 'days').format('YYYY-MM-DD') : startDate;
-  const parks = await models.listAllParks();
+  const parks = await models.location.listAllParks();
   const responses: any[] = await Promise.all(
     parks.reduce(
       (all, park) => {
@@ -31,7 +31,7 @@ export default async (days?: number) => {
   );
 
   for (const parkSchedule of responses) {
-    await models.addParkSchedules(
+    await models.location.addParkSchedules(
       parkSchedule.id,
       parkSchedule.schedule
     );

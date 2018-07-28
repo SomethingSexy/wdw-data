@@ -1,19 +1,14 @@
-import moment from 'moment';
-import 'moment-holiday';
 import Sequelize from 'sequelize';
-import { IAttraction, IHotel, IPark, ISchedule } from '../types';
-import activity from './model/activity';
-import address from './model/address';
-import date from './model/date';
-import hotel from './model/hotel';
-import location from './model/location';
-import locationSchedule from './model/locationSchedule';
-import schedule from './model/schedule';
-import thrillFactor from './model/thrillFactor';
-import waitTime from './model/waitTime';
-import { asyncTransaction, syncTransaction, upsert } from './utils';
+import createAccessObjects from './dao/index';
+import createActivity from './model/activity';
+import createLocation from './model/location';
 
+/**
+ * Setups database connection, creates data access layer, and setups models for
+ * working with the data.
+ */
 export default (connection?: any) => {
+  // create our connection
   const sequelize = connection
     || new Sequelize({
       database: 'wdw',
@@ -24,204 +19,19 @@ export default (connection?: any) => {
       username: 'tylercvetan',
     });
 
-  const Activity = activity(sequelize);
-  const Address = address(sequelize);
-  const Location = location(sequelize);
-  const LocationSchedule = locationSchedule(sequelize);
-  const Schedule = schedule(sequelize);
-  const Date = date(sequelize);
-  const Hotel = hotel(sequelize);
-  const ThrillFactor = thrillFactor(sequelize);
-  const WaitTime = waitTime(sequelize);
+  // get our data access objects
+  const accessObjects = createAccessObjects(sequelize);
 
-  Date.belongsToMany(Schedule, { through: LocationSchedule });
-  Schedule.belongsToMany(Date, { through: LocationSchedule });
-  LocationSchedule.belongsTo(Location);
-  Hotel.belongsTo(Location);
-  Location.belongsTo(Address);
-  Activity.belongsTo(Location);
-  Activity.belongsToMany(
-    ThrillFactor, { as: 'ThrillFactors', through: 'activities_thrill_factors' }
-  );
-  ThrillFactor.belongsToMany(
-    Activity, { as: 'ThrillFactors', through: 'activities_thrill_factors' }
-  );
-  WaitTime.belongsTo(Date);
-  Activity.hasMany(WaitTime);
-
+  // Sync with the database
   sequelize.sync();
 
-  // TODO: move
-  const getDate = async (scheduleDate: string, transaction) => {
-    const localDate = moment(scheduleDate).format('YYYY-MM-DD');
-    return Date
-      .findOne({ where: { date: localDate } }, { transaction })
-      .then(d => {
-        if (!d) {
-          const mDate = moment(scheduleDate);
-          const holiday = mDate.isHoliday();
-          return Date.create(
-            {
-              date: scheduleDate,
-              holiday: holiday || null,
-              isHoliday: !!holiday
-            },
-            { transaction }
-          );
-        }
+  // setup models, these will be higher level objects that will handle the business logic
+  // around the data access objects
+  const activity = createActivity(sequelize, accessObjects);
+  const location = createLocation(sequelize, accessObjects);
 
-        return Promise.resolve(d);
-      });
-  };
-
-  const addParkSchedule = async (
-    locationId: string, scheduleDate: string, parkSchedules, transaction
-  ) => {
-    let cacheDate;
-    return getDate(scheduleDate, transaction)
-      .then(dateInstance => {
-        cacheDate = dateInstance;
-        return Promise.all(
-          parkSchedules.map(data => Schedule.create(data, { transaction }))
-        );
-      })
-      .then(scheduleInstances => {
-        return Promise.all(
-          scheduleInstances.map(scheduleInstance =>
-            cacheDate.addSchedule(
-              scheduleInstance,
-              {
-                transaction,
-                through: { locationId } // tslint:disable-line
-              }
-            )
-          )
-        );
-      });
-  };
-
-  // TODO: Figure out where to put these
-  // probably separate files per "model" that would get passed the sequeilize models (name them doa)
   return {
-    async listAllParks() {
-      return Location.all({ raw: true });
-    },
-    async addUpdateActivities(items: IAttraction[] = []) {
-      return syncTransaction(sequelize, items, async (item, t) => {
-        const activityItem: any = {
-          admissionRequired: item.restrictions.admissionRequired,
-          age: item.restrictions.age,
-          allowServiceAnimals: item.restrictions.allowServiceAnimals,
-          description: item.description,
-          extId: item.extId,
-          extRefName: item.extRefName,
-          fastPass: item.fastPass,
-          fastPassPlus: item.fastPassPlus,
-          height: item.restrictions.height,
-          latitude: item.coordinates ? item.coordinates.gps.latitude : null,
-          longitude: item.coordinates ? item.coordinates.gps.longitude : null,
-          name: item.name,
-          riderSwapAvailable: item.riderSwapAvailable,
-          type: item.type,
-          url: item.url,
-          wheelchairTransfer: item.restrictions.wheelchairTransfer
-        };
-        if (item.id) {
-          activityItem.id = item.id;
-        }
-
-        const activityInstance = await upsert(
-          Activity, activityItem, { extId: item.extId }, t
-        );
-        if (item.location) {
-          const locationInstance = await Location.findOne(
-            { where: { name: item.location } }, { transaction: t }
-          );
-          if (locationInstance) {
-            await activityInstance.setLocation(locationInstance, { transaction: t });
-          }
-          // TODO: else log an issue if we cannot find a location
-        }
-        // check thrill factors
-        if (item.thrillFactor) {
-          // either sync or async with Promise.all
-          for (const factor of item.thrillFactor) {
-            const thrillInstance = await upsert(
-              ThrillFactor, { name: factor }, { name: factor }, t
-            );
-            if (!await activityInstance.hasThrillFactors(thrillInstance)) {
-              await activityInstance.addThrillFactors(thrillInstance, { transaction: t });
-            }
-          }
-        }
-
-        return activityInstance;
-      });
-    },
-    async addUpdateHotels(items: IHotel[] = []) {
-      return asyncTransaction(sequelize, items, async (item, t) => {
-        const locationInstance = await upsert(
-          Location, item, { extId: item.extId }, t, [Address]
-        );
-        return upsert(
-            Hotel,
-            { tier: item.tier, locationId: locationInstance.get('id') },
-            { locationId: locationInstance.get('id') },
-            t
-          );
-      });
-    },
-    async addUpdateParks(items: IPark[] = []) {
-      return Promise.all(
-        items
-          .map(item => {
-            return sequelize.transaction(t => {
-              return upsert(Location, item, { extId: item.extId }, t);
-            });
-          })
-        );
-    },
-    async addParkSchedules(parkId: string, parkSchedules: {[date: string]: ISchedule[]}) {
-      // check if date exists already.
-      return Promise.all(
-        Object
-          .entries(parkSchedules)
-          .map(([key, value]) => {
-            return sequelize.transaction(t => {
-              return addParkSchedule(parkId, key, value, t);
-            });
-          })
-        );
-    },
-    async addWaitTimes(timestamp: string, items = []) {
-      return syncTransaction(sequelize, items, async (item, transaction) => {
-        const { extId, waitTime } = item;
-        const activityInstance = await Activity.findOne(
-          { where: { extId } }, { transaction }
-        );
-
-        if (!activityInstance) {
-          return Promise.resolve(false); // TODO log
-        }
-
-        const dateInstance = await getDate(timestamp, transaction);
-
-        // TODO: Do we want to store another id for the timestamp or
-        // just do find by activityId, dateId and groupby timestamp?
-        return WaitTime.create(
-          {
-            timestamp,
-            activityId: activityInstance.get('id'),
-            dateId: dateInstance.get('id'),
-            fastPassAvailable: waitTime.fastPass.available,
-            singleRider: waitTime.singleRider,
-            status: waitTime.status,
-            statusMessage: waitTime.rollUpStatus,
-            wait: waitTime.postedWaitMinutes,
-            waitMessage: waitTime.rollUpWaitTimeMessage
-          }
-        );
-      });
-    }
+    activity,
+    location
   };
 };
