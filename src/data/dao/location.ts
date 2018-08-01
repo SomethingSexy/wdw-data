@@ -1,8 +1,7 @@
 import Sequelize from 'sequelize';
 
 /**
- * TODO:
- *  - add address
+ *
  */
 export default sequelize => {
   const Location = sequelize.define(

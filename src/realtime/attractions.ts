@@ -51,11 +51,15 @@ export const get = async (attraction: { extId: string },) => {
 
   return {
     ...attraction,
+    admissionRequired,
     ages,
+    allowServiceAnimals,
     coordinates,
     description,
+    height,
     tags,
     thrillFactor,
+    wheelchairTransfer,
     // disneyOperated: response.disneyOperated,
     // disneyOwned: response.disneyOwned,
     extId: response.id,  // tslint:disable-line
@@ -66,12 +70,6 @@ export const get = async (attraction: { extId: string },) => {
     links: {
       schedule: response.links.schedule,
       waitTimes: response.links.waitTimes
-    },
-    restrictions: {
-      admissionRequired,
-      allowServiceAnimals,
-      height,
-      wheelchairTransfer
     },
     riderSwapAvailable: response.riderSwapAvailable
   };

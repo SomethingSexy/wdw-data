@@ -40,16 +40,17 @@ export default async () => {
   const models = data();
 
   // grab our realtime park data
-  const parks = await runParks();
-  await models.location.addUpdateParks(parks);
+  // const parks = await runParks();
+  // await models.location.addUpdateParks(parks);
 
-  const hotels = await runHotels();
-  await models.location.addUpdateHotels(hotels);
+  // const hotels = await runHotels();
+  // await models.location.addUpdateHotels(hotels);
 
-  // grab our realtime park data
-  const attractions = await runAttractions();
-  await models.activity.addUpdateActivities(attractions);
+  // // grab our realtime park data
+  // const attractions = await runAttractions();
+  // await models.activity.addUpdateActivities(attractions);
   // TODO: Entertainment, character meets, etc
-  // const entertainment = await runEntertainment();
-  // console.log(entertainment);
+  const entertainment = await runEntertainment();
+  // console.log(JSON.stringify(entertainment, null, 4));
+  await models.activity.addUpdateActivities(entertainment);
 };

@@ -1,55 +1,71 @@
 import { IAttraction } from '../../types';
 import { syncTransaction, upsert } from '../utils';
 import date from './date';
+import location from './location';
 
 export default (sequelize, access) => {
   return {
     async addUpdateActivities(items: IAttraction[] = []) {
-      const { Activity, Age, Location, Tag, ThrillFactor } = access;
+      const { Activity, Age, Tag, ThrillFactor } = access;
+      const Location = location(sequelize, access);
 
       return syncTransaction(sequelize, items, async (item, t) => {
         const activityItem: any = {
-          admissionRequired: item.restrictions.admissionRequired,
-          allowServiceAnimals: item.restrictions.allowServiceAnimals,
+          admissionRequired: item.admissionRequired,
+          allowServiceAnimals: item.allowServiceAnimals,
           description: item.description,
           extId: item.extId,
           extRefName: item.extRefName,
           fastPass: item.fastPass,
           fastPassPlus: item.fastPassPlus,
-          height: item.restrictions.height,
+          height: item.height,
           latitude: item.coordinates ? item.coordinates.gps.latitude : null,
           longitude: item.coordinates ? item.coordinates.gps.longitude : null,
           name: item.name,
           riderSwapAvailable: item.riderSwapAvailable,
           type: item.type,
           url: item.url,
-          wheelchairTransfer: item.restrictions.wheelchairTransfer
+          wheelchairTransfer: item.wheelchairTransfer
         };
         if (item.id) {
           activityItem.id = item.id;
         }
 
-        const activityInstance = await upsert(
+        const activityInst = await upsert(
           Activity, activityItem, { extId: item.extId }, t
         );
+
         if (item.location) {
-          const locationInstance = await Location.findOne(
-            { where: { name: item.location } }, { transaction: t }
-          );
+          const locationInstance = await Location.findByName(item.location, t);
           if (locationInstance) {
-            await activityInstance.setLocation(locationInstance, { transaction: t });
+            await activityInst.setLocation(locationInstance, { transaction: t });
           }
           // TODO: else log an issue if we cannot find a location
+          // if there is a location, we might also have an area, however
+          // we have to add the area here because there is no other way
+          // to easily generate them
+          if (item.area) {
+            const locationId = locationInstance.get('id');
+            let areaInst =
+              await Location.findAreaByName(locationId, item.area, t);
+
+            if (!areaInst) {
+              areaInst = await Location.addArea(locationId, item.area, t);
+            }
+
+            await activityInst.setArea(areaInst, { transaction: t });
+          }
         }
+
         // check thrill factors
         if (item.thrillFactor) {
           // either sync or async with Promise.all
           for (const factor of item.thrillFactor) {
-            const thrillInstance = await upsert(
+            const thrillInst = await upsert(
               ThrillFactor, { name: factor }, { name: factor }, t
             );
-            if (!await activityInstance.hasThrillFactors(thrillInstance)) {
-              await activityInstance.addThrillFactors(thrillInstance, { transaction: t });
+            if (!await activityInst.hasThrillFactors(thrillInst)) {
+              await activityInst.addThrillFactors(thrillInst, { transaction: t });
             }
           }
         }
@@ -57,11 +73,11 @@ export default (sequelize, access) => {
         if (item.ages) {
           // either sync or async with Promise.all
           for (const ageName of item.ages) {
-            const ageInstance = await upsert(
+            const ageInst = await upsert(
               Age, { name: ageName }, { name: ageName }, t
             );
-            if (!await activityInstance.hasActivityAges(ageInstance)) {
-              await activityInstance.addActivityAges(ageInstance, { transaction: t });
+            if (!await activityInst.hasActivityAges(ageInst)) {
+              await activityInst.addActivityAges(ageInst, { transaction: t });
             }
           }
         }
@@ -69,16 +85,16 @@ export default (sequelize, access) => {
         if (item.tags) {
           // either sync or async with Promise.all
           for (const tagName of item.tags) {
-            const tagInstance = await upsert(
+            const tagInst = await upsert(
               Tag, { name: tagName }, { name: tagName }, t
             );
-            if (!await activityInstance.hasActivityTags(tagInstance)) {
-              await activityInstance.addActivityTags(tagInstance, { transaction: t });
+            if (!await activityInst.hasActivityTags(tagInst)) {
+              await activityInst.addActivityTags(tagInst, { transaction: t });
             }
           }
         }
 
-        return activityInstance;
+        return activityInst;
       });
     },
     async addWaitTimes(timestamp: string, items = []) {

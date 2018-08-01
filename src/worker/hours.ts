@@ -37,5 +37,7 @@ export default async (days?: number) => {
     );
   }
 
+  // TODO: Need to get schedule for activities/entertainment
+
   return responses;
 };

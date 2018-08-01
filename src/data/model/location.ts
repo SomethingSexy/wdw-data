@@ -4,9 +4,15 @@ import date from './date';
 
 export default (sequelize, access) => {
   const api = {
-    async listAllParks() {
-      const { Location } = access;
-      return Location.all({ raw: true });
+    async addArea(locationId, name, transaction) {
+      const { Area } = access;
+      // location and name should be unique combination
+      const exist = await api.findAreaByName(locationId, name, transaction);
+      if (exist) {
+        return exist;
+      }
+
+      return Area.create({ locationId, name }, { transaction });
     },
     async addUpdateHotels(items: IHotel[] = []) {
       const { Address, Hotel, Location } = access;
@@ -69,7 +75,23 @@ export default (sequelize, access) => {
             });
           })
         );
-    }
+    },
+    async findAreaByName(locationId, name, transaction) {
+      const { Area } = access;
+      return Area.findOne(
+        { where: { locationId, name } }, { transaction }
+      );
+    },
+    async findByName(name, transaction) {
+      const { Location } = access;
+      return Location.findOne(
+        { where: { name } }, { transaction }
+      );
+    },
+    async listAllParks() {
+      const { Location } = access;
+      return Location.all({ raw: true });
+    },
   };
 
   return api;
