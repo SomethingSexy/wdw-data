@@ -1,5 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const parse_address_1 = __importDefault(require("parse-address"));
 const screen_1 = require("./api/screen");
 const path = 'https://disneyworld.disney.go.com/resorts/';
 /**
@@ -27,11 +31,7 @@ const details = async ({}, item) => {
         name,
         tier,
         url,
-        address: {
-            // TODO: break this out
-            cityStateZip: addressRest,
-            street: addressLineOne
-        }
+        address: parse_address_1.default.parseLocation(`${addressLineOne}, ${addressRest} `) // tslint:disable-line
     };
 };
 exports.list = async () => {

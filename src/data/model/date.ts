@@ -1,7 +1,7 @@
 import moment from 'moment';
 import 'moment-holiday';
 
-export default (sequelize, access) => {
+export default (_, access) => {
   return {
     async get (scheduleDate: string, transaction) {
       const { Date } = access;

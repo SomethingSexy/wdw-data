@@ -29,30 +29,31 @@ exports.get = async (attraction) => {
     if (response.coordinates && response.coordinates['Guest Entrance']) {
         coordinates = response.coordinates['Guest Entrance'];
     }
-    // console.log(response);
     const { admissionRequired, descriptions, facets } = response;
+    const { age, interests } = facets;
+    // console.log(facets);
     const allowServiceAnimals = !facetHasId(facets.serviceAnimals, NO_SERVICE_ANIMALS_ID);
     const wheelchairTransfer = facetHasId(facets.mobilityDisabilities, MUST_TRANSFER_WHEELCHAIR);
-    // TODO: figure out if there are multiple
-    const age = facets.age && facets.age[0].value;
+    const tags = interests && interests.map(interest => interest.value);
+    const ages = age && facets.age.map(a => a.value);
     const height = facets.height && facets.height[0].value;
     const thrillFactor = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
     const description = descriptions.shortDescriptionMobile
         ? descriptions.shortDescriptionMobile.text : '';
-    return Object.assign({}, attraction, { coordinates,
+    return Object.assign({}, attraction, { admissionRequired,
+        ages,
+        allowServiceAnimals,
+        coordinates,
         description,
-        thrillFactor, 
+        height,
+        tags,
+        thrillFactor,
+        wheelchairTransfer, 
         // disneyOperated: response.disneyOperated,
         // disneyOwned: response.disneyOwned,
         extId: response.id, extRefName: response.urlFriendlyId, fastPassPlus: response.fastPassPlus, fastPass: response.fastPass, name: response.name, links: {
             schedule: response.links.schedule,
             waitTimes: response.links.waitTimes
-        }, restrictions: {
-            admissionRequired,
-            age,
-            allowServiceAnimals,
-            height,
-            wheelchairTransfer
         }, riderSwapAvailable: response.riderSwapAvailable });
 };
 //# sourceMappingURL=attractions.js.map

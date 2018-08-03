@@ -68,7 +68,7 @@ exports.getWebSession = async (url) => {
         cookie: sessionId // tslint:disable-line
     };
 };
-exports.finder = async (url, data, auth) => {
+exports.diningFinder = async (url, data, auth) => {
     let postData = data;
     if (auth) {
         postData = Object.assign({}, postData, { pep_csrf: auth.csrfToken });
@@ -132,6 +132,51 @@ exports.finder = async (url, data, auth) => {
         });
         // This is the data we are posting, it needs to be a string or a buffer
         request.write(postData);
+        request.end();
+    });
+};
+/**
+ * Retrieves data from a web/browser based api.  We probably want to merge this with
+ * the mobile api get function.
+ */
+exports.getWebApi = async (url, params, auth) => {
+    return new Promise((resolve, reject) => {
+        const options = {
+            headers: {
+                Accept: '*/*',
+                'Accept-Language': 'en-US,en;q=0.8',
+                Authorization: `BEARER ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                Host: SITE_HOST,
+                Origin: ORIGIN,
+                Referer: url,
+                'User-Agent': random_useragent_1.default.getRandom(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            hostname: SITE_HOST,
+            method: 'get',
+            path: `/api/wdpro/explorer-service/public/finder/list/ancestor/80007798;entityType=destination?${querystring_1.default.stringify(params)}` // tslint:disable-line
+        };
+        const request = https_1.default
+            .request(options, response => {
+            let data = '';
+            response.on('data', chunk => {
+                data += chunk;
+            });
+            response.on('end', () => {
+                try {
+                    const rData = JSON.parse(data);
+                    resolve(rData);
+                }
+                catch (error) {
+                    reject(error);
+                }
+            });
+        })
+            .on('error', err => {
+            debug('Error in fetching availability', err);
+            reject(err);
+        });
         request.end();
     });
 };

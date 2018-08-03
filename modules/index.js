@@ -24,4 +24,5 @@ exports.parks = {
     },
 };
 exports.realtime = {};
+exports.server = () => { };
 //# sourceMappingURL=index.js.map

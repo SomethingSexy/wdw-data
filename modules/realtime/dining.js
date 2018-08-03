@@ -58,6 +58,6 @@ exports.reservations = async (dining, date, time, size) => {
         type: 'dining'
     };
     const auth = await request_1.getWebSession(dining.url);
-    return request_1.finder(dining.url, postData, auth);
+    return request_1.diningFinder(dining.url, postData, auth);
 };
 //# sourceMappingURL=dining.js.map

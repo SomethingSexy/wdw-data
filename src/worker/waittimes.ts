@@ -10,7 +10,7 @@ export default async () => {
   // setup our database connection
   const models = data();
 
-  const parks = await models.location.listAllParks();
+  const parks = await models.location.list();
   // save the same timestamp for all
   const timeStamp = moment.utc().format();
 

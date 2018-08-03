@@ -18,7 +18,7 @@ exports.list = async () => {
     const screen = await screen_1.grab(path);
     return screen.getItems();
 };
-exports.hours = async (park, start, end) => {
+exports.parkHours = async (park, start, end) => {
     const parsed = utils_1.parseExternal(park.extId);
     if (!parsed) {
         throw new Error('Cannot parse external id when trying to fetch wait times');
@@ -46,10 +46,8 @@ exports.hours = async (park, start, end) => {
             const opening = moment_1.default(`${date} ${startTime}`);
             // type = 'Special Ticketed Event' might be early morning magic, or after hours magic
             const dateSchedule = {
-                date,
                 type,
                 closing: moment_1.default(`${date} ${endTime}`).utc().format(),
-                isHoliday: opening.isHoliday(),
                 isSpecialHours: (type !== 'Operating' && type !== 'Closed' && type !== 'Refurbishment'),
                 opening: opening.utc().format(),
             };
@@ -58,7 +56,10 @@ exports.hours = async (park, start, end) => {
             return Object.assign({}, byDate, { [schedule.date]: updatedDate });
         }, {});
     }, {});
-    return dates;
+    return {
+        id: park.extId,
+        schedule: dates
+    };
 };
 exports.waitTimes = async (park) => {
     const parsed = utils_1.parseExternal(park.extId);
