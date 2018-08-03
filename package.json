@@ -10,7 +10,7 @@
     "postversion": "git push && git push --tags",
     "start": "ts-node ./src/server.ts",
     "service:data": "ts-node ./scripts/data.ts",
-    "service:hours": "ts-node ./scripts/hours.ts",
+    "service:schedules": "ts-node ./scripts/schedules.ts",
     "service:waittimes": "ts-node ./scripts/waittimes.ts",
     "test": "mocha --opts test/mocha.opts",
     "version": "npm run build && git add -A modules"

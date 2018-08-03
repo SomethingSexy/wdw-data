@@ -15,6 +15,11 @@ export default sequelize => {
       extRefName: Sequelize.STRING,
       fastPass: Sequelize.BOOLEAN,
       fastPassPlus: Sequelize.BOOLEAN,
+      fetchSchedule: {
+        allowNull: false,
+        defaultValue: false,
+        type: Sequelize.BOOLEAN
+      },
       height: Sequelize.STRING,
       id: {
         defaultValue: Sequelize.UUIDV4,

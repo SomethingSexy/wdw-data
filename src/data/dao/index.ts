@@ -1,4 +1,5 @@
 import activity from './activity';
+import activitySchedule from './activitySchedule';
 import address from './address';
 import age from './age';
 import area from './area';
@@ -14,6 +15,7 @@ import waitTime from './waitTime';
 export default sequelize => {
   // setup our data access objects
   const Activity = activity(sequelize);
+  const ActivitySchedule = activitySchedule(sequelize);
   const Address = address(sequelize);
   const Age = age(sequelize);
   const Area = area(sequelize);
@@ -45,10 +47,16 @@ export default sequelize => {
   );
   WaitTime.belongsTo(Date);
   Activity.hasMany(WaitTime);
+
   Age.belongsToMany(Activity, { as: 'ActivityAges', through: 'activities_ages' });
   Activity.belongsToMany(Age, { as: 'ActivityAges', through: 'activities_ages' });
+
   Tag.belongsToMany(Activity, { as: 'ActivityTags', through: 'activities_tags' });
   Activity.belongsToMany(Tag, { as: 'ActivityTags', through: 'activities_tags' });
+
+  Date.belongsToMany(Schedule, { as: 'ActivitySchedule', through: ActivitySchedule });
+  Schedule.belongsToMany(Date, { as: 'ActivitySchedule', through: ActivitySchedule });
+  ActivitySchedule.belongsTo(Activity);
 
   // return all of our daos, no need to worry about any individual exports here
   // we are always going to use them

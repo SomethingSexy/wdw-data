@@ -1,3 +1,4 @@
+import invariant from 'invariant';
 import { IHotel, IPark, ISchedule } from '../../types';
 import { asyncTransaction, upsert } from '../utils';
 import date from './date';
@@ -33,8 +34,12 @@ export default (sequelize, access) => {
       return Promise.all(
         items
           .map(item => {
+            const data = {
+              ...item,
+              fetchSchedule: item.type !== 'entertainment-venue'
+            };
             return sequelize.transaction(t => {
-              return upsert(Location, item, { extId: item.extId }, t);
+              return upsert(Location, data, { extId: item.extId }, t);
             });
           })
         );
@@ -47,6 +52,7 @@ export default (sequelize, access) => {
       const DateModel = date(sequelize, access);
       const dateInstance = await DateModel.get(scheduleDate, transaction);
 
+      // TODO: Check to see if we already have a schedule for that day
       return Promise.all(
         parkSchedules.map(data => Schedule.create(data, { transaction }))
       )
@@ -88,10 +94,21 @@ export default (sequelize, access) => {
         { where: { name } }, { transaction }
       );
     },
-    async listAllParks() {
+    /**
+     * List all activities
+     * @param where - search parameters
+     */
+    async list(where?: { [key: string]: string | boolean }) {
       const { Location } = access;
+      if (where) {
+        invariant(
+          Object.keys(where).length, 'Conditions are required when searching for locations.'
+        );
+
+        return Location.findAll({ where, raw: true });
+      }
       return Location.all({ raw: true });
-    },
+    }
   };
 
   return api;

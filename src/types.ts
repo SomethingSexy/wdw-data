@@ -72,3 +72,8 @@ export interface ISchedule {
   isSpecialHours: boolean;
   opening: string;
 }
+
+export interface ISchedules {
+  id: string;
+  schedule: { [date: string]: ISchedule[] };
+}

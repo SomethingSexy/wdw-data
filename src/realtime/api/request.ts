@@ -81,7 +81,7 @@ export const getWebSession = async url => {
   };
 };
 
-export const finder = async (url, data, auth) => {
+export const diningFinder = async (url, data, auth) => {
   let postData = data;
   if (auth) {
     postData = {
@@ -155,6 +155,53 @@ export const finder = async (url, data, auth) => {
   });
 };
 
+/**
+ * Retrieves data from a web/browser based api.  We probably want to merge this with
+ * the mobile api get function.
+ */
+export const getWebApi = async (url, params, auth: string): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const options = {
+      headers: {
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.8',
+        Authorization: `BEARER ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        Host: SITE_HOST,
+        Origin: ORIGIN,
+        Referer: url,
+        'User-Agent': randomUseragent.getRandom(), // tslint:disable-line
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      hostname: SITE_HOST,
+      method: 'get',
+      path: `/api/wdpro/explorer-service/public/finder/list/ancestor/80007798;entityType=destination?${querystring.stringify(params)}` // tslint:disable-line
+    };
+
+    const request = https
+      .request(options, response => {
+        let data = '';
+        response.on('data', chunk => {
+          data += chunk;
+        });
+        response.on('end', () => {
+          try {
+            const rData = JSON.parse(data);
+            resolve(rData);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      })
+      .on('error', err => {
+        debug('Error in fetching availability', err);
+        reject(err);
+      });
+
+    request.end();
+  });
+};
+
 export const getAccessToken = async () => {
   return new Promise<string>((resolve, reject) => {
     const agentOptions = {
@@ -203,7 +250,7 @@ export const getAccessToken = async () => {
   });
 };
 
-export const get = (url: string, params: any, auth: string) => {
+export const get = (url: string, params: any, auth: string): Promise<any> => {
   return new Promise((resolve, reject) => {
     const agentOptions = {
       headers: {

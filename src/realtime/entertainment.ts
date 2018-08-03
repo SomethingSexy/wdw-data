@@ -1,4 +1,7 @@
+import { ISchedules } from '../types';
+import { getAccessToken, getWebApi } from './api/request';
 import { grab } from './api/screen';
+
 const path = 'https://disneyworld.disney.go.com/entertainment/';
 
 const ageKeys = ['All Ages', 'Preschoolers', 'Kids', 'Tweens', 'Teens', 'Adults'];
@@ -72,6 +75,41 @@ export const list = async () => {
  * @param start
  * @param end
  */
-export const schedule = async(start: string): Promise<{ [date: string]: ISchedule[] }> => {
+export const schedule = async(start: string)
+: Promise<ISchedules[]> => {
+  const data = {
+    date: start,
+    filters: 'Entertainment',
+    region: 'US',
+    scheduleOnly: true
+  };
 
+  const auth = await getAccessToken();
+  const response: { results: any[] } =
+    await getWebApi('https://disneyworld.disney.go.com/entertainment/', data, auth);
+
+  const activitySchedules = response.results.reduce(
+    (filtered, activity) => {
+      if (!activity.schedule) {
+        return filtered;
+      }
+      return [
+        ...filtered,
+        {
+          id: activity.id,
+          schedule: {
+            [start]: activity.schedule.schedules.map(s => ({
+              closing: s.endTime,
+              isSpecialHours: false,
+              opening: s.startTime,
+              type: s.type
+            }))
+          }
+        }
+      ];
+    },
+    []
+  );
+
+  return activitySchedules;
 };

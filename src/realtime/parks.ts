@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import moment from 'moment';
 import 'moment-holiday';
-import { ISchedule } from '../types';
+import { ISchedules } from '../types';
 import { get, getAccessToken } from './api/request';
 import { grab } from './api/screen';
 import { parseExternal } from './utils';
@@ -18,8 +18,8 @@ export const list = async () => {
   return screen.getItems();
 };
 
-export const hours = async(park: { extId: string, type: string }, start: string, end?: string)
-: Promise<{ [date: string]: ISchedule[] }> => {
+export const parkHours = async(park: { extId: string, type: string }, start: string, end?: string)
+: Promise<ISchedules> => {
   const parsed = parseExternal(park.extId);
   if (!parsed) {
     throw new Error('Cannot parse external id when trying to fetch wait times');
@@ -38,7 +38,7 @@ export const hours = async(park: { extId: string, type: string }, start: string,
     startDate: start
   };
 
-  const response: any = await get(url, data, auth);
+  const response: { activities: any[] } = await get(url, data, auth);
   // console.log(response.ancestor.schedule.schedules);
   invariant(
     response.activities,
@@ -79,7 +79,10 @@ export const hours = async(park: { extId: string, type: string }, start: string,
     {}
   );
 
-  return dates;
+  return {
+    id: park.extId,
+    schedule: dates
+  };
 };
 
 export const waitTimes = async (park: { extId: string }) => {

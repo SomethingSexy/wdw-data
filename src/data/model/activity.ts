@@ -1,10 +1,53 @@
-import { IAttraction } from '../../types';
+import invariant from 'invariant';
+import { IAttraction, ISchedule } from '../../types';
 import { syncTransaction, upsert } from '../utils';
 import date from './date';
 import location from './location';
 
+export const types = {
+  ENTERTAINMENT: 'entertainment'
+};
+
 export default (sequelize, access) => {
-  return {
+  const api = {
+    async addSchedule(
+      activityId: string, scheduleDate: string, parkSchedules, transaction
+    ) {
+      const { Schedule } = access;
+
+      const DateModel = date(sequelize, access);
+      const dateInstance = await DateModel.get(scheduleDate, transaction);
+
+      // TODO: Check to see if we already have a schedule for that day
+      return Promise.all(
+        parkSchedules.map(data => Schedule.create(data, { transaction }))
+      )
+      .then(scheduleInstances => {
+        return Promise.all(
+          scheduleInstances.map(scheduleInstance =>
+            dateInstance.addActivitySchedule(
+              scheduleInstance,
+              {
+                transaction,
+                through: { activityId } // tslint:disable-line
+              }
+            )
+          )
+        );
+      });
+    },
+    async addSchedules(id: string, schedules: {[date: string]: ISchedule[]}) {
+      // check if date exists already.
+      return Promise.all(
+        Object
+          .entries(schedules)
+          .map(([key, value]) => {
+            return sequelize.transaction(t => {
+              return api.addSchedule(id, key, value, t);
+            });
+          })
+        );
+    },
     async addUpdateActivities(items: IAttraction[] = []) {
       const { Activity, Age, Tag, ThrillFactor } = access;
       const Location = location(sequelize, access);
@@ -18,6 +61,8 @@ export default (sequelize, access) => {
           extRefName: item.extRefName,
           fastPass: item.fastPass,
           fastPassPlus: item.fastPassPlus,
+          // only rule so far
+          fetchSchedule: item.type === types.ENTERTAINMENT,
           height: item.height,
           latitude: item.coordinates ? item.coordinates.gps.latitude : null,
           longitude: item.coordinates ? item.coordinates.gps.longitude : null,
@@ -27,6 +72,7 @@ export default (sequelize, access) => {
           url: item.url,
           wheelchairTransfer: item.wheelchairTransfer
         };
+
         if (item.id) {
           activityItem.id = item.id;
         }
@@ -129,6 +175,23 @@ export default (sequelize, access) => {
           }
         );
       });
+    },
+    /**
+     * List all activities
+     * @param where - search parameters
+     */
+    async list(where?: { [key: string]: string | boolean }) {
+      const { Activity } = access;
+      if (where) {
+        invariant(
+          Object.keys(where).length, 'Conditions are required when searching for activities.'
+        );
+
+        return Activity.findAll({ where, raw: true });
+      }
+      return Activity.all({ raw: true });
     }
   };
+
+  return api;
 };

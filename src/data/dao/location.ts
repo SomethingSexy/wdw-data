@@ -10,6 +10,11 @@ export default sequelize => {
       description: Sequelize.TEXT,
       extId: Sequelize.STRING,
       extRefName: Sequelize.STRING,
+      fetchSchedule: {
+        allowNull: false,
+        defaultValue: false,
+        type: Sequelize.BOOLEAN
+      },
       id: {
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
