@@ -77,3 +77,11 @@ export interface ISchedules {
   id: string;
   schedule: { [date: string]: ISchedule[] };
 }
+
+export interface IConnection {
+  database: string;
+  pool: {
+    max: number;
+  };
+  username: string;
+}

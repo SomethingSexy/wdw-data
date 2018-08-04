@@ -1,30 +1,18 @@
+import Sequelize from 'sequelize';
+import models from './data/index';
+import { IConnection } from './types';
 
-export const parks = {
-  findById: () => {
-    // use model
-    return {
-      /**
-       * Retrieves the hours for a park
-       */
-      hours: () => {
-        // 
-      },
-      /**
-       * Retrieves the wait times for a park by date
-       */
-      waitTimes: () => {}
-    };
-  },
-  get: () => {
-    // model
-  },
-  list: () => {
-    // model
-  },
+/**
+ * Creates a database connection and returns models for accessing data.
+ * @param connection
+ */
+export const createModels = (connection: IConnection) => {
+  const sequelize = new Sequelize({
+    ...connection,
+    dialect: 'postgres'
+  });
+
+  return models(sequelize);
 };
 
-export const realtime = {
-
-}
-
-export const server = () => {};
+// TODO: Export realtime stuff for hooking up to jobs
