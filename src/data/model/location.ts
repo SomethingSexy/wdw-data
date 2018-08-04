@@ -99,15 +99,30 @@ export default (sequelize, access) => {
      * @param where - search parameters
      */
     async list(where?: { [key: string]: string | boolean }) {
-      const { Location } = access;
+      const { Address, Area, Location } = access;
       if (where) {
         invariant(
           Object.keys(where).length, 'Conditions are required when searching for locations.'
         );
 
-        return Location.findAll({ where, raw: true });
+        return Location.findAll({
+          where,
+          include: [{ // tslint:disable-line
+            model: Address
+          }, {
+            model: Area
+          }],
+          raw: true
+        });
       }
-      return Location.all({ raw: true });
+      return Location.all({
+        include: [{
+          model: Address
+        }, {
+          model: Area
+        }],
+        raw: true
+      });
     }
   };
 
