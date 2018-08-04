@@ -9,7 +9,7 @@ const index_1 = __importDefault(require("./data/index"));
  * Creates a database connection and returns models for accessing data.
  * @param connection
  */
-exports.createModels = (connection) => {
+exports.createModels = async (connection) => {
     const sequelize = new sequelize_1.default(Object.assign({}, connection, { dialect: 'postgres' }));
     return index_1.default(sequelize);
 };

@@ -6,7 +6,7 @@ import { IConnection } from './types';
  * Creates a database connection and returns models for accessing data.
  * @param connection
  */
-export const createModels = (connection: IConnection) => {
+export const createModels = async (connection: IConnection) => {
   const sequelize = new Sequelize({
     ...connection,
     dialect: 'postgres'

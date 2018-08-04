@@ -7,7 +7,7 @@ import createLocation from './model/location';
  * Setups database connection, creates data access layer, and setups models for
  * working with the data.
  */
-export default (connection?: any) => {
+export default async (connection?: any) => {
   // create our connection
   const sequelize = connection
     || new Sequelize({
@@ -23,7 +23,7 @@ export default (connection?: any) => {
   const accessObjects = createAccessObjects(sequelize);
 
   // Sync with the database
-  sequelize.sync();
+  await sequelize.sync();
 
   // setup models, these will be higher level objects that will handle the business logic
   // around the data access objects

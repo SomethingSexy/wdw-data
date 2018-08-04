@@ -37,7 +37,7 @@ const runHotels = async () => {
  */
 exports.default = async () => {
     // setup our database connection
-    const models = index_1.default();
+    const models = await index_1.default();
     // grab our realtime park data
     const parks = await runParks();
     await models.location.addUpdateParks(parks);

@@ -8,7 +8,7 @@ import { waitTimes } from '../realtime/parks';
  */
 export default async () => {
   // setup our database connection
-  const models = data();
+  const models = await data();
 
   const parks = await models.location.list();
   // save the same timestamp for all

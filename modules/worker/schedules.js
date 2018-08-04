@@ -13,7 +13,7 @@ const parks_1 = require("../realtime/parks");
  */
 exports.default = async (days) => {
     // setup our database connection
-    const models = index_1.default();
+    const models = await index_1.default();
     const startDate = moment_1.default().format('YYYY-MM-DD');
     const endDate = days ? moment_1.default().add(days, 'days').format('YYYY-MM-DD') : startDate;
     const parks = await models.location.list({ fetchSchedule: true });

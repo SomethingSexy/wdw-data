@@ -12,7 +12,7 @@ const parks_1 = require("../realtime/parks");
  */
 exports.default = async () => {
     // setup our database connection
-    const models = index_1.default();
+    const models = await index_1.default();
     const parks = await models.location.list();
     // save the same timestamp for all
     const timeStamp = moment_1.default.utc().format();

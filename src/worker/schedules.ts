@@ -8,7 +8,7 @@ import { parkHours } from '../realtime/parks';
  */
 export default async (days?: number) => {
   // setup our database connection
-  const models = data();
+  const models = await data();
 
   const startDate = moment().format('YYYY-MM-DD');
   const endDate = days ? moment().add(days, 'days').format('YYYY-MM-DD') : startDate;

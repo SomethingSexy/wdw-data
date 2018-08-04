@@ -11,7 +11,7 @@ const location_1 = __importDefault(require("./model/location"));
  * Setups database connection, creates data access layer, and setups models for
  * working with the data.
  */
-exports.default = (connection) => {
+exports.default = async (connection) => {
     // create our connection
     const sequelize = connection
         || new sequelize_1.default({
@@ -25,7 +25,7 @@ exports.default = (connection) => {
     // get our data access objects
     const accessObjects = index_1.default(sequelize);
     // Sync with the database
-    sequelize.sync();
+    await sequelize.sync();
     // setup models, these will be higher level objects that will handle the business logic
     // around the data access objects
     const activity = activity_1.default(sequelize, accessObjects);
