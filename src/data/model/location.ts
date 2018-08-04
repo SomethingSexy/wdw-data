@@ -3,6 +3,8 @@ import { IHotel, IPark, ISchedule } from '../../types';
 import { asyncTransaction, upsert } from '../utils';
 import date from './date';
 
+const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+
 export default (sequelize, access) => {
   const api = {
     async addArea(locationId, name, transaction) {
@@ -82,12 +84,23 @@ export default (sequelize, access) => {
           })
         );
     },
+    /**
+     * Searches for an area instance.
+     * @param locationId
+     * @param name
+     * @param transaction
+     */
     async findAreaByName(locationId, name, transaction) {
       const { Area } = access;
       return Area.findOne(
         { where: { locationId, name } }, { transaction }
       );
     },
+    /**
+     * Searches for a location instance by name
+     * @param name
+     * @param transaction
+     */
     async findByName(name, transaction) {
       const { Location } = access;
       return Location.findOne(
@@ -95,34 +108,66 @@ export default (sequelize, access) => {
       );
     },
     /**
+     * Returns a raw location by id.
+     * @param id
+     */
+    async get(id: string) {
+      const { Address, Area, Location } = access;
+      const found = await Location.findOne(
+        {
+          attributes: RAW_LOCATION_ATTRIBUTES,
+          include: [{
+            as: 'address',
+            attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+            model: Address
+          }, {
+            as: 'areas',
+            attributes: ['name'],
+            model: Area
+          }],
+          where: { id }
+        }
+      );
+
+      if (!found) {
+        // let the caller handle not found
+        return null;
+      }
+
+      return found.get({ plain: true });
+    },
+    /**
      * List all activities
      * @param where - search parameters
      */
     async list(where?: { [key: string]: string | boolean }) {
       const { Address, Area, Location } = access;
+      let query: { attributes: string[], include: any[], where?: any } = {
+        attributes: RAW_LOCATION_ATTRIBUTES, // tslint:disable-line
+        include: [{
+          as: 'address',
+          attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+          model: Address
+        }, {
+          as: 'areas',
+          attributes: ['name'],
+          model: Area
+        }]
+      };
+
       if (where) {
         invariant(
           Object.keys(where).length, 'Conditions are required when searching for locations.'
         );
-
-        return Location.findAll({
-          where,
-          include: [{ // tslint:disable-line
-            model: Address
-          }, {
-            model: Area
-          }],
-          raw: true
-        });
+        query = {
+          ...query,
+          where
+        };
       }
-      return Location.all({
-        include: [{
-          model: Address
-        }, {
-          model: Area
-        }],
-        raw: true
-      });
+
+      const found = await Location.findAll(query);
+
+      return found.map(item => item.get({ plain: true }));
     }
   };
 
