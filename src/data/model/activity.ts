@@ -1,8 +1,33 @@
 import invariant from 'invariant';
+import pick from 'lodash/pick'; // tslint:disable-line
 import { IAttraction, ISchedule } from '../../types';
 import { syncTransaction, upsert } from '../utils';
 import date from './date';
 import location from './location';
+
+const RAW_ACTIVITY_ATTRIBUTES = [
+  'admissionRequired',
+  'allowServiceAnimals',
+  'description',
+  'fastPass',
+  'fastPassPlus',
+  'height',
+  'id',
+  'name',
+  'riderSwapAvailable',
+  'type',
+  'url',
+  'wheelchairTransfer',
+  'locationId',
+  'areaId'
+];
+
+const normalizeActivity = activity => ({
+  ...pick(activity, RAW_ACTIVITY_ATTRIBUTES),
+  ages: activity.ActivityAges.map(age => age.name),
+  tags: activity.ActivityTags.map(tag => tag.name),
+  thrills: activity.ThrillFactors.map(factor => factor.name)
+});
 
 export const types = {
   ENTERTAINMENT: 'entertainment'
@@ -177,19 +202,88 @@ export default (sequelize, access, logger) => {
       });
     },
     /**
+     * Returns a raw activity by id.
+     * @param id
+     */
+    async get(id: string) {
+      const { Activity, Age, Tag, ThrillFactor } = access;
+      // setting to any because I am not gonna repeat sequelize's api
+      const queryInclude: any[] = [{
+        as: 'ActivityAges',
+        attributes: ['name'],
+        model: Age
+      }, {
+        as: 'ActivityTags',
+        attributes: ['name'],
+        model: Tag
+      }, {
+        as: 'ThrillFactors',
+        attributes: ['name'],
+        model: ThrillFactor
+      }];
+
+      const activity = await sequelize.transaction(async transaction => {
+        const found = await Activity.findOne(
+          {
+            attributes: RAW_ACTIVITY_ATTRIBUTES,
+            include: queryInclude,
+            where: { id }
+          },
+          { transaction }
+        );
+
+        if (!found) {
+          // let the caller handle not found
+          return null;
+        }
+
+        const raw = found.get({ plain: true });
+        return normalizeActivity(raw);
+      });
+
+      return activity;
+    },
+    /**
      * List all activities
      * @param where - search parameters
      */
     async list(where?: { [key: string]: string | boolean }) {
-      const { Activity } = access;
+      const { Activity, Age, Tag, ThrillFactor } = access;
+      let query: { attributes: string[], include: any[], where?: any } = {
+        attributes: RAW_ACTIVITY_ATTRIBUTES, // tslint:disable-line
+        include: [{
+          as: 'ActivityAges',
+          attributes: ['name'],
+          model: Age
+        }, {
+          as: 'ActivityTags',
+          attributes: ['name'],
+          model: Tag
+        }, {
+          as: 'ThrillFactors',
+          attributes: ['name'],
+          model: ThrillFactor
+        }]
+      };
+
       if (where) {
         invariant(
           Object.keys(where).length, 'Conditions are required when searching for activities.'
         );
 
-        return Activity.findAll({ where, raw: true });
+        query = {
+          ...query,
+          where
+        };
       }
-      return Activity.all({ raw: true });
+
+      const found = Activity.findAll(query);
+
+      return found.map(item => {
+        // need to further normalize
+        const raw = item.get({ plain: true });
+        return normalizeActivity(raw);
+      });
     }
   };
 

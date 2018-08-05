@@ -4,9 +4,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
+const pick_1 = __importDefault(require("lodash/pick")); // tslint:disable-line
 const utils_1 = require("../utils");
 const date_1 = __importDefault(require("./date"));
 const location_1 = __importDefault(require("./location"));
+const RAW_ACTIVITY_ATTRIBUTES = [
+    'admissionRequired',
+    'allowServiceAnimals',
+    'description',
+    'fastPass',
+    'fastPassPlus',
+    'height',
+    'id',
+    'name',
+    'riderSwapAvailable',
+    'type',
+    'url',
+    'wheelchairTransfer',
+    'locationId',
+    'areaId'
+];
+const normalizeActivity = activity => (Object.assign({}, pick_1.default(activity, RAW_ACTIVITY_ATTRIBUTES), { ages: activity.ActivityAges.map(age => age.name), tags: activity.ActivityTags.map(tag => tag.name), thrills: activity.ThrillFactors.map(factor => factor.name) }));
 exports.types = {
     ENTERTAINMENT: 'entertainment'
 };
@@ -137,16 +155,72 @@ exports.default = (sequelize, access, logger) => {
             });
         },
         /**
+         * Returns a raw activity by id.
+         * @param id
+         */
+        async get(id) {
+            const { Activity, Age, Tag, ThrillFactor } = access;
+            // setting to any because I am not gonna repeat sequelize's api
+            const queryInclude = [{
+                    as: 'ActivityAges',
+                    attributes: ['name'],
+                    model: Age
+                }, {
+                    as: 'ActivityTags',
+                    attributes: ['name'],
+                    model: Tag
+                }, {
+                    as: 'ThrillFactors',
+                    attributes: ['name'],
+                    model: ThrillFactor
+                }];
+            const activity = await sequelize.transaction(async (transaction) => {
+                const found = await Activity.findOne({
+                    attributes: RAW_ACTIVITY_ATTRIBUTES,
+                    include: queryInclude,
+                    where: { id }
+                }, { transaction });
+                if (!found) {
+                    // let the caller handle not found
+                    return null;
+                }
+                const raw = found.get({ plain: true });
+                return normalizeActivity(raw);
+            });
+            return activity;
+        },
+        /**
          * List all activities
          * @param where - search parameters
          */
         async list(where) {
-            const { Activity } = access;
+            const { Activity, Age, Tag, ThrillFactor } = access;
+            let query = {
+                attributes: RAW_ACTIVITY_ATTRIBUTES,
+                include: [{
+                        as: 'ActivityAges',
+                        attributes: ['name'],
+                        model: Age
+                    }, {
+                        as: 'ActivityTags',
+                        attributes: ['name'],
+                        model: Tag
+                    }, {
+                        as: 'ThrillFactors',
+                        attributes: ['name'],
+                        model: ThrillFactor
+                    }]
+            };
             if (where) {
                 invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for activities.');
-                return Activity.findAll({ where, raw: true });
+                query = Object.assign({}, query, { where });
             }
-            return Activity.all({ raw: true });
+            const found = Activity.findAll(query);
+            return found.map(item => {
+                // need to further normalize
+                const raw = item.get({ plain: true });
+                return normalizeActivity(raw);
+            });
         }
     };
     return api;

@@ -44,12 +44,14 @@ export default sequelize => {
   Activity.belongsTo(Location);
   Location.hasMany(Activity);
   Activity.belongsTo(Area);
+
   Activity.belongsToMany(
     ThrillFactor, { as: 'ThrillFactors', through: 'activities_thrill_factors' }
   );
   ThrillFactor.belongsToMany(
     Activity, { as: 'ThrillFactors', through: 'activities_thrill_factors' }
   );
+
   WaitTime.belongsTo(Date);
   Activity.hasMany(WaitTime);
 
