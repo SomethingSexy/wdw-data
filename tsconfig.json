@@ -20,5 +20,10 @@
     "rootDir": "./src",
     "noImplicitAny": false
   },
-  "exclude": ["node_modules", "modules", "test", "scripts"]
+  "exclude": ["node_modules", "modules", "test", "scripts"],
+  "paths": {
+    "lodash/*": [
+      "node_modules/@types/lodash-es/*"
+    ]
+  }
 }

@@ -85,3 +85,5 @@ export interface IConnection {
   };
   username: string;
 }
+
+export interface ILogType { log: (type: string, message: string) => void; }

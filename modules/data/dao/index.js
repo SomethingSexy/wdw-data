@@ -34,13 +34,17 @@ exports.default = sequelize => {
     // setup assocations
     Date.belongsToMany(Schedule, { through: LocationSchedule });
     Schedule.belongsToMany(Date, { through: LocationSchedule });
+    // TODO: Is this right?
     LocationSchedule.belongsTo(Location);
+    LocationSchedule.belongsTo(Schedule);
+    LocationSchedule.belongsTo(Date);
     Hotel.belongsTo(Location);
     Location.belongsTo(Address);
     Location.hasMany(Area);
     // Splitting Area and Location but since they might not
     // always have an Area, instead of doing a join of the ids
     Activity.belongsTo(Location);
+    Location.hasMany(Activity);
     Activity.belongsTo(Area);
     Activity.belongsToMany(ThrillFactor, { as: 'ThrillFactors', through: 'activities_thrill_factors' });
     ThrillFactor.belongsToMany(Activity, { as: 'ThrillFactors', through: 'activities_thrill_factors' });

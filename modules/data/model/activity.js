@@ -10,7 +10,7 @@ const location_1 = __importDefault(require("./location"));
 exports.types = {
     ENTERTAINMENT: 'entertainment'
 };
-exports.default = (sequelize, access) => {
+exports.default = (sequelize, access, logger) => {
     const api = {
         async addSchedule(activityId, scheduleDate, parkSchedules, transaction) {
             const { Schedule } = access;
@@ -37,7 +37,7 @@ exports.default = (sequelize, access) => {
         },
         async addUpdateActivities(items = []) {
             const { Activity, Age, Tag, ThrillFactor } = access;
-            const Location = location_1.default(sequelize, access);
+            const Location = location_1.default(sequelize, access, logger);
             return utils_1.syncTransaction(sequelize, items, async (item, t) => {
                 const activityItem = {
                     admissionRequired: item.admissionRequired,

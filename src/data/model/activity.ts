@@ -8,7 +8,7 @@ export const types = {
   ENTERTAINMENT: 'entertainment'
 };
 
-export default (sequelize, access) => {
+export default (sequelize, access, logger) => {
   const api = {
     async addSchedule(
       activityId: string, scheduleDate: string, parkSchedules, transaction
@@ -50,7 +50,7 @@ export default (sequelize, access) => {
     },
     async addUpdateActivities(items: IAttraction[] = []) {
       const { Activity, Age, Tag, ThrillFactor } = access;
-      const Location = location(sequelize, access);
+      const Location = location(sequelize, access, logger);
 
       return syncTransaction(sequelize, items, async (item, t) => {
         const activityItem: any = {

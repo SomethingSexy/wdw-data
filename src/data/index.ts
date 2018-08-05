@@ -1,13 +1,21 @@
 import Sequelize from 'sequelize';
+import { ILogType } from '../types';
 import createAccessObjects from './dao/index';
 import createActivity from './model/activity';
 import createLocation from './model/location';
+
+const createLogger = (logger?: ILogType) =>
+  (type: string, message: string) => {
+    if (logger) {
+      logger.log(type, message);
+    }
+  };
 
 /**
  * Setups database connection, creates data access layer, and setups models for
  * working with the data.
  */
-export default async (connection?: any) => {
+export default async (connection?: any, logger?: ILogType) => {
   // create our connection
   const sequelize = connection
     || new Sequelize({
@@ -19,6 +27,8 @@ export default async (connection?: any) => {
       username: 'tylercvetan',
     });
 
+  const internalLogger = createLogger(logger);
+
   // get our data access objects
   const accessObjects = createAccessObjects(sequelize);
 
@@ -27,8 +37,8 @@ export default async (connection?: any) => {
 
   // setup models, these will be higher level objects that will handle the business logic
   // around the data access objects
-  const activity = createActivity(sequelize, accessObjects);
-  const location = createLocation(sequelize, accessObjects);
+  const activity = createActivity(sequelize, accessObjects, internalLogger);
+  const location = createLocation(sequelize, accessObjects, internalLogger);
 
   return {
     activity,

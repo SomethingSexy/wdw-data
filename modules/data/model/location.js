@@ -4,10 +4,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
+const pick_1 = __importDefault(require("lodash/pick")); // tslint:disable-line
 const utils_1 = require("../utils");
 const date_1 = __importDefault(require("./date"));
 const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
-exports.default = (sequelize, access) => {
+var GetTypes;
+(function (GetTypes) {
+    GetTypes["Activities"] = "activities";
+})(GetTypes || (GetTypes = {}));
+exports.default = (sequelize, access, logger) => {
     const api = {
         async addArea(locationId, name, transaction) {
             const { Area } = access;
@@ -81,26 +86,94 @@ exports.default = (sequelize, access) => {
          * Returns a raw location by id.
          * @param id
          */
-        async get(id) {
-            const { Address, Area, Location } = access;
-            const found = await Location.findOne({
-                attributes: RAW_LOCATION_ATTRIBUTES,
-                include: [{
-                        as: 'address',
-                        attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
-                        model: Address
-                    }, {
-                        as: 'areas',
-                        attributes: ['name'],
-                        model: Area
-                    }],
-                where: { id }
+        async get(id, include) {
+            const { Activity, Address, Area, Hotel, Location } = access;
+            // setting to any because I am not gonna repeat sequelize's api
+            const queryInclude = [{
+                    as: 'address',
+                    attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+                    model: Address
+                }, {
+                    as: 'areas',
+                    attributes: ['name'],
+                    model: Area
+                }];
+            // check to see if we are including different associations
+            if (include) {
+                include.forEach(i => {
+                    if (i === GetTypes.Activities) {
+                        queryInclude.push({
+                            as: 'activities',
+                            attributes: ['id', 'name', 'description', 'type', 'url'],
+                            include: [{
+                                    as: 'area',
+                                    attributes: ['name'],
+                                    model: Area
+                                }],
+                            model: Activity
+                        });
+                    }
+                });
+            }
+            const location = await sequelize.transaction(async (transaction) => {
+                const found = await Location.findOne({
+                    attributes: RAW_LOCATION_ATTRIBUTES,
+                    include: queryInclude,
+                    where: { id }
+                }, { transaction });
+                if (!found) {
+                    // let the caller handle not found
+                    return null;
+                }
+                let raw = found.get({ plain: true });
+                // if this is a resort, then we need to grab the resort information
+                if (found.get('type') === 'resort') {
+                    const hotel = await Hotel
+                        .findOne({ where: { locationId: found.get('id') } }, { transaction });
+                    // just save off tier for now
+                    raw = Object.assign({}, raw, { tier: hotel.get('tier') });
+                }
+                return raw;
             });
+            return location;
+        },
+        /**
+         * Retrieves schedules for a given day.
+         * @param id
+         * @param date
+         * @returns - Array of schedules for the given day.  Returns null if the location cannot b
+         *            found or an empty array if no schedules are found.
+         */
+        async getLocationSchedule(id, byDate) {
+            // First lets verify that this location exists
+            const { Date, Location, LocationSchedule, Schedule } = access;
+            const found = await Location.findOne({ where: { id } });
+            // if we are trying to find schedules for a location that doesn't exist
+            // throw an exception here.
             if (!found) {
-                // let the caller handle not found
+                logger('debug', `Location ${id} not found when searching for schedules.`);
                 return null;
             }
-            return found.get({ plain: true });
+            // Grab the date instance, if there is no date, that means we do not
+            // have any schedules for this location.
+            const dateInst = await Date.findOne({ where: { date: byDate } });
+            if (!dateInst) {
+                logger('debug', `No date for ${byDate} when searching for schedules for location ${id}`);
+                return [];
+            }
+            // I am sure there is a better way to do this
+            const schedules = await LocationSchedule.findAll({
+                include: [{
+                        model: Schedule
+                    }, {
+                        model: Date
+                    }],
+                where: { dateId: dateInst.get('id'), locationId: found.get('id') },
+            });
+            return schedules.map(item => {
+                const raw = item.get({ plain: true });
+                return Object.assign({}, pick_1.default(raw.schedule, ['closing', 'opening', 'isSpecialHours', 'type']), pick_1.default(raw.date, ['date', 'holiday', 'isHoliday']));
+            });
         },
         /**
          * List all activities

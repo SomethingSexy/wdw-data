@@ -9,9 +9,9 @@ const index_1 = __importDefault(require("./data/index"));
  * Creates a database connection and returns models for accessing data.
  * @param connection
  */
-exports.createModels = async (connection) => {
+exports.createModels = async (connection, logger) => {
     const sequelize = new sequelize_1.default(Object.assign({}, connection, { dialect: 'postgres' }));
-    return index_1.default(sequelize);
+    return index_1.default(sequelize, logger);
 };
 // TODO: Export realtime stuff for hooking up to jobs
 //# sourceMappingURL=index.js.map
