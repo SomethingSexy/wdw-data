@@ -5,10 +5,12 @@ import { syncTransaction, upsert } from '../utils';
 import date from './date';
 import location from './location';
 
+// Note: returning extId for jobs
 const RAW_ACTIVITY_ATTRIBUTES = [
   'admissionRequired',
   'allowServiceAnimals',
   'description',
+  'extId',
   'fastPass',
   'fastPassPlus',
   'height',
@@ -242,6 +244,54 @@ export default (sequelize, access, logger) => {
       });
 
       return activity;
+    },
+    async getActivitySchedule(id: string, byDate: string) {
+      // First lets verify that this location exists
+      const { Date, Activity, ActivitySchedule, Schedule } = access;
+      const found = await Activity.findOne({ where: { id } });
+      // if we are trying to find schedules for a location that doesn't exist
+      // throw an exception here.
+      if (!found) {
+        logger('error', `Activity ${id} not found when searching for schedules.`);
+        return null;
+      }
+
+      if (!found.get('fetchSchedule')) {
+        logger('error', `Activity ${id} does not support schedules.`);
+        return null;
+      }
+
+      // Grab the date instance, if there is no date, that means we do not
+      // have any schedules for this location.
+      const dateInst = await Date.findOne({ where: { date: byDate } });
+      if (!dateInst) {
+        logger('debug', `No date for ${byDate} when searching for schedules for activity ${id}`);
+        return [];
+      }
+      // I am sure there is a better way to do this
+      const schedules = await ActivitySchedule.findAll({
+        include: [{
+          model: Schedule
+        }, {
+          model: Date
+        }],
+        where: { dateId: dateInst.get('id'), activityId: found.get('id') },
+      });
+      return schedules.map(item => {
+        const raw = item.get({ plain: true });
+        return {
+          ...pick(raw.schedule, ['closing', 'opening', 'isSpecialHours', 'type']),
+          ...pick(raw.date, ['date', 'holiday', 'isHoliday'])
+        };
+      });
+    },
+    /**
+     * Returns waittimes for an activity, if they are available
+     * @param id
+     * @param dates
+     */
+    async getWaittimes (id: string, dates: string[]) {
+
     },
     /**
      * List all activities

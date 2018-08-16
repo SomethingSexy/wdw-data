@@ -22,7 +22,7 @@ export const parkHours = async(park: { extId: string, type: string }, start: str
 : Promise<ISchedules> => {
   const parsed = parseExternal(park.extId);
   if (!parsed) {
-    throw new Error('Cannot parse external id when trying to fetch wait times');
+    throw new Error('Cannot parse external id when trying to fetch hours');
   }
 
   // TODO: validate YYYY-MM-DD

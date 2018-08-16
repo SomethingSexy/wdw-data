@@ -30,7 +30,9 @@ exports.default = async (days) => {
     }
     // get all activities that can fetch schedules
     const entertainment = await models.activity.list({ fetchSchedule: true });
-    let entertainmentSchedules = await entertainment_1.schedule('2018-08-03');
+    console.log('retrieving entertainment schedules');
+    let entertainmentSchedules = await entertainment_1.schedule(startDate);
+    console.log('retrieved entertainment schedules');
     entertainmentSchedules = entertainmentSchedules
         .reduce((all, eS) => {
         const found = entertainment.find(e => e.extId === eS.id);
@@ -43,6 +45,7 @@ exports.default = async (days) => {
         ];
     }, []);
     for (const entertainmentSchedule of entertainmentSchedules) {
+        console.log('Adding schedule to database');
         await models.activity.addSchedules(entertainmentSchedule.id, entertainmentSchedule.schedule);
     }
     return null;

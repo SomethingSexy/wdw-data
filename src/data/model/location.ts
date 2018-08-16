@@ -4,7 +4,19 @@ import { IHotel, IPark, ISchedule } from '../../types';
 import { asyncTransaction, upsert } from '../utils';
 import date from './date';
 
-const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+// Note: extId is on here right now for the jobs
+const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url', 'extId'];
+const RAW_ROOM_ATTRIBUTES = [
+  'bedsDescription',
+  'occupancy',
+  'occupancyDescription',
+  'view',
+  'description',
+  'extId',
+  'name',
+  'pricingUrl'
+];
+
 enum GetTypes {
   Activities = 'activities'
 }
@@ -22,17 +34,44 @@ export default (sequelize, access, logger) => {
       return Area.create({ locationId, name }, { transaction });
     },
     async addUpdateHotels(items: IHotel[] = []) {
-      const { Address, Hotel, Location } = access;
+      const { Address, Hotel, Location, Room, RoomConfiguration } = access;
+
       return asyncTransaction(sequelize, items, async (item, t) => {
         const locationInstance = await upsert(
           Location, item, { extId: item.extId }, t, [Address]
         );
-        return upsert(
-            Hotel,
-            { tier: item.tier, locationId: locationInstance.get('id') },
-            { locationId: locationInstance.get('id') },
-            t
-          );
+        const hotelInstance = await upsert(
+          Hotel,
+          { tier: item.tier, locationId: locationInstance.get('id') },
+          { locationId: locationInstance.get('id') },
+          t,
+        );
+        // need to handle adding rooms separately because we want to update
+        // if we have them already based on the extId
+        if (item.rooms) {
+          for (const room of item.rooms) {
+            const roomInstance = await upsert(
+              Room,
+              { ...pick(room, RAW_ROOM_ATTRIBUTES), hotelId: hotelInstance.get('id') },
+              { extId: room.extId },
+              t
+            );
+
+            if (room.configurations) {
+              for (const configuration of room.configurations) {
+                await upsert(
+                  RoomConfiguration,
+                  { ...configuration, roomId: roomInstance.get('id') },
+                  { description: configuration.description, roomId: roomInstance.get('id') },
+                  t
+                );
+              }
+            }
+          }
+        }
+
+        // TODO: Figure out what to return here
+        return Promise.resolve();
       });
     },
     async addUpdateParks(items: IPark[] = []) {
@@ -193,7 +232,7 @@ export default (sequelize, access, logger) => {
       // if we are trying to find schedules for a location that doesn't exist
       // throw an exception here.
       if (!found) {
-        logger('debug', `Location ${id} not found when searching for schedules.`);
+        logger('error', `Location ${id} not found when searching for schedules.`);
         return null;
       }
 

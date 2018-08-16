@@ -1,9 +1,11 @@
 import Sequelize from 'sequelize';
 
 export default sequelize => {
-  const LocationSchedules = sequelize.define(
-    'locations_schedules',
+  const RoomConfiguration = sequelize.define(
+    'room_configuration',
     {
+      count: Sequelize.INTEGER,
+      description: Sequelize.TEXT,
       id: {
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
@@ -12,5 +14,5 @@ export default sequelize => {
     }
   );
 
-  return LocationSchedules;
+  return RoomConfiguration;
 };

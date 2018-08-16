@@ -7,6 +7,8 @@ import date from './date';
 import hotel from './hotel';
 import location from './location';
 import locationSchedule from './locationSchedule';
+import room from './room';
+import roomConfiguration from './roomConfiguration';
 import schedule from './schedule';
 import tag from './tag';
 import thrillFactor from './thrillFactor';
@@ -27,6 +29,8 @@ export default sequelize => {
   const Tag = tag(sequelize);
   const ThrillFactor = thrillFactor(sequelize);
   const WaitTime = waitTime(sequelize);
+  const Room = room(sequelize);
+  const RoomConfiguration = roomConfiguration(sequelize);
 
   // setup assocations
   Date.belongsToMany(Schedule, { through: LocationSchedule });
@@ -37,6 +41,8 @@ export default sequelize => {
   LocationSchedule.belongsTo(Date);
 
   Hotel.belongsTo(Location);
+  Room.hasMany(RoomConfiguration);
+  Hotel.hasMany(Room);
   Location.belongsTo(Address);
   Location.hasMany(Area);
   // Splitting Area and Location but since they might not
@@ -64,11 +70,17 @@ export default sequelize => {
   Date.belongsToMany(Schedule, { as: 'ActivitySchedule', through: ActivitySchedule });
   Schedule.belongsToMany(Date, { as: 'ActivitySchedule', through: ActivitySchedule });
   ActivitySchedule.belongsTo(Activity);
+  ActivitySchedule.belongsTo(Schedule);
+  ActivitySchedule.belongsTo(Date);
+
+  // TODO:
+  // Setup RoomRates, Bus Wait Times, Dining, ADRs
 
   // return all of our daos, no need to worry about any individual exports here
   // we are always going to use them
   return {
     Activity,
+    ActivitySchedule,
     Address,
     Age,
     Area,
@@ -76,6 +88,8 @@ export default sequelize => {
     Hotel,
     Location,
     LocationSchedule,
+    Room,
+    RoomConfiguration,
     Schedule,
     Tag,
     ThrillFactor,

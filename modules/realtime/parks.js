@@ -21,7 +21,7 @@ exports.list = async () => {
 exports.parkHours = async (park, start, end) => {
     const parsed = utils_1.parseExternal(park.extId);
     if (!parsed) {
-        throw new Error('Cannot parse external id when trying to fetch wait times');
+        throw new Error('Cannot parse external id when trying to fetch hours');
     }
     // TODO: validate YYYY-MM-DD
     const auth = await request_1.getAccessToken();

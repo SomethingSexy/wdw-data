@@ -57,10 +57,13 @@ exports.default = sequelize => {
     Date.belongsToMany(Schedule, { as: 'ActivitySchedule', through: ActivitySchedule });
     Schedule.belongsToMany(Date, { as: 'ActivitySchedule', through: ActivitySchedule });
     ActivitySchedule.belongsTo(Activity);
+    ActivitySchedule.belongsTo(Schedule);
+    ActivitySchedule.belongsTo(Date);
     // return all of our daos, no need to worry about any individual exports here
     // we are always going to use them
     return {
         Activity,
+        ActivitySchedule,
         Address,
         Age,
         Area,

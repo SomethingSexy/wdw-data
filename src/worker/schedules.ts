@@ -36,7 +36,9 @@ export default async (days?: number) => {
 
   // get all activities that can fetch schedules
   const entertainment = await models.activity.list({ fetchSchedule: true });
-  let entertainmentSchedules: any[] = await schedule('2018-08-03');
+  console.log('retrieving entertainment schedules');
+  let entertainmentSchedules: any[] = await schedule(startDate);
+  console.log('retrieved entertainment schedules');
   entertainmentSchedules = entertainmentSchedules
     .reduce(
       (all, eS) => {
@@ -54,6 +56,7 @@ export default async (days?: number) => {
     );
 
   for (const entertainmentSchedule of entertainmentSchedules) {
+    console.log('Adding schedule to database');
     await models.activity.addSchedules(
       entertainmentSchedule.id,
       entertainmentSchedule.schedule

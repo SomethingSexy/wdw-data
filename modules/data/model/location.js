@@ -7,7 +7,8 @@ const invariant_1 = __importDefault(require("invariant"));
 const pick_1 = __importDefault(require("lodash/pick")); // tslint:disable-line
 const utils_1 = require("../utils");
 const date_1 = __importDefault(require("./date"));
-const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+// Note: extId is on here right now for the jobs
+const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url', 'extId'];
 var GetTypes;
 (function (GetTypes) {
     GetTypes["Activities"] = "activities";
@@ -151,7 +152,7 @@ exports.default = (sequelize, access, logger) => {
             // if we are trying to find schedules for a location that doesn't exist
             // throw an exception here.
             if (!found) {
-                logger('debug', `Location ${id} not found when searching for schedules.`);
+                logger('error', `Location ${id} not found when searching for schedules.`);
                 return null;
             }
             // Grab the date instance, if there is no date, that means we do not
