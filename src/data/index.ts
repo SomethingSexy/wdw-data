@@ -2,6 +2,7 @@ import Sequelize from 'sequelize';
 import { IConnection, ILogger } from '../types';
 import createAccessObjects from './dao/index';
 import createActivity from './model/activity';
+import createDining from './model/dining';
 import createLocation from './model/location';
 
 /**
@@ -29,10 +30,12 @@ export default async (connection: any | IConnection, logger: ILogger) => {
   // setup models, these will be higher level objects that will handle the business logic
   // around the data access objects
   const activity = createActivity(sequelize, accessObjects, logger);
+  const dining = createDining(sequelize, accessObjects, logger);
   const location = createLocation(sequelize, accessObjects, logger);
 
   return {
     activity,
+    dining,
     location
   };
 };

@@ -1,3 +1,4 @@
+import cheerio from 'cheerio';
 import { ILogger } from '../types';
 import { get as requestGet, getAccessToken, screen } from './api/request';
 import { parseExternal, parseLocation } from './utils';
@@ -17,10 +18,20 @@ const facetHasId = (facet: any[], id: string) =>
  * Retrieves additional details about an attraction.
  * @param {object} attraction
  */
-export const get = async (attraction: { extId: string }) => {
+export const get = async (attraction: { extId: string }, logger: ILogger) => {
+  if (!attraction.extId) {
+    logger('info', `No extId for attraction, cannot retrieve additional data.`);
+    return null;
+  }
+
   const url = `/global-pool-override-A/facility-service/attractions/${attraction.extId}`;
+
+  logger('info', `Getting request data for ${url}.`);
+
   const auth = await getAccessToken();
   const response: any = await requestGet(url, {}, auth);
+
+  logger('info', `Grabbed data for ${url}.`);
 
   let coordinates;
   if (response.coordinates && response.coordinates['Guest Entrance']) {
@@ -38,6 +49,8 @@ export const get = async (attraction: { extId: string }) => {
   const thrillFactor = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
   const description = descriptions.shortDescriptionMobile
     ? descriptions.shortDescriptionMobile.text : '';
+
+  logger('info', `Finished processing data for ${url}.`);
 
   return {
     ...attraction,
@@ -135,11 +148,11 @@ export const list = async (logger: ILogger, options: { max?: number} = {}) => {
   // one at a time instead of blasting the server
   const modifiedItems: any[] = [];
   for (const item of items) {
-    const diningItem = await get(item);
-    if (typeof diningItem === 'object') {
+    const attractionItem = await get(item, logger);
+    if (typeof attractionItem === 'object') {
       modifiedItems.push({
         ...item,
-        ...diningItem
+        ...attractionItem
       });
     } else {
       modifiedItems.push(item);

@@ -42,8 +42,8 @@ export const get = async (extId: string, url: string, logger: ILogger): Promise<
     }
 
     // main contents
-    const $mainContent = $.find('.finderDetailsHeaderContent');
-    const rawDescription = $mainContent.find('.finderDetailsPageSubtitle').text().trim();
+    // const $mainContent = $.find('.finderDetailsHeaderContent');
+    const rawDescription = $.find('.finderDetailsPageSubtitle').text().trim();
     const description = rawDescription || null;
 
     // TODO: Hours (only if not in park?), menu, handle things like seminars
