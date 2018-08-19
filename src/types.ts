@@ -80,6 +80,7 @@ export interface ISchedules {
 
 export interface IConnection {
   database: string;
+  logging?: boolean;
   pool: {
     max: number;
   };
@@ -87,3 +88,5 @@ export interface IConnection {
 }
 
 export interface ILogType { log: (type: string, message: string) => void; }
+
+export type ILogger = (type: string, message: string) => void;

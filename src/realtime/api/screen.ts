@@ -3,7 +3,9 @@ import { IScreenItem } from '../../types';
 import { parseExternal, parseLocation } from '../utils';
 import { screen } from './request';
 
-export type GetItemsCallback = ($: any, item: {}) => {};
+export type GetItemsCallback = ($: any, item: {}) => Promise<{}>;
+
+const delay = ms => new Promise(_ => setTimeout(_, ms));
 
 export const grab = async path => {
   const response = await screen(path);
@@ -14,8 +16,8 @@ export const grab = async path => {
      */
     getItems: async (callback?: GetItemsCallback): Promise<IScreenItem[]> => {
       const $cards = $.find('li.card');
-
-      let items: any = [];
+      console.log('Total of ', $cards.length);
+      const items: any = [];
       // .each instead of .map because map().get() in Typescript forces string[]
       $cards.each(({}, card) => {
         let location;
@@ -71,25 +73,29 @@ export const grab = async path => {
         });
       });
 
+      let modifiedItems;
       if (callback) {
-        items = await Promise.all(items
-          .map(async item => {
-            const additional = await callback(item.$card, item.item);
-            if (additional) {
-              return {
-                ...item,
-                item: {
-                  ...item.item,
-                  ...additional
-                }
-              };
-            }
+        modifiedItems = [];
+        // if there are callbacks, lets run them in order and wait on each one.
+        // Most of the time these callbacks are making additional calls to screens
+        // and we should play nice.
+        for (const item of items) {
+          const additional = await callback(item.$card, item.item);
+          if (additional) {
+            modifiedItems.push({
+              ...item,
+              item: {
+                ...item.item,
+                ...additional
+              }
+            });
+          }
 
-            return item;
-          }));
+          modifiedItems.push(item);
+        }
       }
-
-      return items.map(item => item.item);
+      console.log('done');
+      return (modifiedItems || items).map(item => item.item);
     },
     html: () => {
       return $;

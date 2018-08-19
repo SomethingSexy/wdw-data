@@ -1,28 +1,147 @@
+import cheerio from 'cheerio';
 import createDebug from 'debug';
 import invariant from 'invariant';
-import { diningFinder, getWebSession } from './api/request';
-import { grab } from './api/screen';
+import { ILogger } from '../types';
+import { diningFinder, getWebSession, screen } from './api/request';
+import { parseExternal, parseLocation } from './utils';
 
 const debug = createDebug('dining');
 
+const VALID_ADMISSION_REQUIRED = 'Valid Park Admission Required';
+const CUISINE_LABEL = 'Cuisine';
+
 const path = 'https://disneyworld.disney.go.com/dining/';
 
-export const list = async () => {
-  const screen = await grab(path);
+export const get = async (extId: string, url: string, logger: ILogger): Promise<{} | null> => {
+  if (!url) {
+    // if it doesn't have a url, don't bother getting anything for now other than super basics
+    logger('info', `No url for dining ${extId}, cannot get details.`);
+    return null;
+  }
 
-  return screen.getItems($item => {
-    const costCuisineInfo = $item.find('span[aria-label=facets]').text().split(',');
-    const cost = costCuisineInfo.length === 2 ? costCuisineInfo[0].trim() : '';
-    const cuisine = costCuisineInfo.length === 2 ? costCuisineInfo[1].trim() : '';
-    const description = $item.find('span[aria-label="dining type"]').text();
+  logger('info', `Getting screen for ${url}.`);
+  try {
+    const response = await screen(url);
+    logger('info', `Grabbed screen for ${url} with length ${response.length}.`);
+    const $ = cheerio(response);
+    const $rightBarInfo = $.find('.atAGlance');
+    const rawCostDescription = $rightBarInfo.find('.diningPriceInfo h3').text();
+    const costDescription = rawCostDescription
+      .substring(0, rawCostDescription.indexOf(')') + 1)
+      .trim();
 
-    // TODO: Hours, reservations, menu
+    const rawAdmissionRequired = $rightBarInfo.find('.themeParkAdmission').text().trim();
+    const admissionRequired = rawAdmissionRequired === VALID_ADMISSION_REQUIRED;
+
+    const rawCuisine = $rightBarInfo.find('.diningInfo h3').text().trim();
+    let cuisine: string[] | null = null;
+    if (rawCuisine) {
+      cuisine = rawCuisine
+        .split(',')
+        .map(text => text.replace(CUISINE_LABEL, '').trim());
+    }
+
+    // main contents
+    const $mainContent = $.find('.finderDetailsHeaderContent');
+    const rawDescription = $mainContent.find('.finderDetailsPageSubtitle').text().trim();
+    const description = rawDescription || null;
+
+    // TODO: Hours (only if not in park?), menu, handle things like seminars
     return {
-      cost,
+      admissionRequired,
+      costDescription,
       cuisine,
       description
     };
-  });
+  } catch (error) {
+    logger('error', `Failed to get screen or process screen for ${url} - ${error}`);
+  }
+
+  return null;
+};
+
+/**
+ * Return a list of all dining options.
+ */
+export const list = async (logger: ILogger, options: { max?: number} = {}) => {
+  logger('info', `Grabbing screen for ${path}.`);
+  const response = await screen(path);
+
+  const $ = cheerio(response);
+  const $diningCards = $.find('li.card');
+
+  logger('info', `Total of ${$diningCards.length} to process.`);
+
+  const items: any = [];
+  for (let i = 0; i < (options.max || $diningCards.length); i += 1) {
+    const card = $diningCards.get(i);
+    let location = null;
+    let area = null;
+    let type;
+    let extId;
+    let extRefName;
+    const $card = cheerio(card);
+    const external = $card.attr('data-entityid');
+    const name = $card.find('.cardName').text();
+
+    const parsedExternal = parseExternal(external);
+    if (parsedExternal) {
+      extId = parsedExternal.extId;
+      type = parsedExternal.type;
+    }
+    if (!type) {
+      return undefined;
+    }
+
+    const url = $card
+      .find('.cardLinkOverlay')
+      .attr('href');
+
+    // not every place has a url, for example the California Grill Lounge
+    if (url) {
+      extRefName = url.substring(path.length, url.length);
+      // depending on the url, might be additonal segements we need to remove
+      extRefName = extRefName.substring(
+        extRefName.indexOf('/') === extRefName.length - 1 ? 0 : extRefName.indexOf('/') + 1,
+        extRefName.length - 1
+      );
+    }
+
+    const fullLocation = parseLocation($card.find('span[aria-label=location]').text());
+    if (fullLocation) {
+      location = fullLocation.location;
+      area = fullLocation.area;
+    }
+
+    items.push({
+      area,
+      extId,
+      extRefName,
+      location,
+      name,
+      type,
+      url
+    });
+  }
+
+  logger('info', `Retrieving additional data of ${items.length}.`);
+
+  // We are getting a lot of data here, so lets play nice with them and call them
+  // one at a time instead of blasting the server
+  const modifiedItems: any[] = [];
+  for (const item of items) {
+    const diningItem = await get(item.extId, item.url, logger);
+    if (typeof diningItem === 'object') {
+      modifiedItems.push({
+        ...item,
+        ...diningItem
+      });
+    } else {
+      modifiedItems.push(item);
+    }
+  }
+
+  return modifiedItems;
 };
 
 /**

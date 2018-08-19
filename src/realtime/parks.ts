@@ -1,10 +1,10 @@
+import cheerio from 'cheerio';
 import invariant from 'invariant';
 import moment from 'moment';
 import 'moment-holiday';
-import { ISchedules } from '../types';
-import { get, getAccessToken } from './api/request';
-import { grab } from './api/screen';
-import { parseExternal } from './utils';
+import { ILogger, ISchedules } from '../types';
+import { get, getAccessToken , screen } from './api/request';
+import { parseExternal, parseLocation } from './utils';
 
 const DESTINATION_ID = 80007798;
 const path = 'https://disneyworld.disney.go.com/destinations/';
@@ -12,10 +12,69 @@ const PARK_REGION = 'us';
 // const TIME_ZONE = 'America/New_York';
 // const DATE_FORMAT = 'YYYY-MM-DD';
 
-export const list = async () => {
-  const screen = await grab(path);
+export const list = async (logger: ILogger) => {
+  logger('info', `Grabbing park screen for ${path}.`);
+  const response = await screen(path);
 
-  return screen.getItems();
+  const $ = cheerio(response);
+  const $parkCards = $.find('li.card');
+
+  logger('info', `Total of ${$parkCards.length} to process.`);
+
+  const items: any = [];
+  for (let i = 0; i < $parkCards.length; i += 1) {
+    const card = $parkCards.get(i);
+    let location = null;
+    let area = null;
+    let type;
+    let extId;
+    let extRefName;
+
+    const $card = cheerio(card);
+    const external = $card.attr('data-entityid');
+    const name = $card.find('.cardName').text();
+
+    const parsedExternal = parseExternal(external);
+    if (parsedExternal) {
+      extId = parsedExternal.extId;
+      type = parsedExternal.type;
+    }
+    // if (!type) {
+    //   return undefined;
+    // }
+
+    const url = $card
+      .find('.cardLinkOverlay')
+      .attr('href');
+
+    // not every place has a url, for example the California Grill Lounge
+    if (url) {
+      extRefName = url.substring(path.length, url.length);
+      // depending on the url, might be additonal segements we need to remove
+      extRefName = extRefName.substring(
+        extRefName.indexOf('/') === extRefName.length - 1 ? 0 : extRefName.indexOf('/') + 1,
+        extRefName.length - 1
+      );
+    }
+
+    const fullLocation = parseLocation($card.find('span[aria-label=location]').text());
+    if (fullLocation) {
+      location = fullLocation.location;
+      area = fullLocation.area;
+    }
+
+    items.push({
+      area,
+      extId,
+      extRefName,
+      location,
+      name,
+      type,
+      url
+    });
+  }
+
+  return items;
 };
 
 export const parkHours = async(park: { extId: string, type: string }, start: string, end?: string)

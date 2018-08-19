@@ -1,6 +1,7 @@
-import { ISchedules } from '../types';
-import { getAccessToken, getWebApi } from './api/request';
-import { grab } from './api/screen';
+import cheerio from 'cheerio';
+import { ILogger, ISchedules } from '../types';
+import { getAccessToken, getWebApi, screen } from './api/request';
+import { parseExternal, parseLocation } from './utils';
 
 const path = 'https://disneyworld.disney.go.com/entertainment/';
 
@@ -12,29 +13,10 @@ const ADMISSION_REQUIRED = 'Valid Park Admission Required';
  * Retrieves detailed information about an entertainment activity, internal for processing list.
  * @param {string} url
  */
-const details = async ($item, item) => {
-  const $description = $item.find('.descriptionLines');
-  const $facets = $description.find('.facets');
-  const facets = $facets
-    .first()
-    .text()
-    .split(',')
-    .filter(detail => detail !== '')
-    .map(detail => detail.trim()) || [];
+const get = async item => {
+  const response = await screen(item.url);
 
-  const ages: string[] = [];
-  const tags: string[] = [];
-  facets.forEach(detail => {
-    if (ageKeys.includes(detail)) {
-      ages.push(detail);
-    } else {
-      tags.push(detail);
-    }
-  });
-
-  const screen = await grab(item.url);
-
-  const $ = screen.html();
+  const $ = cheerio(response);
   const $page = $.find('#pageContent');
   const $restrictions = $page
     .find('.moreDetailsInfo .modalContainer .moreDetailsModal-accessibility');
@@ -52,9 +34,7 @@ const details = async ($item, item) => {
   // TODO: add length if it exists
   return {
     admissionRequired,
-    ages,
     description,
-    tags,
     wheelchairTransfer
   };
 };
@@ -62,10 +42,106 @@ const details = async ($item, item) => {
 /**
  * Reloads cached data.
  */
-export const list = async () => {
-  const screen = await grab(path);
+export const list = async (logger: ILogger, options: { max?: number} = {}) => {
+  logger('info', `Grabbing screen for ${path}.`);
+  const response = await screen(path);
 
-  return screen.getItems(details);
+  const $ = cheerio(response);
+  const $attractionCards = $.find('li.card');
+
+  logger('info', `Total of ${$attractionCards.length} entertainment to process.`);
+
+  const items: any = [];
+  for (let i = 0; i < (options.max || $attractionCards.length); i += 1) {
+    const card = $attractionCards.get(i);
+    let location = null;
+    let area = null;
+    let type;
+    let extId;
+    let extRefName;
+    const $card = cheerio(card);
+    const external = $card.attr('data-entityid');
+    const name = $card.find('.cardName').text();
+
+    const parsedExternal = parseExternal(external);
+    if (parsedExternal) {
+      extId = parsedExternal.extId;
+      type = parsedExternal.type;
+    }
+    if (!type) {
+      return undefined;
+    }
+
+    const url = $card
+      .find('.cardLinkOverlay')
+      .attr('href');
+
+    // not every place has a url, for example the California Grill Lounge
+    if (url) {
+      extRefName = url.substring(path.length, url.length);
+      // depending on the url, might be additonal segements we need to remove
+      extRefName = extRefName.substring(
+        extRefName.indexOf('/') === extRefName.length - 1 ? 0 : extRefName.indexOf('/') + 1,
+        extRefName.length - 1
+      );
+    }
+
+    const fullLocation = parseLocation($card.find('span[aria-label=location]').text());
+    if (fullLocation) {
+      location = fullLocation.location;
+      area = fullLocation.area;
+    }
+
+    const $description = $card.find('.descriptionLines');
+    const $facets = $description.find('.facets');
+    const facets = $facets
+      .first()
+      .text()
+      .split(',')
+      .filter(detail => detail !== '')
+      .map(detail => detail.trim()) || [];
+
+    const ages: string[] = [];
+    const tags: string[] = [];
+    facets.forEach(detail => {
+      if (ageKeys.includes(detail)) {
+        ages.push(detail);
+      } else {
+        tags.push(detail);
+      }
+    });
+
+    items.push({
+      ages,
+      area,
+      extId,
+      extRefName,
+      location,
+      name,
+      tags,
+      type,
+      url
+    });
+  }
+
+  logger('info', `Retrieving additional data of ${items.length}.`);
+
+  // We are getting a lot of data here, so lets play nice with them and call them
+  // one at a time instead of blasting the server
+  const modifiedItems: any[] = [];
+  for (const item of items) {
+    const diningItem = await get(item);
+    if (typeof diningItem === 'object') {
+      modifiedItems.push({
+        ...item,
+        ...diningItem
+      });
+    } else {
+      modifiedItems.push(item);
+    }
+  }
+
+  return modifiedItems;
 };
 
 /**

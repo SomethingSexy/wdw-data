@@ -1,6 +1,8 @@
 import cheerio from 'cheerio';
 import parseAddress from 'parse-address';
-import { grab } from './api/screen';
+import { ILogger } from '../types';
+import { screen } from './api/request';
+import { parseExternal, parseLocation } from './utils';
 
 const path = 'https://disneyworld.disney.go.com/resorts/';
 
@@ -121,14 +123,24 @@ const totalOccupancy = description => {
  * Retrieves detailed information about a hotel, internal for processing list.
  * @param {string} url
  */
-const details = async ({}, item) => {
+const get = async (extUrl, logger) => {
+  if (!extUrl) {
+    // if it doesn't have a url, don't bother getting anything for now other than super basics
+    logger('info', `No url for hotel ${extUrl}, cannot get details.`);
+    return null;
+  }
+
   // need to massage url here
-  const url = item.url.substring(0, item.url.indexOf('/rates-rooms/'));
+  const url = extUrl.substring(0, extUrl.indexOf('/rates-rooms/'));
   const extRefName = url.substring(path.length, url.length);
 
-  const screen = await grab(url);
+  logger('info', `Getting screen for ${url}.`);
 
-  const $ = screen.html();
+  const response = await screen(url);
+
+  logger('info', `Grabbed screen for ${url} with length ${response.length}.`);
+
+  const $ = cheerio(response);
   const $page = $.find('.resortsPage');
   const name = $page.find('h1').text();
   const description = $page.find('.description').text().trim();
@@ -149,9 +161,8 @@ const details = async ({}, item) => {
   };
 
   // grab room information now
-  const roomsScreem = await grab(item.url);
-  const rooms = roomsScreem
-    .html()
+  const roomsScreem = await screen(extUrl);
+  const rooms = cheerio(roomsScreem)
     .find('.roomType')
     .map(({}, el) => {
       const $room = cheerio(el);
@@ -182,14 +193,90 @@ const details = async ({}, item) => {
       };
     }).get();
 
+  logger('info', `Finished processing data for screen for ${url}.`);
+
   return {
     ...hotel,
     rooms
   };
 };
 
-export const list = async () => {
-  const screen = await grab(path);
+export const list = async (logger: ILogger) => {
+  logger('info', `Grabbing hotels screen for ${path}.`);
+  const response = await screen(path);
 
-  return screen.getItems(details);
+  const $ = cheerio(response);
+  const $diningCards = $.find('li.card');
+
+  logger('info', `Total of ${$diningCards.length} hotels to process.`);
+
+  const items: any = [];
+  for (let i = 0; i < $diningCards.length; i += 1) {
+    const card = $diningCards.get(i);
+    let location = null;
+    let area = null;
+    let type;
+    let extId;
+    let extRefName;
+    const $card = cheerio(card);
+    const external = $card.attr('data-entityid');
+    const name = $card.find('.cardName').text();
+
+    const parsedExternal = parseExternal(external);
+    if (parsedExternal) {
+      extId = parsedExternal.extId;
+      type = parsedExternal.type;
+    }
+
+    if (type) {
+      const url = $card
+        .find('.cardLinkOverlay')
+        .attr('href');
+
+      // not every place has a url, for example the California Grill Lounge
+      if (url) {
+        extRefName = url.substring(path.length, url.length);
+        // depending on the url, might be additonal segements we need to remove
+        extRefName = extRefName.substring(
+          extRefName.indexOf('/') === extRefName.length - 1 ? 0 : extRefName.indexOf('/') + 1,
+          extRefName.length - 1
+        );
+      }
+
+      const fullLocation = parseLocation($card.find('span[aria-label=location]').text());
+      if (fullLocation) {
+        location = fullLocation.location;
+        area = fullLocation.area;
+      }
+
+      items.push({
+        area,
+        extId,
+        extRefName,
+        location,
+        name,
+        type,
+        url
+      });
+    }
+  }
+
+  logger('info', `Retrieving additional data of ${items.length}.`);
+
+  // We are getting a lot of data here, so lets play nice with them and call them
+  // one at a time instead of blasting the server
+  const modifiedItems: any[] = [];
+  for (const item of items) {
+    const diningItem = await get(item.url, logger);
+    if (typeof diningItem === 'object') {
+      modifiedItems.push({
+        ...item,
+        ...diningItem
+      });
+    } else {
+      modifiedItems.push(item);
+    }
+  }
+
+  return modifiedItems;
 };
