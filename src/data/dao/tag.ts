@@ -4,6 +4,7 @@ export default sequelize => {
   const Tag = sequelize.define(
     'tag',
     {
+      from: Sequelize.STRING,
       id: {
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,

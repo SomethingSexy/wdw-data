@@ -19,7 +19,7 @@ export default async (options: IOptions =
   const models = await createModels(
     {
       database: 'wdw',
-      logging: false,
+      logging: true,
       pool: {
         max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
       },
@@ -40,7 +40,7 @@ export default async (options: IOptions =
       logger.log('info', JSON.stringify(parks, null, 4));
       await models.location.addUpdateParks(parks);
     } catch (e) {
-      logger.log('error', e);
+      logger.log('error', e.toString());
     }
   }
 
@@ -53,7 +53,7 @@ export default async (options: IOptions =
       logger.log('info', JSON.stringify(hotels, null, 4));
       await models.location.addUpdateHotels(hotels);
     } catch (e) {
-      logger.log('error', e);
+      logger.log('error', e.toString());
     }
   }
 
@@ -66,7 +66,7 @@ export default async (options: IOptions =
       logger.log('info', JSON.stringify(attractions, null, 4));
       await models.activity.addUpdateActivities(attractions);
     } catch (e) {
-      logger.log('error', e);
+      logger.log('error', e.toString());
     }
   }
 
@@ -79,7 +79,7 @@ export default async (options: IOptions =
       logger.log('info', JSON.stringify(entertainment, null, 4));
       await models.activity.addUpdateActivities(entertainment);
     } catch (e) {
-      logger.log('error', e);
+      logger.log('error', e.toString());
     }
   }
 
@@ -91,7 +91,8 @@ export default async (options: IOptions =
       logger.log('info', JSON.stringify(dining, null, 4));
       await models.dining.addUpdate(dining);
     } catch (e) {
-      logger.log('error', e);
+      console.log(e);
+      logger.log('error', e.toString());
     }
   }
 };

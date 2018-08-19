@@ -52,6 +52,9 @@ export default sequelize => {
   Dining.belongsTo(Area);
   Location.hasMany(Dining);
 
+  Tag.belongsToMany(Dining, { as: 'DiningTags', through: 'dinings_tags' });
+  Dining.belongsToMany(Tag, { as: 'DiningTags', through: 'dinings_tags' });
+
   // Splitting Area and Location but since they might not
   // always have an Area, instead of doing a join of the ids
   Activity.belongsTo(Location);

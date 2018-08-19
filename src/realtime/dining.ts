@@ -41,6 +41,14 @@ export const get = async (extId: string, url: string, logger: ILogger): Promise<
         .map(text => text.replace(CUISINE_LABEL, '').trim());
     }
 
+    const rawTags = $rightBarInfo.find('.diningInfo p').text().trim();
+    let tags: string[] | null = null;
+    if (rawTags) {
+      tags = rawTags
+        .split(',')
+        .map(text => text.trim());
+    }
+
     // main contents
     // const $mainContent = $.find('.finderDetailsHeaderContent');
     const rawDescription = $.find('.finderDetailsPageSubtitle').text().trim();
@@ -51,7 +59,8 @@ export const get = async (extId: string, url: string, logger: ILogger): Promise<
       admissionRequired,
       costDescription,
       cuisine,
-      description
+      description,
+      tags
     };
   } catch (error) {
     logger('error', `Failed to get screen or process screen for ${url} - ${error}`);

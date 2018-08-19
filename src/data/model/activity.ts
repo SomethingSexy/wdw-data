@@ -159,7 +159,7 @@ export default (sequelize, access, logger) => {
           // either sync or async with Promise.all
           for (const tagName of item.tags) {
             const tagInst = await upsert(
-              Tag, { name: tagName }, { name: tagName }, t
+              Tag, { name: tagName, from: 'activity' }, { name: tagName }, t
             );
             if (!await activityInst.hasActivityTags(tagInst)) {
               await activityInst.addActivityTags(tagInst, { transaction: t });

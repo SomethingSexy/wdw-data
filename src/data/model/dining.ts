@@ -37,7 +37,7 @@ export const types = {
 export default (sequelize, access, logger) => {
   const api = {
     async addUpdate(items: IAttraction[] = []) {
-      const { Dining } = access;
+      const { Dining, Tag } = access;
       const Location = location(sequelize, access, logger);
 
       return syncTransaction(sequelize, items, async (item, t) => {
@@ -81,6 +81,18 @@ export default (sequelize, access, logger) => {
             }
 
             await diningInst.setArea(areaInst, { transaction: t });
+          }
+        }
+
+        if (item.tags) {
+          // either sync or async with Promise.all
+          for (const tagName of item.tags) {
+            const tagInst = await upsert(
+              Tag, { name: tagName, from: 'dining' }, { name: tagName }, t
+            );
+            if (!await diningInst.hasDiningTags(tagInst)) {
+              await diningInst.addDiningTags(tagInst, { transaction: t });
+            }
           }
         }
 
