@@ -27,10 +27,8 @@ export const get = async (attraction: { extId: string }, logger: ILogger) => {
   const url = `/global-pool-override-A/facility-service/attractions/${attraction.extId}`;
 
   logger('info', `Getting request data for ${url}.`);
-
   const auth = await getAccessToken();
   const response: any = await requestGet(url, {}, auth);
-
   logger('info', `Grabbed data for ${url}.`);
 
   let coordinates;

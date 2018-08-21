@@ -1,3 +1,3 @@
 import data from '../src/worker/data';
 
-data({ dining: true }).then(() => process.exit);
+data().then(() => process.exit);

@@ -3,6 +3,7 @@ import activitySchedule from './activitySchedule';
 import address from './address';
 import age from './age';
 import area from './area';
+import cuisine from './cuisine';
 import date from './date';
 import dining from './dining';
 import hotel from './hotel';
@@ -27,6 +28,7 @@ export default sequelize => {
   const Schedule = schedule(sequelize);
   const Date = date(sequelize);
   const Dining = dining(sequelize);
+  const Cuisine = cuisine(sequelize);
   const Hotel = hotel(sequelize);
   const Tag = tag(sequelize);
   const ThrillFactor = thrillFactor(sequelize);
@@ -51,9 +53,9 @@ export default sequelize => {
   Dining.belongsTo(Location);
   Dining.belongsTo(Area);
   Location.hasMany(Dining);
-
   Tag.belongsToMany(Dining, { as: 'DiningTags', through: 'dinings_tags' });
   Dining.belongsToMany(Tag, { as: 'DiningTags', through: 'dinings_tags' });
+  Dining.hasMany(Cuisine);
 
   // Splitting Area and Location but since they might not
   // always have an Area, instead of doing a join of the ids
@@ -94,6 +96,7 @@ export default sequelize => {
     Address,
     Age,
     Area,
+    Cuisine,
     Date,
     Dining,
     Hotel,

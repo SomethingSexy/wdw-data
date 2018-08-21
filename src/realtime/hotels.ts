@@ -135,9 +135,7 @@ const get = async (extUrl, logger) => {
   const extRefName = url.substring(path.length, url.length);
 
   logger('info', `Getting screen for ${url}.`);
-
   const response = await screen(url);
-
   logger('info', `Grabbed screen for ${url} with length ${response.length}.`);
 
   const $ = cheerio(response);

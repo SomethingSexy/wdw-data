@@ -1,7 +1,7 @@
 import { ILogger } from '../types';
 import { get as attractionGet, list as attractionList } from './attractions';
 import { get as diningGet, list as diningList, reservations } from './dining';
-import { list as entertainmentList } from './entertainment';
+import { list as entertainmentList, schedule } from './entertainment';
 import { list as hotelList } from './hotels';
 import { list as parkList, parkHours, waitTimes } from './parks';
 
@@ -14,7 +14,8 @@ export const attractions = (logger: ILogger) => {
 
 export const entertainment = (logger: ILogger) => {
   return {
-    list: (options?: any) => entertainmentList(logger, options),
+    schedule,
+    list: (options?: any) => entertainmentList(logger, options) // tslint:disable-line
   };
 };
 
@@ -34,8 +35,8 @@ export const hotels = (logger: ILogger) => {
 
 export const parks = (logger: ILogger) => {
   return {
-    parkHours,
     waitTimes,
-    list: () => parkList(logger) // tslint:disable-line
+    hours: parkHours, // tslint:disable-line
+    list: () => parkList(logger)
   };
 };

@@ -1,14 +1,25 @@
 import moment from 'moment';
 import 'moment-holiday';
-import data from '../data/index';
-import { schedule } from '../realtime/entertainment';
-import { parkHours } from '../realtime/parks';
+import { createModels, realtime } from '../index';
+import logger from '../log';
 /**
  * Service for updating hours
  */
 export default async (days?: number) => {
   // setup our database connection
-  const models = await data();
+  const models = await createModels(
+    {
+      database: 'wdw',
+      logging: true,
+      pool: {
+        max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
+      },
+      username: 'tylercvetan',
+    },
+    logger
+  );
+
+  const realtimeModels = realtime(logger);
 
   const startDate = moment().format('YYYY-MM-DD');
   const endDate = days ? moment().add(days, 'days').format('YYYY-MM-DD') : startDate;
@@ -18,7 +29,7 @@ export default async (days?: number) => {
       (all, park) => {
         return [
           ...all,
-          parkHours(park, startDate, endDate)
+          realtimeModels.parks.hours(park, startDate, endDate)
             .then(p => ({ ...p, id: park.id }))
         ];
       },
@@ -26,7 +37,6 @@ export default async (days?: number) => {
     )
   );
 
-  // console.log('parks', responses);
   for (const parkSchedule of responses) {
     await models.location.addParkSchedules(
       parkSchedule.id,
@@ -36,9 +46,11 @@ export default async (days?: number) => {
 
   // get all activities that can fetch schedules
   const entertainment = await models.activity.list({ fetchSchedule: true });
-  console.log('retrieving entertainment schedules');
-  let entertainmentSchedules: any[] = await schedule(startDate);
-  console.log('retrieved entertainment schedules');
+
+  logger.log('info', 'retrieving entertainment schedules');
+  let entertainmentSchedules: any[] = await realtimeModels.entertainment.schedule(startDate);
+  logger.log('info', 'retrieved entertainment schedules');
+
   entertainmentSchedules = entertainmentSchedules
     .reduce(
       (all, eS) => {
@@ -56,7 +68,7 @@ export default async (days?: number) => {
     );
 
   for (const entertainmentSchedule of entertainmentSchedules) {
-    console.log('Adding schedule to database');
+    logger.log('info', 'Adding schedule to database');
     await models.activity.addSchedules(
       entertainmentSchedule.id,
       entertainmentSchedule.schedule

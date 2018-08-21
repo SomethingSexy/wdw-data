@@ -11,6 +11,11 @@ export default sequelize => {
       admissionRequired: Sequelize.BOOLEAN,
       costDescription: Sequelize.TEXT,
       description: Sequelize.TEXT,
+      diningEvent: {
+        allowNull: false,
+        defaultValue: false,
+        type: Sequelize.BOOLEAN
+      },
       extId: Sequelize.STRING,
       extRefName: Sequelize.STRING,
       fetchSchedule: {
@@ -24,6 +29,16 @@ export default sequelize => {
         type: Sequelize.UUID,
       },
       name: Sequelize.STRING,
+      quickService: {
+        allowNull: false,
+        defaultValue: false,
+        type: Sequelize.BOOLEAN
+      },
+      tableService: {
+        allowNull: false,
+        defaultValue: false,
+        type: Sequelize.BOOLEAN
+      },
       type: Sequelize.STRING,
       url: Sequelize.STRING,
     },

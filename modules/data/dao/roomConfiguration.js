@@ -5,13 +5,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = __importDefault(require("sequelize"));
 exports.default = sequelize => {
-    const LocationSchedules = sequelize.define('locations_schedules', {
+    const RoomConfiguration = sequelize.define('room_configuration', {
+        count: sequelize_1.default.INTEGER,
+        description: sequelize_1.default.TEXT,
         id: {
             defaultValue: sequelize_1.default.UUIDV4,
             primaryKey: true,
             type: sequelize_1.default.UUID,
         }
     });
-    return LocationSchedules;
+    return RoomConfiguration;
 };
-//# sourceMappingURL=locationSchedule.js.map
+//# sourceMappingURL=roomConfiguration.js.map

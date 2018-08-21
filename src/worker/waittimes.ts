@@ -1,14 +1,26 @@
 import moment from 'moment';
 import 'moment-holiday';
-import data from '../data/index';
-import { waitTimes } from '../realtime/parks';
+import { createModels, realtime } from '../index';
+import logger from '../log';
 
 /**
  * Service for updating hours
  */
 export default async () => {
   // setup our database connection
-  const models = await data();
+  const models = await createModels(
+    {
+      database: 'wdw',
+      logging: true,
+      pool: {
+        max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
+      },
+      username: 'tylercvetan',
+    },
+    logger
+  );
+
+  const realtimeModels = realtime(logger);
 
   const parks = await models.location.list();
   // save the same timestamp for all
@@ -19,7 +31,7 @@ export default async () => {
       (all, park) => {
         return [
           ...all,
-          waitTimes(park)
+          realtimeModels.parks.waitTimes(park)
         ];
       },
       []

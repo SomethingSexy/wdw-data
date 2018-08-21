@@ -9,6 +9,9 @@ const debug = createDebug('dining');
 
 const VALID_ADMISSION_REQUIRED = 'Valid Park Admission Required';
 const CUISINE_LABEL = 'Cuisine';
+const QUICK_SERVICE = 'Quick Service';
+const DINING_EVENT = 'Dining Event';
+const TABLE_SERVICE = 'Table Service';
 
 const path = 'https://disneyworld.disney.go.com/dining/';
 
@@ -89,6 +92,9 @@ export const list = async (logger: ILogger, options: { max?: number} = {}) => {
     let type;
     let extId;
     let extRefName;
+    let quickService = false;
+    let tableService = false;
+    let diningEvent = false;
     const $card = cheerio(card);
     const external = $card.attr('data-entityid');
     const name = $card.find('.cardName').text();
@@ -122,12 +128,23 @@ export const list = async (logger: ILogger, options: { max?: number} = {}) => {
       area = fullLocation.area;
     }
 
+    const rawTypes = $card.find('.itemInfo').find('.metaInfo').find('.serviceType').text().trim();
+    if (rawTypes) {
+      const types = rawTypes.split(',').map(t => t.trim());
+      quickService = types.includes(QUICK_SERVICE);
+      tableService = types.includes(TABLE_SERVICE);
+      diningEvent = types.includes(DINING_EVENT);
+    }
+
     items.push({
       area,
+      diningEvent,
       extId,
       extRefName,
       location,
       name,
+      quickService,
+      tableService,
       type,
       url
     });

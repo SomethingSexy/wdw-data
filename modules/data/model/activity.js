@@ -122,7 +122,7 @@ exports.default = (sequelize, access, logger) => {
                 if (item.tags) {
                     // either sync or async with Promise.all
                     for (const tagName of item.tags) {
-                        const tagInst = await utils_1.upsert(Tag, { name: tagName }, { name: tagName }, t);
+                        const tagInst = await utils_1.upsert(Tag, { name: tagName, from: 'activity' }, { name: tagName }, t);
                         if (!await activityInst.hasActivityTags(tagInst)) {
                             await activityInst.addActivityTags(tagInst, { transaction: t });
                         }
@@ -225,6 +225,13 @@ exports.default = (sequelize, access, logger) => {
                 const raw = item.get({ plain: true });
                 return Object.assign({}, pick_1.default(raw.schedule, ['closing', 'opening', 'isSpecialHours', 'type']), pick_1.default(raw.date, ['date', 'holiday', 'isHoliday']));
             });
+        },
+        /**
+         * Returns waittimes for an activity, if they are available
+         * @param id
+         * @param dates
+         */
+        async getWaittimes(id, dates) {
         },
         /**
          * List all activities

@@ -5,34 +5,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment_1 = __importDefault(require("moment"));
 require("moment-holiday");
-const index_1 = __importDefault(require("../data/index"));
-const entertainment_1 = require("../realtime/entertainment");
-const parks_1 = require("../realtime/parks");
+const index_1 = require("../index");
+const log_1 = __importDefault(require("../log"));
 /**
  * Service for updating hours
  */
 exports.default = async (days) => {
     // setup our database connection
-    const models = await index_1.default();
+    const models = await index_1.createModels({
+        database: 'wdw',
+        logging: true,
+        pool: {
+            max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
+        },
+        username: 'tylercvetan',
+    }, log_1.default);
+    const realtimeModels = index_1.realtime(log_1.default);
     const startDate = moment_1.default().format('YYYY-MM-DD');
     const endDate = days ? moment_1.default().add(days, 'days').format('YYYY-MM-DD') : startDate;
     const parks = await models.location.list({ fetchSchedule: true });
     const responses = await Promise.all(parks.reduce((all, park) => {
         return [
             ...all,
-            parks_1.parkHours(park, startDate, endDate)
+            realtimeModels.parks.hours(park, startDate, endDate)
                 .then(p => (Object.assign({}, p, { id: park.id })))
         ];
     }, []));
-    // console.log('parks', responses);
     for (const parkSchedule of responses) {
         await models.location.addParkSchedules(parkSchedule.id, parkSchedule.schedule);
     }
     // get all activities that can fetch schedules
     const entertainment = await models.activity.list({ fetchSchedule: true });
-    console.log('retrieving entertainment schedules');
-    let entertainmentSchedules = await entertainment_1.schedule(startDate);
-    console.log('retrieved entertainment schedules');
+    log_1.default.log('info', 'retrieving entertainment schedules');
+    let entertainmentSchedules = await realtimeModels.entertainment.schedule(startDate);
+    log_1.default.log('info', 'retrieved entertainment schedules');
     entertainmentSchedules = entertainmentSchedules
         .reduce((all, eS) => {
         const found = entertainment.find(e => e.extId === eS.id);
@@ -45,7 +51,7 @@ exports.default = async (days) => {
         ];
     }, []);
     for (const entertainmentSchedule of entertainmentSchedules) {
-        console.log('Adding schedule to database');
+        log_1.default.log('info', 'Adding schedule to database');
         await models.activity.addSchedules(entertainmentSchedule.id, entertainmentSchedule.schedule);
     }
     return null;

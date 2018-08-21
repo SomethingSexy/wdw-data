@@ -13,30 +13,38 @@ const ADMISSION_REQUIRED = 'Valid Park Admission Required';
  * Retrieves detailed information about an entertainment activity, internal for processing list.
  * @param {string} url
  */
-const get = async item => {
-  const response = await screen(item.url);
+const get = async (item, logger: ILogger) => {
+  try {
+    logger('info', `Getting screen for ${item.url}.`);
+    const response = await screen(item.url);
+    logger('info', `Grabbed screen for ${item.url} with length ${response.length}.`);
+    const $ = cheerio(response);
+    const $page = $.find('#pageContent');
+    const $restrictions = $page
+      .find('.moreDetailsInfo .modalContainer .moreDetailsModal-accessibility');
+    const wheelchairTransfer = $restrictions
+      .find('.moreDetailsModalItem-wheelchair-access')
+      .text()
+      .trim() !== NO_WHEELCHAIR_TRANSFER;
+    const admissionRequired =
+      $page.find('.themeParkAdmission').text().trim() === ADMISSION_REQUIRED;
+    const description = $page.find('.finderDetailsPageSubtitle').text().trim();
+    // <li class="moreDetailsModalItem-audio-description">Audio Description</li>
+    // <li class="moreDetailsModalItem-sign-language">Sign Language</li>
+    // <li class="moreDetailsModalItem-handheld-captioning">Handheld Captioning</li>
+    // <li class="moreDetailsModalItem-assistive-listening">Assistive Listening</li>
 
-  const $ = cheerio(response);
-  const $page = $.find('#pageContent');
-  const $restrictions = $page
-    .find('.moreDetailsInfo .modalContainer .moreDetailsModal-accessibility');
-  const wheelchairTransfer = $restrictions
-    .find('.moreDetailsModalItem-wheelchair-access')
-    .text()
-    .trim() !== NO_WHEELCHAIR_TRANSFER;
-  const admissionRequired = $page.find('.themeParkAdmission').text().trim() === ADMISSION_REQUIRED;
-  const description = $page.find('.finderDetailsPageSubtitle').text().trim();
-  // <li class="moreDetailsModalItem-audio-description">Audio Description</li>
-  // <li class="moreDetailsModalItem-sign-language">Sign Language</li>
-  // <li class="moreDetailsModalItem-handheld-captioning">Handheld Captioning</li>
-  // <li class="moreDetailsModalItem-assistive-listening">Assistive Listening</li>
+    // TODO: add length if it exists
+    return {
+      admissionRequired,
+      description,
+      wheelchairTransfer
+    };
+  } catch (error) {
+    logger('error', `Failed to get screen or process screen for ${item.url} - ${error}`);
+  }
 
-  // TODO: add length if it exists
-  return {
-    admissionRequired,
-    description,
-    wheelchairTransfer
-  };
+  return null;
 };
 
 /**
@@ -130,7 +138,7 @@ export const list = async (logger: ILogger, options: { max?: number} = {}) => {
   // one at a time instead of blasting the server
   const modifiedItems: any[] = [];
   for (const item of items) {
-    const diningItem = await get(item);
+    const diningItem = await get(item, logger);
     if (typeof diningItem === 'object') {
       modifiedItems.push({
         ...item,

@@ -15,7 +15,7 @@ interface IOptions {
 export default async (options: IOptions =
     { attractions: true, dining: true, entertainment: true, hotels: true , parks: true }
 ) => {
-  // // setup our database connection
+  // setup our database connection
   const models = await createModels(
     {
       database: 'wdw',
@@ -87,11 +87,10 @@ export default async (options: IOptions =
     try {
       const dining = await realtimeModels
         .dining
-        .list({ max: 10 });
+        .list({ max: 50 });
       logger.log('info', JSON.stringify(dining, null, 4));
       await models.dining.addUpdate(dining);
     } catch (e) {
-      console.log(e);
       logger.log('error', e.toString());
     }
   }

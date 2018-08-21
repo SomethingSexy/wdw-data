@@ -6,12 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = __importDefault(require("sequelize"));
 const index_1 = __importDefault(require("./dao/index"));
 const activity_1 = __importDefault(require("./model/activity"));
+const dining_1 = __importDefault(require("./model/dining"));
 const location_1 = __importDefault(require("./model/location"));
-const createLogger = (logger) => (type, message) => {
-    if (logger) {
-        logger.log(type, message);
-    }
-};
 /**
  * Setups database connection, creates data access layer, and setups models for
  * working with the data.
@@ -27,17 +23,18 @@ exports.default = async (connection, logger) => {
             },
             username: 'tylercvetan',
         });
-    const internalLogger = createLogger(logger);
     // get our data access objects
     const accessObjects = index_1.default(sequelize);
     // Sync with the database
     await sequelize.sync();
     // setup models, these will be higher level objects that will handle the business logic
     // around the data access objects
-    const activity = activity_1.default(sequelize, accessObjects, internalLogger);
-    const location = location_1.default(sequelize, accessObjects, internalLogger);
+    const activity = activity_1.default(sequelize, accessObjects, logger);
+    const dining = dining_1.default(sequelize, accessObjects, logger);
+    const location = location_1.default(sequelize, accessObjects, logger);
     return {
         activity,
+        dining,
         location
     };
 };

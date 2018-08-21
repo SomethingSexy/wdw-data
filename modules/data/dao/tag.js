@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = __importDefault(require("sequelize"));
 exports.default = sequelize => {
     const Tag = sequelize.define('tag', {
+        from: sequelize_1.default.STRING,
         id: {
             defaultValue: sequelize_1.default.UUIDV4,
             primaryKey: true,

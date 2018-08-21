@@ -37,7 +37,7 @@ export const types = {
 export default (sequelize, access, logger) => {
   const api = {
     async addUpdate(items: IAttraction[] = []) {
-      const { Dining, Tag } = access;
+      const { Cuisine, Dining, Tag } = access;
       const Location = location(sequelize, access, logger);
 
       return syncTransaction(sequelize, items, async (item, t) => {
@@ -45,11 +45,14 @@ export default (sequelize, access, logger) => {
           admissionRequired: item.admissionRequired,
           costDescription: item.costDescription,
           description: item.description,
+          diningEvent: item.diningEvent,
           extId: item.extId,
           extRefName: item.extRefName,
           // only rule so far
           fetchSchedule: item.type === types.ENTERTAINMENT,
           name: item.name,
+          quickService: item.quickService,
+          tableService: item.tableService,
           type: item.type,
           url: item.url
         };
@@ -93,6 +96,14 @@ export default (sequelize, access, logger) => {
             if (!await diningInst.hasDiningTags(tagInst)) {
               await diningInst.addDiningTags(tagInst, { transaction: t });
             }
+          }
+        }
+
+        if (item.cuisine) {
+          for (const cuisine of item.cuisine) {
+            await upsert(
+              Cuisine, { name: cuisine, diningId: diningInst.get('id') }, { name: cuisine }, t
+            );
           }
         }
 

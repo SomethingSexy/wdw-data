@@ -8,10 +8,14 @@ const activitySchedule_1 = __importDefault(require("./activitySchedule"));
 const address_1 = __importDefault(require("./address"));
 const age_1 = __importDefault(require("./age"));
 const area_1 = __importDefault(require("./area"));
+const cuisine_1 = __importDefault(require("./cuisine"));
 const date_1 = __importDefault(require("./date"));
+const dining_1 = __importDefault(require("./dining"));
 const hotel_1 = __importDefault(require("./hotel"));
 const location_1 = __importDefault(require("./location"));
 const locationSchedule_1 = __importDefault(require("./locationSchedule"));
+const room_1 = __importDefault(require("./room"));
+const roomConfiguration_1 = __importDefault(require("./roomConfiguration"));
 const schedule_1 = __importDefault(require("./schedule"));
 const tag_1 = __importDefault(require("./tag"));
 const thrillFactor_1 = __importDefault(require("./thrillFactor"));
@@ -27,10 +31,14 @@ exports.default = sequelize => {
     const LocationSchedule = locationSchedule_1.default(sequelize);
     const Schedule = schedule_1.default(sequelize);
     const Date = date_1.default(sequelize);
+    const Dining = dining_1.default(sequelize);
+    const Cuisine = cuisine_1.default(sequelize);
     const Hotel = hotel_1.default(sequelize);
     const Tag = tag_1.default(sequelize);
     const ThrillFactor = thrillFactor_1.default(sequelize);
     const WaitTime = waitTime_1.default(sequelize);
+    const Room = room_1.default(sequelize);
+    const RoomConfiguration = roomConfiguration_1.default(sequelize);
     // setup assocations
     Date.belongsToMany(Schedule, { through: LocationSchedule });
     Schedule.belongsToMany(Date, { through: LocationSchedule });
@@ -39,8 +47,16 @@ exports.default = sequelize => {
     LocationSchedule.belongsTo(Schedule);
     LocationSchedule.belongsTo(Date);
     Hotel.belongsTo(Location);
+    Room.hasMany(RoomConfiguration);
+    Hotel.hasMany(Room);
     Location.belongsTo(Address);
     Location.hasMany(Area);
+    Dining.belongsTo(Location);
+    Dining.belongsTo(Area);
+    Location.hasMany(Dining);
+    Tag.belongsToMany(Dining, { as: 'DiningTags', through: 'dinings_tags' });
+    Dining.belongsToMany(Tag, { as: 'DiningTags', through: 'dinings_tags' });
+    Dining.hasMany(Cuisine);
     // Splitting Area and Location but since they might not
     // always have an Area, instead of doing a join of the ids
     Activity.belongsTo(Location);
@@ -59,6 +75,8 @@ exports.default = sequelize => {
     ActivitySchedule.belongsTo(Activity);
     ActivitySchedule.belongsTo(Schedule);
     ActivitySchedule.belongsTo(Date);
+    // TODO:
+    // Setup RoomRates, Bus Wait Times, Dining, ADRs
     // return all of our daos, no need to worry about any individual exports here
     // we are always going to use them
     return {
@@ -67,10 +85,14 @@ exports.default = sequelize => {
         Address,
         Age,
         Area,
+        Cuisine,
         Date,
+        Dining,
         Hotel,
         Location,
         LocationSchedule,
+        Room,
+        RoomConfiguration,
         Schedule,
         Tag,
         ThrillFactor,
