@@ -21,15 +21,16 @@ const VIEWS = [
     { values: WATER, id: 'water' },
     { values: THEME_PARK, id: 'themePark' }
 ];
+// TODO: Need to finish this
 // CLub access or club level
-const CLUB = ['Club Level Access', 'Club Level', 'Atrium Club Level'];
+// const CLUB = ['Club Level Access', 'Club Level', 'Atrium Club Level'];
 // Additional tags
-const PREFERRED = ['Preferred'];
-const VALUE = ['Value'];
-const CAMPSITE = ['Campsite'];
-const DELUXE = ['Deluxe'];
-const STUDIO = ['Studio'];
-const VILLIA = ['Villa'];
+// const PREFERRED = ['Preferred'];
+// const VALUE = ['Value'];
+// const CAMPSITE = ['Campsite'];
+// const DELUXE = ['Deluxe'];
+// const STUDIO = ['Studio'];
+// const VILLIA = ['Villa'];
 const viewType = (name, config) => {
     const found = config.find(viewConfig => {
         return !!viewConfig.values.find(view => {

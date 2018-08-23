@@ -291,7 +291,47 @@ export default (sequelize, access, logger) => {
      * @param dates
      */
     async getWaittimes (id: string, dates: string[]) {
+      invariant(id, 'Activity id is required to get wait times.');
+      invariant(dates.length, 'Dates are required to get wait times.');
+      const { Date, WaitTime } = access;
+      const waitTimes = await Promise.all(
+        dates.map(async byDate => {
+          logger('debug', `Fetching wait times for ${id} ${byDate}.`);
+          const dateInst = await Date.findOne({ where: { date: byDate } });
+          if (!dateInst) {
+            logger(
+              'debug',
+              `No date for ${byDate} when searching for schedules for activity ${id}`
+            );
+            return null;
+          }
 
+          const times = await WaitTime.findAll(
+            { where: { dateId: dateInst.get('id'), activityId: id } }
+          );
+          logger('debug', `Found ${times.length} wait times for ${id} ${byDate}.`);
+
+          // need to make sure we convert over to the plain objects
+          return {
+            date: byDate,
+            waitTimes: times.map(item => item.get({ plain: true }))
+          };
+        })
+      );
+
+      return waitTimes
+        .reduce(
+          (all, d) => {
+            if (!d) {
+              return all;
+            }
+            return {
+              ...all,
+              [d.date]: d.waitTimes
+            };
+          },
+          {}
+        );
     },
     /**
      * List all activities
