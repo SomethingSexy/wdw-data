@@ -102,8 +102,9 @@ export const validateLocations = (items: ILocation[]) => {
   if (!items || !items.length) {
     return 'Locations are required to add or update.';
   }
-  const errors = items.map(validateLocation);
-  errors.filter(error => typeof error === 'string');
+  const errors = items
+    .map(validateLocation)
+    .filter(error => typeof error === 'string');
 
   return errors.length ? errors : true;
 };
