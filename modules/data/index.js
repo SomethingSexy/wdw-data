@@ -8,6 +8,8 @@ const index_1 = __importDefault(require("./dao/index"));
 const activity_1 = __importDefault(require("./model/activity"));
 const dining_1 = __importDefault(require("./model/dining"));
 const location_1 = __importDefault(require("./model/location"));
+const utils_1 = require("./utils");
+exports.responseHandlers = { Error: utils_1.Error, Success: utils_1.Success };
 /**
  * Setups database connection, creates data access layer, and setups models for
  * working with the data.

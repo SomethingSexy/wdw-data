@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import pick from 'lodash/pick'; // tslint:disable-line
-import { IHotel, IPark, ISchedule } from '../../types';
-import { asyncTransaction, upsert } from '../utils';
+import { ILocation, ISchedule } from '../../types';
+import { asyncTransaction, Error, Success, upsert } from '../utils';
 import date from './date';
 
 // Note: extId is on here right now for the jobs
@@ -16,10 +16,97 @@ const RAW_ROOM_ATTRIBUTES = [
   'name',
   'pricingUrl'
 ];
+const HOTEL_TYPE = 'resort';
 
 enum GetTypes {
   Activities = 'activities'
 }
+
+const addUpdateHotel = async (item: ILocation, access, transaction, logger) => {
+  const { Address, Hotel, Location, Room, RoomConfiguration } = access;
+  logger('debug', `Adding/updating hotel ${item.extId}.`);
+
+  const locationInstance = await upsert(
+    Location, item, { extId: item.extId }, transaction, [Address]
+  );
+  const hotelInstance = await upsert(
+    Hotel,
+    { tier: item.tier, locationId: locationInstance.get('id') },
+    { locationId: locationInstance.get('id') },
+    transaction,
+  );
+  // need to handle adding rooms separately because we want to update
+  // if we have them already based on the extId
+  if (item.rooms) {
+    for (const room of item.rooms) {
+      const roomInstance = await upsert(
+        Room,
+        { ...pick(room, RAW_ROOM_ATTRIBUTES), hotelId: hotelInstance.get('id') },
+        { extId: room.extId },
+        transaction
+      );
+
+      if (room.configurations) {
+        for (const configuration of room.configurations) {
+          await upsert(
+            RoomConfiguration,
+            { ...configuration, roomId: roomInstance.get('id') },
+            { description: configuration.description, roomId: roomInstance.get('id') },
+            transaction
+          );
+        }
+      }
+    }
+  }
+
+  logger('debug', `Finished adding/updating hotel ${item.extId}.`);
+  return Promise.resolve(locationInstance.get('id'));
+};
+
+const addUpdateLocation = async (item: ILocation, access, transaction, logger) => {
+  const { Location } = access;
+  logger('debug', `Adding/updating location ${item.extId}.`);
+
+  const data = {
+    ...item,
+    fetchSchedule: item.type !== 'entertainment-venue'
+  };
+  const locationInstance = await upsert(Location, data, { extId: item.extId }, transaction);
+
+  logger('debug', `Finished adding/updating location ${item.extId}.`);
+  return Promise.resolve(locationInstance.get('id'));
+};
+
+/**
+ * Validates a single location.  The following fields are considered
+ * required: type and extId.
+ * @param item
+ */
+const validateLocation = (item: ILocation) => {
+  if (!item.type) {
+    return 'Type is required for location';
+  }
+
+  if (!item.extId) {
+    return 'ExtId is required for location.';
+  }
+
+  return true;
+};
+
+/**
+ * Validates all locations.
+ * @param items
+ */
+export const validateLocations = (items: ILocation[]) => {
+  if (!items || !items.length) {
+    return 'Locations are required to add or update.';
+  }
+  const errors = items.map(validateLocation);
+  errors.filter(error => typeof error === 'string');
+
+  return errors.length ? errors : true;
+};
 
 export default (sequelize, access, logger) => {
   const api = {
@@ -33,61 +120,29 @@ export default (sequelize, access, logger) => {
 
       return Area.create({ locationId, name }, { transaction });
     },
-    async addUpdateHotels(items: IHotel[] = []) {
-      const { Address, Hotel, Location, Room, RoomConfiguration } = access;
+    /**
+     * Upserts locations.  Returns an errors object if known errors are found,
+     * otherwise will throw an exception for everything else.
+     * @param items
+     */
+    async addUpdateLocations(items: ILocation[] = []): Promise<{[Error]?: any; [Success]?: any; }> {
+      // if there are no items, just return an empty array
+      const valid = validateLocations(items);
+      if (valid !== true) {
+        // if it not valid, return the known errors
+        return { [Error]: valid };
+      }
+      logger('debug', `Adding and updating ${items.length} locations.`);
+      const locations = await asyncTransaction(sequelize, items, async (item, transaction) => {
+        const id = item.type === HOTEL_TYPE
+          ? await addUpdateHotel(item, access, transaction, logger)
+          : await addUpdateLocation(item, access, transaction, logger);
 
-      return asyncTransaction(sequelize, items, async (item, t) => {
-        const locationInstance = await upsert(
-          Location, item, { extId: item.extId }, t, [Address]
-        );
-        const hotelInstance = await upsert(
-          Hotel,
-          { tier: item.tier, locationId: locationInstance.get('id') },
-          { locationId: locationInstance.get('id') },
-          t,
-        );
-        // need to handle adding rooms separately because we want to update
-        // if we have them already based on the extId
-        if (item.rooms) {
-          for (const room of item.rooms) {
-            const roomInstance = await upsert(
-              Room,
-              { ...pick(room, RAW_ROOM_ATTRIBUTES), hotelId: hotelInstance.get('id') },
-              { extId: room.extId },
-              t
-            );
-
-            if (room.configurations) {
-              for (const configuration of room.configurations) {
-                await upsert(
-                  RoomConfiguration,
-                  { ...configuration, roomId: roomInstance.get('id') },
-                  { description: configuration.description, roomId: roomInstance.get('id') },
-                  t
-                );
-              }
-            }
-          }
-        }
-
-        // TODO: Figure out what to return here
-        return Promise.resolve();
+        return api.get(id);
       });
-    },
-    async addUpdateParks(items: IPark[] = []) {
-      const { Location } = access;
-      return Promise.all(
-        items
-          .map(item => {
-            const data = {
-              ...item,
-              fetchSchedule: item.type !== 'entertainment-venue'
-            };
-            return sequelize.transaction(t => {
-              return upsert(Location, data, { extId: item.extId }, t);
-            });
-          })
-        );
+
+      logger('debug', `Finished adding and updating ${locations.length} of ${items.length}.`);
+      return { [Success]: locations };
     },
     async addParkSchedule(
       locationId: string, scheduleDate: string, parkSchedules, transaction

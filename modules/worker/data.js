@@ -26,7 +26,7 @@ exports.default = async (options = { attractions: true, dining: true, entertainm
                 .parks
                 .list();
             log_1.default.log('info', JSON.stringify(parks, null, 4));
-            await models.location.addUpdateParks(parks);
+            await models.location.addUpdateLocations(parks);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
@@ -38,7 +38,7 @@ exports.default = async (options = { attractions: true, dining: true, entertainm
                 .hotels
                 .list();
             log_1.default.log('info', JSON.stringify(hotels, null, 4));
-            await models.location.addUpdateHotels(hotels);
+            await models.location.addUpdateLocations(hotels);
         }
         catch (e) {
             log_1.default.log('error', e.toString());

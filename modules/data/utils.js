@@ -1,5 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Error = Symbol('data:error');
+exports.Success = Symbol('data:success');
 exports.upsert = async (Model, values, condition, transaction, include) => {
     let options = { transaction };
     if (include) {

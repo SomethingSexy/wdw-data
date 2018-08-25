@@ -13,40 +13,21 @@ export interface IAttraction {
   type: string;
 }
 
-export interface IHotel {
-  // internal id
-  address: any;
-  id?: string;
-  extId: string;
-  extRefName: string;
-  location: string;
-  name: string;
-  tier: string;
-  type: string;
-  url: string;
-}
-
-export interface IPlace {
-  areas?: string[];
-  extId: string;
-  id: string;
-  location: string;
-  name: string;
-  type: string;
-}
-
 export interface IDate {
   date: string;
   isHoliday: boolean | string;
   holiday?: string;
 }
 
-export interface IPark {
+export interface ILocation {
+  address?: any;
   // internal id
   id?: string;
   extId: string;
   extRefName: string;
   name: string;
+  rooms?: any[];
+  tier?: string;
   type: string;
   url: string;
 }

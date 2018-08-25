@@ -38,7 +38,7 @@ export default async (options: IOptions =
         .list();
 
       logger.log('info', JSON.stringify(parks, null, 4));
-      await models.location.addUpdateParks(parks);
+      await models.location.addUpdateLocations(parks);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -51,7 +51,7 @@ export default async (options: IOptions =
         .list();
 
       logger.log('info', JSON.stringify(hotels, null, 4));
-      await models.location.addUpdateHotels(hotels);
+      await models.location.addUpdateLocations(hotels);
     } catch (e) {
       logger.log('error', e.toString());
     }

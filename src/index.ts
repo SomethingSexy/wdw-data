@@ -1,5 +1,5 @@
 import Sequelize from 'sequelize';
-import models from './data/index';
+import models, { responseHandlers } from './data/index';
 import { attractions, dining, entertainment, hotels, parks } from './realtime/index';
 import { IConnection, ILogger, ILogType } from './types';
 
@@ -9,6 +9,8 @@ const createLogger = (logger?: ILogType): ILogger =>
       logger.log(type, message);
     }
   };
+
+export const response = responseHandlers;
 
 /**
  * Creates a database connection and returns models for accessing data.

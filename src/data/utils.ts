@@ -1,3 +1,6 @@
+export const Error = Symbol('data:error');
+export const Success = Symbol('data:success');
+
 export const upsert = async (Model, values, condition, transaction, include?) => {
   let options: any = { transaction };
   if (include) {

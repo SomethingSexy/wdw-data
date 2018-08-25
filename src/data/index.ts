@@ -4,7 +4,9 @@ import createAccessObjects from './dao/index';
 import createActivity from './model/activity';
 import createDining from './model/dining';
 import createLocation from './model/location';
+import { Error, Success } from './utils';
 
+export const responseHandlers = { Error, Success };
 /**
  * Setups database connection, creates data access layer, and setups models for
  * working with the data.
