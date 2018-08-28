@@ -60,7 +60,7 @@ const addUpdateHotel = async (item: ILocation, access, transaction, logger) => {
   }
 
   logger('debug', `Finished adding/updating hotel ${item.extId}.`);
-  return Promise.resolve(locationInstance.get('id'));
+  return locationInstance.get('id');
 };
 
 const addUpdateLocation = async (item: ILocation, access, transaction, logger) => {
@@ -74,7 +74,7 @@ const addUpdateLocation = async (item: ILocation, access, transaction, logger) =
   const locationInstance = await upsert(Location, data, { extId: item.extId }, transaction);
 
   logger('debug', `Finished adding/updating location ${item.extId}.`);
-  return Promise.resolve(locationInstance.get('id'));
+  return locationInstance.get('id');
 };
 
 /**
@@ -126,7 +126,7 @@ export default (sequelize, access, logger) => {
      * otherwise will throw an exception for everything else.
      * @param items
      */
-    async addUpdateLocations(items: ILocation[] = []): Promise<{[Error]?: any; [Success]?: any; }> {
+    async addUpdate(items: ILocation[] = []): Promise<{[Error]?: any; [Success]?: any; }> {
       // if there are no items, just return an empty array
       const valid = validateLocations(items);
       if (valid !== true) {
@@ -145,15 +145,25 @@ export default (sequelize, access, logger) => {
       logger('debug', `Finished adding and updating ${locations.length} of ${items.length}.`);
       return { [Success]: locations };
     },
-    async addParkSchedule(
+    async addSchedule(
       locationId: string, scheduleDate: string, parkSchedules, transaction
     ) {
-      const { Schedule } = access;
+      const { LocationSchedule, Schedule } = access;
 
       const DateModel = date(sequelize, access);
       const dateInstance = await DateModel.get(scheduleDate, transaction);
+      const dateId = dateInstance.get('id');
 
-      // TODO: Check to see if we already have a schedule for that day
+      // Check to see if we have any schedules for this location and date already
+      // this might cause issues in the future if we did not update everything,
+      // worry about that if it comes up
+      const alreadyAdded = await LocationSchedule
+        .findOne({ where: { locationId, dateId } });
+
+      if (alreadyAdded) {
+        return null;
+      }
+
       return Promise.all(
         parkSchedules.map(data => Schedule.create(data, { transaction }))
       )
@@ -171,16 +181,17 @@ export default (sequelize, access, logger) => {
         );
       });
     },
-    async addParkSchedules(parkId: string, parkSchedules: {[date: string]: ISchedule[]}) {
-      // check if date exists already.
+    async addSchedules(parkId: string, parkSchedules: {[date: string]: ISchedule[]}) {
+      // TODO: Figure out what to return from here, probably call get location schedule
       return Promise.all(
         Object
           .entries(parkSchedules)
           .map(([key, value]) => {
             return sequelize.transaction(t => {
-              return api.addParkSchedule(parkId, key, value, t);
+              return api.addSchedule(parkId, key, value, t);
             });
           })
+          .filter(schedule => schedule !== null)
         );
     },
     /**

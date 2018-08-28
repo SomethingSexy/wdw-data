@@ -1,16 +1,48 @@
 export interface IDining {
+  admissionRequired: boolean;
+  area: string;
+  costDescription: string;
+  cuisine: string[];
+  description: string;
+  diningEvent: boolean;
+  extId: string;
+  extRefName: string;
   id: string;
   location: string;
   name: string;
+  quickService: boolean;
+  tableService: boolean;
+  tags: string[];
   type: string;
+  url: string;
 }
 
-export interface IAttraction {
+export interface IActivity {
+  admissionRequired: boolean;
+  ages?: string[];
+  allowServiceAnimals: boolean;
+  area?: string;
+  coordinates?: {
+    gps: {
+      latitude: number;
+      longitude: number;
+    }
+  };
+  description: string;
   id: string;
   extId: string;
+  extRefName: string;
+  fastPass: boolean;
+  fastPassPlus: boolean;
+  height: string;
   location: string;
   name: string;
+  riderSwapAvailable: boolean;
+  tags?: string[];
+  thrillFactor?: string[];
   type: string;
+  url: string;
+  wheelchairTransfer: boolean;
 }
 
 export interface IDate {

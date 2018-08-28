@@ -38,7 +38,7 @@ export default async (days?: number) => {
   );
 
   for (const parkSchedule of responses) {
-    await models.location.addParkSchedules(
+    await models.location.addSchedules(
       parkSchedule.id,
       parkSchedule.schedule
     );

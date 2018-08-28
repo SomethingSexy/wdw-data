@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import pick from 'lodash/pick'; // tslint:disable-line
-import { IAttraction, ISchedule } from '../../types';
-import { syncTransaction, upsert } from '../utils';
+import { IActivity, ISchedule } from '../../types';
+import { Error, Success, syncTransaction, upsert } from '../utils';
 import date from './date';
 import location from './location';
 
@@ -35,17 +35,152 @@ export const types = {
   ENTERTAINMENT: 'entertainment'
 };
 
+const addUpdateActivity = async (item: IActivity, Location, access, transaction, logger) => {
+  logger('debug', `Adding/updating activity ${item.extId}.`);
+  const { Activity, Age, Tag, ThrillFactor } = access;
+  const activityItem: any = {
+    admissionRequired: item.admissionRequired,
+    allowServiceAnimals: item.allowServiceAnimals,
+    description: item.description,
+    extId: item.extId,
+    extRefName: item.extRefName,
+    fastPass: item.fastPass,
+    fastPassPlus: item.fastPassPlus,
+    // only rule so far
+    fetchSchedule: item.type === types.ENTERTAINMENT,
+    height: item.height,
+    latitude: item.coordinates ? item.coordinates.gps.latitude : null,
+    longitude: item.coordinates ? item.coordinates.gps.longitude : null,
+    name: item.name,
+    riderSwapAvailable: item.riderSwapAvailable,
+    type: item.type,
+    url: item.url,
+    wheelchairTransfer: item.wheelchairTransfer
+  };
+
+  if (item.id) {
+    activityItem.id = item.id;
+  }
+
+  const activityInst = await upsert(
+    Activity, activityItem, { extId: item.extId }, transaction
+  );
+
+  if (item.location) {
+    const locationInstance = await Location.findByName(item.location, transaction);
+    if (locationInstance) {
+      await activityInst.setLocation(locationInstance, { transaction });
+    }
+    // TODO: else log an issue if we cannot find a location
+    // if there is a location, we might also have an area, however
+    // we have to add the area here because there is no other way
+    // to easily generate them
+    if (item.area) {
+      const locationId = locationInstance.get('id');
+      let areaInst =
+        await Location.findAreaByName(locationId, item.area, transaction);
+
+      if (!areaInst) {
+        areaInst = await Location.addArea(locationId, item.area, transaction);
+      }
+
+      await activityInst.setArea(areaInst, { transaction });
+    }
+  }
+
+  // check thrill factors
+  if (item.thrillFactor) {
+    // either sync or async with Promise.all
+    for (const factor of item.thrillFactor) {
+      const thrillInst = await upsert(
+        ThrillFactor, { name: factor }, { name: factor }, transaction
+      );
+      if (!await activityInst.hasThrillFactors(thrillInst)) {
+        await activityInst.addThrillFactors(thrillInst, { transaction });
+      }
+    }
+  }
+
+  if (item.ages) {
+    // either sync or async with Promise.all
+    for (const ageName of item.ages) {
+      const ageInst = await upsert(
+        Age, { name: ageName }, { name: ageName }, transaction
+      );
+      if (!await activityInst.hasActivityAges(ageInst)) {
+        await activityInst.addActivityAges(ageInst, { transaction });
+      }
+    }
+  }
+
+  if (item.tags) {
+    // either sync or async with Promise.all
+    for (const tagName of item.tags) {
+      const tagInst = await upsert(
+        Tag, { name: tagName, from: 'activity' }, { name: tagName }, transaction
+      );
+      if (!await activityInst.hasActivityTags(tagInst)) {
+        await activityInst.addActivityTags(tagInst, { transaction });
+      }
+    }
+  }
+  logger('debug', `Finished adding/updating activity ${item.extId}.`);
+  return activityInst.get('id');
+};
+
+/**
+ * Validates a single location.  The following fields are considered
+ * required: type and extId.
+ * @param item
+ */
+const validateActivity = (item: IActivity) => {
+  if (!item.type) {
+    return 'Type is required for an activity.';
+  }
+
+  if (!item.extId) {
+    return 'ExtId is required for activity.';
+  }
+
+  return true;
+};
+
+/**
+ * Validates all activities.
+ * @param items
+ */
+export const validateActivities = (items: IActivity[]) => {
+  if (!items || !items.length) {
+    return 'Activities are required to add or update.';
+  }
+  const errors = items
+    .map(validateActivity)
+    .filter(error => typeof error === 'string');
+
+  return errors.length ? errors : true;
+};
+
 export default (sequelize, access, logger) => {
   const api = {
     async addSchedule(
       activityId: string, scheduleDate: string, parkSchedules, transaction
     ) {
-      const { Schedule } = access;
+      const { ActivitySchedule, Schedule } = access;
 
       const DateModel = date(sequelize, access);
       const dateInstance = await DateModel.get(scheduleDate, transaction);
+      const dateId = dateInstance.get('id');
 
-      // TODO: Check to see if we already have a schedule for that day
+      // Check to see if we have any schedules for this location and date already
+      // this might cause issues in the future if we did not update everything,
+      // worry about that if it comes up
+      const alreadyAdded = await ActivitySchedule
+        .findOne({ where: { activityId, dateId } });
+
+      if (alreadyAdded) {
+        return null;
+      }
+
       return Promise.all(
         parkSchedules.map(data => Schedule.create(data, { transaction }))
       )
@@ -75,100 +210,24 @@ export default (sequelize, access, logger) => {
           })
         );
     },
-    async addUpdateActivities(items: IAttraction[] = []) {
-      const { Activity, Age, Tag, ThrillFactor } = access;
+    async addUpdate(items: IActivity[] = []) {
+      // if there are no items, just return an empty array
+      const valid = validateActivities(items);
+      if (valid !== true) {
+        // if it not valid, return the known errors
+        return { [Error]: valid };
+      }
+      logger('debug', `Adding and updating ${items.length} activities.`);
+
       const Location = location(sequelize, access, logger);
 
-      return syncTransaction(sequelize, items, async (item, t) => {
-        const activityItem: any = {
-          admissionRequired: item.admissionRequired,
-          allowServiceAnimals: item.allowServiceAnimals,
-          description: item.description,
-          extId: item.extId,
-          extRefName: item.extRefName,
-          fastPass: item.fastPass,
-          fastPassPlus: item.fastPassPlus,
-          // only rule so far
-          fetchSchedule: item.type === types.ENTERTAINMENT,
-          height: item.height,
-          latitude: item.coordinates ? item.coordinates.gps.latitude : null,
-          longitude: item.coordinates ? item.coordinates.gps.longitude : null,
-          name: item.name,
-          riderSwapAvailable: item.riderSwapAvailable,
-          type: item.type,
-          url: item.url,
-          wheelchairTransfer: item.wheelchairTransfer
-        };
-
-        if (item.id) {
-          activityItem.id = item.id;
-        }
-
-        const activityInst = await upsert(
-          Activity, activityItem, { extId: item.extId }, t
-        );
-
-        if (item.location) {
-          const locationInstance = await Location.findByName(item.location, t);
-          if (locationInstance) {
-            await activityInst.setLocation(locationInstance, { transaction: t });
-          }
-          // TODO: else log an issue if we cannot find a location
-          // if there is a location, we might also have an area, however
-          // we have to add the area here because there is no other way
-          // to easily generate them
-          if (item.area) {
-            const locationId = locationInstance.get('id');
-            let areaInst =
-              await Location.findAreaByName(locationId, item.area, t);
-
-            if (!areaInst) {
-              areaInst = await Location.addArea(locationId, item.area, t);
-            }
-
-            await activityInst.setArea(areaInst, { transaction: t });
-          }
-        }
-
-        // check thrill factors
-        if (item.thrillFactor) {
-          // either sync or async with Promise.all
-          for (const factor of item.thrillFactor) {
-            const thrillInst = await upsert(
-              ThrillFactor, { name: factor }, { name: factor }, t
-            );
-            if (!await activityInst.hasThrillFactors(thrillInst)) {
-              await activityInst.addThrillFactors(thrillInst, { transaction: t });
-            }
-          }
-        }
-
-        if (item.ages) {
-          // either sync or async with Promise.all
-          for (const ageName of item.ages) {
-            const ageInst = await upsert(
-              Age, { name: ageName }, { name: ageName }, t
-            );
-            if (!await activityInst.hasActivityAges(ageInst)) {
-              await activityInst.addActivityAges(ageInst, { transaction: t });
-            }
-          }
-        }
-
-        if (item.tags) {
-          // either sync or async with Promise.all
-          for (const tagName of item.tags) {
-            const tagInst = await upsert(
-              Tag, { name: tagName, from: 'activity' }, { name: tagName }, t
-            );
-            if (!await activityInst.hasActivityTags(tagInst)) {
-              await activityInst.addActivityTags(tagInst, { transaction: t });
-            }
-          }
-        }
-
-        return activityInst;
+      const activities = await syncTransaction(sequelize, items, async (item, transction) => {
+        const id = await addUpdateActivity(item, Location, access, transction, logger);
+        return api.get(id);
       });
+
+      logger('debug', `Finished adding and updating ${activities.length} of ${items.length}.`);
+      return { [Success]: activities };
     },
     async addWaitTimes(timestamp: string, items = []) {
       const { Activity, WaitTime } = access;

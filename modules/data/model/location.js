@@ -42,7 +42,7 @@ const addUpdateHotel = async (item, access, transaction, logger) => {
         }
     }
     logger('debug', `Finished adding/updating hotel ${item.extId}.`);
-    return Promise.resolve(locationInstance.get('id'));
+    return locationInstance.get('id');
 };
 const addUpdateLocation = async (item, access, transaction, logger) => {
     const { Location } = access;
@@ -50,7 +50,7 @@ const addUpdateLocation = async (item, access, transaction, logger) => {
     const data = Object.assign({}, item, { fetchSchedule: item.type !== 'entertainment-venue' });
     const locationInstance = await utils_1.upsert(Location, data, { extId: item.extId }, transaction);
     logger('debug', `Finished adding/updating location ${item.extId}.`);
-    return Promise.resolve(locationInstance.get('id'));
+    return locationInstance.get('id');
 };
 /**
  * Validates a single location.  The following fields are considered
@@ -95,7 +95,7 @@ exports.default = (sequelize, access, logger) => {
          * otherwise will throw an exception for everything else.
          * @param items
          */
-        async addUpdateLocations(items = []) {
+        async addUpdate(items = []) {
             // if there are no items, just return an empty array
             const valid = exports.validateLocations(items);
             if (valid !== true) {

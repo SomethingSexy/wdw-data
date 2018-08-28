@@ -58,6 +58,7 @@ export const get = async (extId: string, url: string, logger: ILogger): Promise<
     const description = rawDescription || null;
 
     // TODO: Hours (only if not in park?), menu, handle things like seminars
+    logger('info', `Finished processing data for ${url}.`);
     return {
       admissionRequired,
       costDescription,

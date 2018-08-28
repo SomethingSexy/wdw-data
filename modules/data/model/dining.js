@@ -29,64 +29,97 @@ const normalizeActivity = activity => (Object.assign({}, pick_1.default(activity
 exports.types = {
     ENTERTAINMENT: 'entertainment'
 };
+const addUpdateDining = async (item, Location, access, transaction, logger) => {
+    logger('debug', `Adding/updating dining ${item.extId}.`);
+    const { Cuisine, Dining, Tag } = access;
+    const activityItem = {
+        admissionRequired: item.admissionRequired,
+        costDescription: item.costDescription,
+        description: item.description,
+        diningEvent: item.diningEvent,
+        extId: item.extId,
+        extRefName: item.extRefName,
+        // only rule so far
+        fetchSchedule: item.type === exports.types.ENTERTAINMENT,
+        name: item.name,
+        quickService: item.quickService,
+        tableService: item.tableService,
+        type: item.type,
+        url: item.url
+    };
+    if (item.id) {
+        activityItem.id = item.id;
+    }
+    const diningInst = await utils_1.upsert(Dining, activityItem, { extId: item.extId }, transaction);
+    if (item.location) {
+        const locationInstance = await Location.findByName(item.location, transaction);
+        if (locationInstance) {
+            await diningInst.setLocation(locationInstance, { transaction });
+        }
+        // TODO: else log an issue if we cannot find a location
+        // if there is a location, we might also have an area, however
+        // we have to add the area here because there is no other way
+        // to easily generate them
+        if (item.area) {
+            const locationId = locationInstance.get('id');
+            let areaInst = await Location.findAreaByName(locationId, item.area, transaction);
+            if (!areaInst) {
+                areaInst = await Location.addArea(locationId, item.area, transaction);
+            }
+            await diningInst.setArea(areaInst, { transaction });
+        }
+    }
+    if (item.tags) {
+        // either sync or async with Promise.all
+        for (const tagName of item.tags) {
+            const tagInst = await utils_1.upsert(Tag, { name: tagName, from: 'dining' }, { name: tagName }, transaction);
+            if (!await diningInst.hasDiningTags(tagInst)) {
+                await diningInst.addDiningTags(tagInst, { transaction });
+            }
+        }
+    }
+    if (item.cuisine) {
+        for (const cuisine of item.cuisine) {
+            await utils_1.upsert(Cuisine, { name: cuisine, diningId: diningInst.get('id') }, { name: cuisine }, transaction);
+        }
+    }
+    logger('debug', `Finished adding/updating dining ${item.extId}.`);
+    return diningInst.get('id');
+};
+/**
+ * Validates a single dining.  The following fields are considered
+ * required: type and extId.
+ * @param item
+ */
+const validateDining = (item) => {
+    if (!item.type) {
+        return 'Type is required for an activity.';
+    }
+    if (!item.extId) {
+        return 'ExtId is required for activity.';
+    }
+    return true;
+};
+/**
+ * Validates all activities.
+ * @param items
+ */
+exports.validateAllDining = (items) => {
+    if (!items || !items.length) {
+        return 'Activities are required to add or update.';
+    }
+    const errors = items
+        .map(validateDining)
+        .filter(error => typeof error === 'string');
+    return errors.length ? errors : true;
+};
 exports.default = (sequelize, access, logger) => {
     const api = {
         async addUpdate(items = []) {
-            const { Cuisine, Dining, Tag } = access;
             const Location = location_1.default(sequelize, access, logger);
-            return utils_1.syncTransaction(sequelize, items, async (item, t) => {
-                const activityItem = {
-                    admissionRequired: item.admissionRequired,
-                    costDescription: item.costDescription,
-                    description: item.description,
-                    diningEvent: item.diningEvent,
-                    extId: item.extId,
-                    extRefName: item.extRefName,
-                    // only rule so far
-                    fetchSchedule: item.type === exports.types.ENTERTAINMENT,
-                    name: item.name,
-                    quickService: item.quickService,
-                    tableService: item.tableService,
-                    type: item.type,
-                    url: item.url
-                };
-                if (item.id) {
-                    activityItem.id = item.id;
-                }
-                const diningInst = await utils_1.upsert(Dining, activityItem, { extId: item.extId }, t);
-                if (item.location) {
-                    const locationInstance = await Location.findByName(item.location, t);
-                    if (locationInstance) {
-                        await diningInst.setLocation(locationInstance, { transaction: t });
-                    }
-                    // TODO: else log an issue if we cannot find a location
-                    // if there is a location, we might also have an area, however
-                    // we have to add the area here because there is no other way
-                    // to easily generate them
-                    if (item.area) {
-                        const locationId = locationInstance.get('id');
-                        let areaInst = await Location.findAreaByName(locationId, item.area, t);
-                        if (!areaInst) {
-                            areaInst = await Location.addArea(locationId, item.area, t);
-                        }
-                        await diningInst.setArea(areaInst, { transaction: t });
-                    }
-                }
-                if (item.tags) {
-                    // either sync or async with Promise.all
-                    for (const tagName of item.tags) {
-                        const tagInst = await utils_1.upsert(Tag, { name: tagName, from: 'dining' }, { name: tagName }, t);
-                        if (!await diningInst.hasDiningTags(tagInst)) {
-                            await diningInst.addDiningTags(tagInst, { transaction: t });
-                        }
-                    }
-                }
-                if (item.cuisine) {
-                    for (const cuisine of item.cuisine) {
-                        await utils_1.upsert(Cuisine, { name: cuisine, diningId: diningInst.get('id') }, { name: cuisine }, t);
-                    }
-                }
-                return diningInst;
+            return utils_1.syncTransaction(sequelize, items, async (item, transaction) => {
+                const dining = await addUpdateDining(item, Location, access, transaction, logger);
+                return api.get(dining);
             });
         },
         /**

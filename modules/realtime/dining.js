@@ -52,6 +52,7 @@ exports.get = async (extId, url, logger) => {
         const rawDescription = $.find('.finderDetailsPageSubtitle').text().trim();
         const description = rawDescription || null;
         // TODO: Hours (only if not in park?), menu, handle things like seminars
+        logger('info', `Finished processing data for ${url}.`);
         return {
             admissionRequired,
             costDescription,
@@ -111,8 +112,10 @@ exports.list = async (logger, options = {}) => {
             area = fullLocation.area;
         }
         const rawTypes = $card.find('.itemInfo').find('.metaInfo').find('.serviceType').text().trim();
+        logger('info', rawTypes);
         if (rawTypes) {
             const types = rawTypes.split(',').map(t => t.trim());
+            // logger('info', types.join(' '));
             quickService = types.includes(QUICK_SERVICE);
             tableService = types.includes(TABLE_SERVICE);
             diningEvent = types.includes(DINING_EVENT);
