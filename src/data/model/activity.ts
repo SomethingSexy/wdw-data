@@ -200,7 +200,7 @@ export default (sequelize, access, logger) => {
     },
     async addSchedules(id: string, schedules: {[date: string]: ISchedule[]}) {
       // check if date exists already.
-      return Promise.all(
+      await Promise.all(
         Object
           .entries(schedules)
           .map(([key, value]) => {
@@ -209,6 +209,8 @@ export default (sequelize, access, logger) => {
             });
           })
         );
+      // TODO: Figure out what to return from here, probably call get location schedule
+      return { [Success]: true };
     },
     async addUpdate(items: IActivity[] = []) {
       // if there are no items, just return an empty array

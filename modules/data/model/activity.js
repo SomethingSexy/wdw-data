@@ -135,10 +135,18 @@ exports.validateActivities = (items) => {
 exports.default = (sequelize, access, logger) => {
     const api = {
         async addSchedule(activityId, scheduleDate, parkSchedules, transaction) {
-            const { Schedule } = access;
+            const { ActivitySchedule, Schedule } = access;
             const DateModel = date_1.default(sequelize, access);
             const dateInstance = await DateModel.get(scheduleDate, transaction);
-            // TODO: Check to see if we already have a schedule for that day
+            const dateId = dateInstance.get('id');
+            // Check to see if we have any schedules for this location and date already
+            // this might cause issues in the future if we did not update everything,
+            // worry about that if it comes up
+            const alreadyAdded = await ActivitySchedule
+                .findOne({ where: { activityId, dateId } });
+            if (alreadyAdded) {
+                return null;
+            }
             return Promise.all(parkSchedules.map(data => Schedule.create(data, { transaction })))
                 .then(scheduleInstances => {
                 return Promise.all(scheduleInstances.map(scheduleInstance => dateInstance.addActivitySchedule(scheduleInstance, {
@@ -149,13 +157,15 @@ exports.default = (sequelize, access, logger) => {
         },
         async addSchedules(id, schedules) {
             // check if date exists already.
-            return Promise.all(Object
+            await Promise.all(Object
                 .entries(schedules)
                 .map(([key, value]) => {
                 return sequelize.transaction(t => {
                     return api.addSchedule(id, key, value, t);
                 });
             }));
+            // TODO: Figure out what to return from here, probably call get location schedule
+            return { [utils_1.Success]: true };
         },
         async addUpdate(items = []) {
             // if there are no items, just return an empty array

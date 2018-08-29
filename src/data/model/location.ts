@@ -182,8 +182,7 @@ export default (sequelize, access, logger) => {
       });
     },
     async addSchedules(parkId: string, parkSchedules: {[date: string]: ISchedule[]}) {
-      // TODO: Figure out what to return from here, probably call get location schedule
-      return Promise.all(
+      await Promise.all(
         Object
           .entries(parkSchedules)
           .map(([key, value]) => {
@@ -193,6 +192,9 @@ export default (sequelize, access, logger) => {
           })
           .filter(schedule => schedule !== null)
         );
+
+      // TODO: Figure out what to return from here, probably call get location schedule
+      return { [Success]: true };
     },
     /**
      * Searches for an area instance.

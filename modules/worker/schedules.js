@@ -32,7 +32,7 @@ exports.default = async (days) => {
         ];
     }, []));
     for (const parkSchedule of responses) {
-        await models.location.addParkSchedules(parkSchedule.id, parkSchedule.schedule);
+        await models.location.addSchedules(parkSchedule.id, parkSchedule.schedule);
     }
     // get all activities that can fetch schedules
     const entertainment = await models.activity.list({ fetchSchedule: true });

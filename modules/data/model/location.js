@@ -112,11 +112,19 @@ exports.default = (sequelize, access, logger) => {
             logger('debug', `Finished adding and updating ${locations.length} of ${items.length}.`);
             return { [utils_1.Success]: locations };
         },
-        async addParkSchedule(locationId, scheduleDate, parkSchedules, transaction) {
-            const { Schedule } = access;
+        async addSchedule(locationId, scheduleDate, parkSchedules, transaction) {
+            const { LocationSchedule, Schedule } = access;
             const DateModel = date_1.default(sequelize, access);
             const dateInstance = await DateModel.get(scheduleDate, transaction);
-            // TODO: Check to see if we already have a schedule for that day
+            const dateId = dateInstance.get('id');
+            // Check to see if we have any schedules for this location and date already
+            // this might cause issues in the future if we did not update everything,
+            // worry about that if it comes up
+            const alreadyAdded = await LocationSchedule
+                .findOne({ where: { locationId, dateId } });
+            if (alreadyAdded) {
+                return null;
+            }
             return Promise.all(parkSchedules.map(data => Schedule.create(data, { transaction })))
                 .then(scheduleInstances => {
                 return Promise.all(scheduleInstances.map(scheduleInstance => dateInstance.addSchedule(scheduleInstance, {
@@ -125,15 +133,17 @@ exports.default = (sequelize, access, logger) => {
                 })));
             });
         },
-        async addParkSchedules(parkId, parkSchedules) {
-            // check if date exists already.
-            return Promise.all(Object
+        async addSchedules(parkId, parkSchedules) {
+            await Promise.all(Object
                 .entries(parkSchedules)
                 .map(([key, value]) => {
                 return sequelize.transaction(t => {
-                    return api.addParkSchedule(parkId, key, value, t);
+                    return api.addSchedule(parkId, key, value, t);
                 });
-            }));
+            })
+                .filter(schedule => schedule !== null));
+            // TODO: Figure out what to return from here, probably call get location schedule
+            return { [utils_1.Success]: true };
         },
         /**
          * Searches for an area instance.
