@@ -186,13 +186,14 @@ exports.default = (sequelize, access, logger) => {
         async addWaitTimes(timestamp, items = []) {
             const { Activity, WaitTime } = access;
             const DateModel = date_1.default(sequelize, access);
+            // grab the date instanced first, reuse for everything else.
+            const dateInstance = await sequelize.transaction(async (t) => DateModel.get(timestamp, t));
             return utils_1.syncTransaction(sequelize, items, async (item, transaction) => {
                 const { extId, waitTime } = item; // tslint:disable-line
                 const activityInstance = await Activity.findOne({ where: { extId } }, { transaction });
                 if (!activityInstance) {
                     return Promise.resolve(false); // TODO log
                 }
-                const dateInstance = await DateModel.get(timestamp, transaction);
                 // TODO: Do we want to store another id for the timestamp or
                 // just do find by activityId, dateId and groupby timestamp?
                 return WaitTime.create({
