@@ -23,7 +23,7 @@ enum GetTypes {
 }
 
 const addUpdateHotel = async (item: ILocation, access, transaction, logger) => {
-  const { Address, Hotel, Location, Room, RoomConfiguration } = access;
+  const { Address, BusStop, Hotel, Location, Room, RoomConfiguration } = access;
   logger('debug', `Adding/updating hotel ${item.extId}.`);
 
   const locationInstance = await upsert(
@@ -56,6 +56,23 @@ const addUpdateHotel = async (item: ILocation, access, transaction, logger) => {
           );
         }
       }
+    }
+  }
+
+  if (item.busStops) {
+    // either sync or async with Promise.all
+    for (const stop of item.busStops) {
+      await BusStop
+        .findOne({ where: { hotelId: hotelInstance.get('id'), name: stop } }, { transaction })
+        .then(obj => {
+          if (!obj) {
+            return BusStop.create(
+              { hotelId: hotelInstance.get('id'), name: stop }, { transaction }
+            );
+          }
+
+          return Promise.resolve();
+        });
     }
   }
 

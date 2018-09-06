@@ -53,6 +53,7 @@ export interface IDate {
 
 export interface ILocation {
   address?: any;
+  busStops?: string[];
   // internal id
   id?: string;
   extId: string;

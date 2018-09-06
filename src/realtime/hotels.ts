@@ -38,6 +38,43 @@ const VIEWS = [
 // const STUDIO = ['Studio'];
 // const VILLIA = ['Villa'];
 
+const additionalData = {
+  '80010383;entityType=resort': {
+    busStops: [
+      'Congress Park',
+      'The Carousel',
+      'The Grandstand',
+      'The Paddock',
+      'The Springs'
+    ]
+  },
+  '80010387;entityType=resort': {
+    busStops: [
+      'Hospitality House',
+      "Miller's Road", // tslint:disable-line
+      'Old Turtle Road',
+      'Peninsular Road',
+      'South Point Road'
+    ]
+  },
+  '80010396;entityType=resort': {
+    busStops: ['Cabanas', 'Casitas', 'El Centro', 'Ranchos']
+  },
+  '80010397;entityType=resort': {
+    busStops: ['East Depot', 'Main Building', 'North Depot', 'West Depot']
+  },
+  '80010399;entityType=resort': {
+    busStops: [
+      'Aruba',
+      'Jamacia',
+      'Martinique',
+      'Old Port Royale',
+      'Trinidad North',
+      'Trinidad South'
+    ]
+  }
+};
+
 const viewType = (name: string, config: IView[]) => {
   const found = config.find(viewConfig => {
     return !!viewConfig.values.find(view => {
@@ -85,7 +122,7 @@ const roomConfigurations = description => {
       if (counts.length) {
         count = counts.reduce(
           (total, n) => {
-            return total + Number.parseInt(n);
+            return total + Number.parseInt(n, 10);
           },
           0
         );
@@ -117,7 +154,7 @@ const totalOccupancy = description => {
     return null;
   }
 
-  return Number.parseInt(counts[0]);
+  return Number.parseInt(counts[0], 10);
 };
 
 /**
@@ -248,7 +285,10 @@ export const list = async (logger: ILogger) => {
         area = fullLocation.area;
       }
 
+      const localData = additionalData[extId] ? additionalData[extId] : {};
+
       items.push({
+        ...localData,
         area,
         extId,
         extRefName,

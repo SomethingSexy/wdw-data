@@ -3,6 +3,7 @@ import activitySchedule from './activitySchedule';
 import address from './address';
 import age from './age';
 import area from './area';
+import busStop from './busStop';
 import cuisine from './cuisine';
 import date from './date';
 import dining from './dining';
@@ -23,6 +24,7 @@ export default sequelize => {
   const Address = address(sequelize);
   const Age = age(sequelize);
   const Area = area(sequelize);
+  const BusStop = busStop(sequelize);
   const Location = location(sequelize);
   const LocationSchedule = locationSchedule(sequelize);
   const Schedule = schedule(sequelize);
@@ -47,6 +49,7 @@ export default sequelize => {
   Hotel.belongsTo(Location);
   Room.hasMany(RoomConfiguration);
   Hotel.hasMany(Room);
+  Hotel.hasMany(BusStop);
   Location.belongsTo(Address);
   Location.hasMany(Area);
 
@@ -96,6 +99,7 @@ export default sequelize => {
     Address,
     Age,
     Area,
+    BusStop,
     Cuisine,
     Date,
     Dining,
