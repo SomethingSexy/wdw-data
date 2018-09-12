@@ -1,25 +1,43 @@
 import { expect } from 'chai';
 import 'mocha';
-import { list, reservations } from '../../src/realtime/dining';
+import nock from 'nock';
+import { reservations } from '../../src/realtime/dining';
+
+const diningSuccess = '<div class="horizontalSeparator diningCtaHSeparator"></div><span class="title">Available Times</span> <span class="diningReservationInfoText available"> Search results around 8:00 AM to 11:50 AM on Thursday, February 14, 2019. </span> <div class="ctaAvailableTimesContainer"> <div class="availableTime"> <a class="pillLink" data-plugins="[&quot;pepActiveStyleSupport&quot;]" href="https://disneyworld.disney.go.com/dining-reservation/setup-order/table-service/?offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/646dc690-96d9-47a8-8f13-eea1f90117b9&amp;offerOrigin=/dining/grand-floridian-resort-and-spa/1900-park-fare/"><span class="button offerButton blue firstCtaOption pillBase callToAction " tabindex="0" data-serviceDateTime="2019-02-14T09:45:00-05:00" data-offerIds="offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/646dc690-96d9-47a8-8f13-eea1f90117b9" data-bookingLink="https://disneyworld.disney.go.com/dining-reservation/setup-order/table-service/?offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/646dc690-96d9-47a8-8f13-eea1f90117b9&amp;offerOrigin=/dining/grand-floridian-resort-and-spa/1900-park-fare/" data-bookingType="table-service"> <span class="gradient"> <span class="buttonText">9:45 AM</span> </span></span></a> </div><div class="availableTime"> <a class="pillLink" data-plugins="[&quot;pepActiveStyleSupport&quot;]" href="https://disneyworld.disney.go.com/dining-reservation/setup-order/table-service/?offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/069a40fa-aba9-4a44-9f8b-9edef8455bab&amp;offerOrigin=/dining/grand-floridian-resort-and-spa/1900-park-fare/"><span class="button offerButton blue pillBase callToAction " tabindex="0" data-serviceDateTime="2019-02-14T10:05:00-05:00" data-offerIds="offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/069a40fa-aba9-4a44-9f8b-9edef8455bab" data-bookingLink="https://disneyworld.disney.go.com/dining-reservation/setup-order/table-service/?offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/069a40fa-aba9-4a44-9f8b-9edef8455bab&amp;offerOrigin=/dining/grand-floridian-resort-and-spa/1900-park-fare/" data-bookingType="table-service"> <span class="gradient"> <span class="buttonText">10:05 AM</span> </span></span></a> </div></div><span id="diningAvailabilityFlag" data-hasavailability="1"></span>'; // tslint:disable-line
 
 describe('dinning', () => {
-  describe('list', () => {
-    it('should fetch a list of dinning options', async () => {
-      return list()
-        .then(response => expect(response.length > 0).to.equal(true));
+  describe('reservations', () => {
+    it('should find a reservation', async () => {
+      nock('https://disneyworld.disney.go.com')
+        .get('/dining/grand-floridian-resort-and-spa/1900-park-fare/')
+        .reply(
+          200,
+          '<input id="pep_csrf" value="c3934980ffbce07e862962" />',
+          { 'set-cookie': ['PHPSESSID=3h2dvdeab9jldhd53fegl92ve0; path=/; secure; HttpOnly'] }
+        );
+
+      nock('https://disneyworld.disney.go.com')
+        .post(
+          '/finder/dining-availability/',
+          'id=90001212%3BentityType%3Drestaurant&partySize=2&searchDate=2018-11-08&searchTime=80000714&skipPricing=true&type=dining&pep_csrf=c3934980ffbce07e862962' // tslint:disable-line
+        )
+        .reply(200, diningSuccess);
+
+      const dining = {
+        id: '90001212;entityType=restaurant',
+        url: 'https://disneyworld.disney.go.com/dining/grand-floridian-resort-and-spa/1900-park-fare/' // tslint:disable-line
+      };
+
+      return reservations(dining, '2018-11-08', 'dinner', 2)
+        .then(response =>
+          expect(response).to.deep.equal([{
+            link:'https://disneyworld.disney.go.com/dining-reservation/setup-order/table-service/?offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/646dc690-96d9-47a8-8f13-eea1f90117b9&offerOrigin=/dining/grand-floridian-resort-and-spa/1900-park-fare/', // tslint:disable-line
+            time: '9:45 AM'
+          }, {
+            link: 'https://disneyworld.disney.go.com/dining-reservation/setup-order/table-service/?offerId[]=https://disneyworld.disney.go.com/api/wdpro/global-pool-override-A/availability-service/table-service-availability/81f00b7e-1ad4-46e0-98f7-41db4ee326a7/offers/069a40fa-aba9-4a44-9f8b-9edef8455bab&offerOrigin=/dining/grand-floridian-resort-and-spa/1900-park-fare/', // tslint:disable-line
+            time: '10:05 AM'
+          }])
+        );
     });
   });
-
-  // TODO: Figure out how we want to test this one
-  // describe('reservations', () => {
-  //   it.only('should fetch a reservation', async () => {
-  //     const dining = {
-  //       id: '90001212;entityType=restaurant',
-  //       url: 'https://disneyworld.disney.go.com/dining/grand-floridian-resort-and-spa/1900-park-fare/'
-  //     };
-
-  //     return reservations(dining, '2018-07-08', 'dinner', 2)
-  //       .then(response => console.log(response));
-  //   });
-  // });
 });

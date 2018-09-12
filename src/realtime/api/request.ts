@@ -50,35 +50,39 @@ export const screen = async (path: string) => {
  */
 export const getWebSession = async url => {
   debug(`Requesting session for ${url}`);
+  return new Promise((resolve, reject) => {
+    https.get(url, response => {
+      const setCookie = response.headers['set-cookie'];
+      if (!setCookie) {
+        throw new Error(`Cannot retrieve session cookie for ${url}`);
+      }
 
-  const response = await fetch(url);
+      let sessionId = setCookie.find(test => test.indexOf('PHPSESSID=') > -1);
+      if (!sessionId) {
+        throw new Error(`Cannot retrieve session cookie for ${url}`);
+      }
 
-  if (!response.ok) {
-    throw new Error(`Cannot retrieve session for ${url}`);
-  }
+      sessionId = sessionId.substring(sessionId.indexOf(SESSION_KEY));
+      sessionId = sessionId.substring(SESSION_KEY.length, sessionId.indexOf(';'));
 
-  const setCookie = response.headers.get('set-cookie');
-  if (!setCookie) {
-    throw new Error(`Cannot retrieve session cookie for ${url}`);
-  }
+      let html = '';
+      response.on('data', chunk => {
+        html += chunk;
+      });
+      response.on('end', () => {
+        const $ = cheerio.load(html);
+        const csrfToken = $('#pep_csrf').val();
 
-  let sessionId = setCookie.split(';').find(test => test.indexOf('PHPSESSID=') > -1);
-  if (!sessionId) {
-    throw new Error(`Cannot retrieve session cookie for ${url}`);
-  }
-
-  sessionId = sessionId.substring(sessionId.indexOf(SESSION_KEY));
-  sessionId = sessionId.substring(SESSION_KEY.length);
-
-  const html = await response.text();
-  const $ = cheerio.load(html);
-  const csrfToken = $('#pep_csrf').val();
-
-  debug(`Retrieved session for ${url}`);
-  return {
-    csrfToken,
-    cookie: sessionId // tslint:disable-line
-  };
+        debug(`Retrieved session for ${url}`);
+        resolve({
+          csrfToken,
+          cookie: sessionId // tslint:disable-line
+        });
+      });
+    }).on('error', error => {
+      reject(`Cannot retrieve session for ${url} - ${error}`);
+    });
+  });
 };
 
 export const diningFinder = async (url, data, auth) => {
