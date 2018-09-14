@@ -23,6 +23,12 @@ const accessTokenURLBody =
 // use the same user-agent for all WDW park requests
 const authUserAgent = randomUseragent.getRandom(ua => ua.osName === 'Android');
 
+// meh
+const WEB_API_TYPES = {
+  dining: 'dining-availability',
+  entertainment: 'list/ancestor'
+};
+
 /**
  * Retrieves the HTML for a screen.
  * @param path
@@ -163,7 +169,7 @@ export const diningFinder = async (url, data, auth) => {
  * Retrieves data from a web/browser based api.  We probably want to merge this with
  * the mobile api get function.
  */
-export const getWebApi = async (url, params, auth: string): Promise<any> => {
+export const getWebApi = async (url, type: string, params, auth: string): Promise<any> => {
   return new Promise((resolve, reject) => {
     const options = {
       headers: {
@@ -179,7 +185,7 @@ export const getWebApi = async (url, params, auth: string): Promise<any> => {
       },
       hostname: SITE_HOST,
       method: 'get',
-      path: `/api/wdpro/explorer-service/public/finder/list/ancestor/80007798;entityType=destination?${querystring.stringify(params)}` // tslint:disable-line
+      path: `/api/wdpro/explorer-service/public/finder/${WEB_API_TYPES[type]}/80007798;entityType=destination?${querystring.stringify(params)}` // tslint:disable-line
     };
 
     const request = https

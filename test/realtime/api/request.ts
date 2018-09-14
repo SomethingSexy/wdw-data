@@ -6,8 +6,14 @@ import { getAccessToken, getWebSession } from '../../../src/realtime/api/request
 describe('api - request', () => {
   describe('getAccessToken', () => {
     it('should fetch an access token', async () => {
+      nock('https://authorization.go.com')
+        .post('/token')
+        .reply(
+          200,
+          { access_token: '123-456-789', expires_in: '10' }
+        );
       return getAccessToken()
-        .then((response: string) => expect(response.length > 0).to.equal(true));
+        .then((response: string) => expect(response).to.equal('123-456-789'));
     });
   });
 

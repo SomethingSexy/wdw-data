@@ -2,7 +2,7 @@ import cheerio from 'cheerio';
 import createDebug from 'debug';
 import invariant from 'invariant';
 import { ILogger } from '../types';
-import { diningFinder, getWebSession, screen } from './api/request';
+import { diningFinder, getAccessToken, getWebApi, getWebSession, screen } from './api/request';
 import { parseExternal, parseLocation } from './utils';
 
 const debug = createDebug('dining');
@@ -14,6 +14,14 @@ const DINING_EVENT = 'Dining Event';
 const TABLE_SERVICE = 'Table Service';
 
 const path = 'https://disneyworld.disney.go.com/dining/';
+
+interface IAllDiningResponse {
+  availability: {
+    [key: string]: {
+      availableTimes: any[]
+    }
+  };
+}
 
 export const get = async (extId: string, url: string, logger: ILogger): Promise<{} | null> => {
   if (!url) {
@@ -174,7 +182,7 @@ export const list = async (logger: ILogger, options: { max?: number} = {}) => {
 /**
  * Retrieves available reservations for a restaurant.
  *
- * TODO: Add support for multiple.
+ * TODO: This probably goes away unless we still need to get individual reservations
  *
  */
 export const reservations = async (
@@ -215,4 +223,90 @@ export const reservations = async (
     postData,
     auth
   );
+};
+
+/**
+ *
+ * @param date
+ * @param time
+ * @param size
+ */
+export const reservationsByDate = async (
+  date: string,
+  time: string,
+  size: number
+) => {
+  let localTime;
+  if (time === 'dinner') {
+    localTime = '80000714';
+  } else if (time === 'lunch') {
+    localTime = '80000717';
+  } else if (time === 'breakfast') {
+    localTime = '80000712';
+  } else {
+    localTime = time;
+  }
+
+  const data = {
+    mobile: false,
+    partySize: size,
+    searchDate: date,
+    searchTime: localTime
+  };
+
+  const auth = await getAccessToken();
+  const response: IAllDiningResponse  = await getWebApi(
+    'https://disneyworld.disney.go.com/dining/', 'dining', data, auth
+  );
+
+  const { availability } = response;
+
+  if (!availability) {
+    return [];
+  }
+
+  return Object
+    .entries(availability)
+    .map(([key, dining]) => {
+      if (!dining.availableTimes) {
+        return null;
+      }
+
+      const diningTimes = dining.availableTimes
+        .reduce(
+          (all, times) => {
+            if (times.unavailableReason) {
+              // NO_SCHEDULE_FOR_DATE_TIME
+              // NOT_FULFILLABLE_AFTER_DATE
+              // NO_AVAILABILITY = should mean nothing is available for this time
+              // NO_BOOKINGS_ALLOWED_SAME_DAY
+              // NOT_AVAILABLE_ONLINE
+              return all;
+            }
+
+            // if there is an id, that means it is an event that
+            // has availability at the following resturante
+            if (times.id) {
+              // TODO: Figure out how to handle events
+              return all;
+            }
+
+            if (times.offers) {
+              return [
+                ...all,
+                ...times.offers.map(offer => ({ dateTime: offer.dateTime, time: offer.time }))
+              ];
+            }
+
+            return all;
+          },
+          []
+        );
+
+      if (!diningTimes.length) {
+        return null;
+      }
+      return { extId: key, availability: diningTimes };
+    })
+    .filter(t => t !== null);
 };

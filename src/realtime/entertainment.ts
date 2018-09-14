@@ -169,8 +169,9 @@ export const schedule = async(start: string)
   };
 
   const auth = await getAccessToken();
-  const response: { results: any[] } =
-    await getWebApi('https://disneyworld.disney.go.com/entertainment/', data, auth);
+  const response: { results: any[] } = await getWebApi(
+    'https://disneyworld.disney.go.com/entertainment/', 'entertainment', data, auth
+  );
 
   const activitySchedules = response.results.reduce(
     (filtered, activity) => {
