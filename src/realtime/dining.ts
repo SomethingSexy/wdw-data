@@ -226,15 +226,16 @@ export const reservations = async (
 };
 
 /**
- *
+ * Gets all possible reservations for a given day, time, and party size.
  * @param date
  * @param time
  * @param size
  */
 export const reservationsByDate = async (
+  logger: ILogger,
   date: string,
   time: string,
-  size: number
+  size: number,
 ) => {
   let localTime;
   if (time === 'dinner') {
@@ -246,6 +247,8 @@ export const reservationsByDate = async (
   } else {
     localTime = time;
   }
+
+  logger('info', `Retrieving reservations for ${size} people at ${time} on ${date}.`);
 
   const data = {
     mobile: false,
@@ -265,7 +268,7 @@ export const reservationsByDate = async (
     return [];
   }
 
-  return Object
+  const available = Object
     .entries(availability)
     .map(([key, dining]) => {
       if (!dining.availableTimes) {
@@ -309,4 +312,8 @@ export const reservationsByDate = async (
       return { extId: key, availability: diningTimes };
     })
     .filter(t => t !== null);
+
+  logger('info', `Retrieving found ${available.length} reservations.`);
+
+  return available;
 };

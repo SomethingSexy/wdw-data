@@ -5,6 +5,7 @@ export default sequelize => {
     'date',
     {
       date: Sequelize.DATEONLY,
+      dayOfWeek: Sequelize.STRING,
       holiday: Sequelize.STRING,
       id: {
         defaultValue: Sequelize.UUIDV4,

@@ -1,20 +1,22 @@
 import cheerio from 'cheerio';
-import { ILogger, ISchedules } from '../types';
-import { getAccessToken, getWebApi, screen } from './api/request';
+import { ILogger } from '../types';
+import { screen } from './api/request';
 import { parseExternal, parseLocation } from './utils';
 
-const path = 'https://disneyworld.disney.go.com/entertainment/';
+const path = 'https://disneyworld.disney.go.com/shops/';
 
-const ageKeys = ['All Ages', 'Preschoolers', 'Kids', 'Tweens', 'Teens', 'Adults'];
 const NO_WHEELCHAIR_TRANSFER = 'May Remain in Wheelchair/ECV';
 const ADMISSION_REQUIRED = 'Valid Park Admission Required';
 
 /**
- * Retrieves detailed information about an entertainment activity, internal for processing list.
+ * Retrieves detailed information about a shop, internal for processing list.
  * @param {string} url
  */
 const get = async (item, logger: ILogger) => {
   try {
+    if (!item.url) {
+      return null;
+    }
     logger('info', `Getting screen for ${item.url}.`);
     const response = await screen(item.url);
     logger('info', `Grabbed screen for ${item.url} with length ${response.length}.`);
@@ -22,23 +24,18 @@ const get = async (item, logger: ILogger) => {
     const $page = $.find('#pageContent');
     const $restrictions = $page
       .find('.moreDetailsInfo .modalContainer .moreDetailsModal-accessibility');
-    const wheelchairTransfer = $restrictions
+    const wheelchairAccessible= $restrictions
       .find('.moreDetailsModalItem-wheelchair-access')
       .text()
       .trim() !== NO_WHEELCHAIR_TRANSFER;
     const admissionRequired =
       $page.find('.themeParkAdmission').text().trim() === ADMISSION_REQUIRED;
     const description = $page.find('.finderDetailsPageSubtitle').text().trim();
-    // <li class="moreDetailsModalItem-audio-description">Audio Description</li>
-    // <li class="moreDetailsModalItem-sign-language">Sign Language</li>
-    // <li class="moreDetailsModalItem-handheld-captioning">Handheld Captioning</li>
-    // <li class="moreDetailsModalItem-assistive-listening">Assistive Listening</li>
 
-    // TODO: add length if it exists
     return {
       admissionRequired,
       description,
-      wheelchairTransfer
+      wheelchairAccessible
     };
   } catch (error) {
     logger('error', `Failed to get screen or process screen for ${item.url} - ${error}`);
@@ -48,20 +45,22 @@ const get = async (item, logger: ILogger) => {
 };
 
 /**
- * Retrieves all entertainment locations.
+ * Retrieves all shops.
+ *
+ * TODO: Add type
  */
 export const list = async (logger: ILogger, options: { max?: number} = {}) => {
   logger('info', `Grabbing screen for ${path}.`);
   const response = await screen(path);
 
   const $ = cheerio(response);
-  const $attractionCards = $.find('li.card');
+  const $shopCards = $.find('li.card');
 
-  logger('info', `Total of ${$attractionCards.length} entertainment to process.`);
+  logger('info', `Total of ${$shopCards.length} shops to process.`);
 
   const items: any = [];
-  for (let i = 0; i < (options.max || $attractionCards.length); i += 1) {
-    const card = $attractionCards.get(i);
+  for (let i = 0; i < (options.max || $shopCards.length); i += 1) {
+    const card = $shopCards.get(i);
     let location = null;
     let area = null;
     let type;
@@ -102,25 +101,15 @@ export const list = async (logger: ILogger, options: { max?: number} = {}) => {
 
     const $description = $card.find('.descriptionLines');
     const $facets = $description.find('.facets');
-    const facets = $facets
+    // this will grab information about what type of stuff is sold at this shop
+    const tags = $facets
       .first()
       .text()
       .split(',')
       .filter(detail => detail !== '')
       .map(detail => detail.trim()) || [];
 
-    const ages: string[] = [];
-    const tags: string[] = [];
-    facets.forEach(detail => {
-      if (ageKeys.includes(detail)) {
-        ages.push(detail);
-      } else {
-        tags.push(detail);
-      }
-    });
-
     items.push({
-      ages,
       area,
       extId,
       extRefName,
@@ -150,51 +139,4 @@ export const list = async (logger: ILogger, options: { max?: number} = {}) => {
   }
 
   return modifiedItems;
-};
-
-/**
- * Retrieves the schedules for all of the entertainment for a given day.  Returns them
- * by activity extId.
- *
- * @param start
- * @param end
- */
-export const schedule = async(start: string)
-: Promise<ISchedules[]> => {
-  const data = {
-    date: start,
-    filters: 'Entertainment',
-    region: 'US',
-    scheduleOnly: true
-  };
-
-  const auth = await getAccessToken();
-  const response: { results: any[] } = await getWebApi(
-    'https://disneyworld.disney.go.com/entertainment/', 'entertainment', data, auth
-  );
-
-  const activitySchedules = response.results.reduce(
-    (filtered, activity) => {
-      if (!activity.schedule) {
-        return filtered;
-      }
-      return [
-        ...filtered,
-        {
-          id: activity.id,
-          schedule: {
-            [start]: activity.schedule.schedules.map(s => ({
-              closing: s.endTime,
-              isSpecialHours: false,
-              opening: s.startTime,
-              type: s.type
-            }))
-          }
-        }
-      ];
-    },
-    []
-  );
-
-  return activitySchedules;
 };

@@ -1,6 +1,6 @@
 import Sequelize from 'sequelize';
 import models, { responseHandlers } from './data/index';
-import { attractions, dining, entertainment, hotels, parks } from './realtime/index';
+import { attractions, dining, entertainment, hotels, parks, shops } from './realtime/index';
 import { IConnection, ILogger, ILogType } from './types';
 
 const createLogger = (logger?: ILogType): ILogger =>
@@ -33,6 +33,7 @@ export const realtime = (logger?: ILogType) => {
     dining: dining(internalLogger),
     entertainment: entertainment(internalLogger),
     hotels: hotels(internalLogger),
-    parks: parks(internalLogger)
+    parks: parks(internalLogger),
+    shops: shops(internalLogger)
   };
 };

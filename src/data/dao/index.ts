@@ -10,6 +10,7 @@ import dining from './dining';
 import hotel from './hotel';
 import location from './location';
 import locationSchedule from './locationSchedule';
+import reservation from './reservation';
 import room from './room';
 import roomConfiguration from './roomConfiguration';
 import schedule from './schedule';
@@ -32,11 +33,12 @@ export default sequelize => {
   const Dining = dining(sequelize);
   const Cuisine = cuisine(sequelize);
   const Hotel = hotel(sequelize);
+  const Reservation = reservation(sequelize);
+  const Room = room(sequelize);
+  const RoomConfiguration = roomConfiguration(sequelize);
   const Tag = tag(sequelize);
   const ThrillFactor = thrillFactor(sequelize);
   const WaitTime = waitTime(sequelize);
-  const Room = room(sequelize);
-  const RoomConfiguration = roomConfiguration(sequelize);
 
   // setup assocations
   Date.belongsToMany(Schedule, { through: LocationSchedule });
@@ -59,6 +61,8 @@ export default sequelize => {
   Tag.belongsToMany(Dining, { as: 'DiningTags', through: 'dinings_tags' });
   Dining.belongsToMany(Tag, { as: 'DiningTags', through: 'dinings_tags' });
   Dining.hasMany(Cuisine);
+  Dining.hasMany(Reservation);
+  Date.hasMany(Reservation);
 
   // Splitting Area and Location but since they might not
   // always have an Area, instead of doing a join of the ids

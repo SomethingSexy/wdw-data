@@ -7,14 +7,15 @@ interface IOptions {
   entertainment?: boolean;
   hotels?: boolean;
   parks?: boolean;
+  shops?: boolean;
 }
 
 /**
  * A service for retrieving and persisting waitimes.
  */
-export default async (options: IOptions =
-    { attractions: true, dining: true, entertainment: true, hotels: true , parks: true }
-) => {
+export default async (options: IOptions = {
+  attractions: true, dining: true, entertainment: true, hotels: true , parks: true, shops: true
+}) => {
   // setup our database connection
   const models = await createModels(
     {
@@ -90,6 +91,19 @@ export default async (options: IOptions =
         .list({ max: 50 });
       logger.log('info', JSON.stringify(dining, null, 4));
       await models.dining.addUpdate(dining);
+    } catch (e) {
+      logger.log('error', e.toString());
+    }
+  }
+
+  if (options.shops) {
+    try {
+      const shops = await realtimeModels
+        .shops
+        .list({ max: 10 });
+
+      logger.log('info', JSON.stringify(shops, null, 4));
+      // await models.activity.addUpdate(entertainment);
     } catch (e) {
       logger.log('error', e.toString());
     }
