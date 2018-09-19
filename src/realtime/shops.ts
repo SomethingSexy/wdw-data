@@ -24,7 +24,7 @@ const get = async (item, logger: ILogger) => {
     const $page = $.find('#pageContent');
     const $restrictions = $page
       .find('.moreDetailsInfo .modalContainer .moreDetailsModal-accessibility');
-    const wheelchairAccessible= $restrictions
+    const wheelchairAccessible = $restrictions
       .find('.moreDetailsModalItem-wheelchair-access')
       .text()
       .trim() !== NO_WHEELCHAIR_TRANSFER;

@@ -2,9 +2,9 @@ import cheerio from 'cheerio';
 import createDebug from 'debug';
 import https from 'https';
 import invariant from 'invariant';
-import fetch from 'node-fetch';
 import querystring from 'querystring';
 import randomUseragent from 'random-useragent';
+import { parse } from 'url';
 import { IAvailability } from '../../types';
 
 const debug = createDebug('request');
@@ -33,21 +33,40 @@ const WEB_API_TYPES = {
  * Retrieves the HTML for a screen.
  * @param path
  */
-export const screen = async (path: string) => {
-  const response = await fetch(path, {
-    headers: {
-      Accept: '*/*',
-      'Accept-Language': 'en-US,en;q=0.8',
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      Host: SITE_HOST,
-      Origin: ORIGIN,
-      'X-Requested-With': 'XMLHttpRequest',
-      'User-Agent': randomUseragent.getRandom() // tslint:disable-line
-    },
-    method: 'get'
-  });
+export const screen = async (url: string): Promise<any> => {
+  debug(`Requesting html for ${url}`);
+  const parsedUrl = parse(url);
+  return new Promise((resolve, reject) => {
+    const options = {
+      headers: {
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.8',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        Host: SITE_HOST,
+        Origin: ORIGIN,
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': randomUseragent.getRandom() // tslint:disable-line
+      },
+      hostname: parsedUrl.host,
+      method: 'get',
+      path: parsedUrl.pathname
+    };
 
-  return response.text();
+    const request = https.request(options, response => {
+      let html: string = '';
+      response.on('data', chunk => {
+        html += chunk;
+      });
+      response.on('end', () => {
+        debug(`Retrieved html for ${url}`);
+        resolve(html);
+      });
+    }).on('error', error => {
+      reject(`Cannot retrieve html for ${url} - ${error}`);
+    });
+
+    request.end();
+  });
 };
 
 /**
