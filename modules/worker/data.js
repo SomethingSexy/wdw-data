@@ -8,7 +8,9 @@ const log_1 = __importDefault(require("../log"));
 /**
  * A service for retrieving and persisting waitimes.
  */
-exports.default = async (options = { attractions: true, dining: true, entertainment: true, hotels: true, parks: true }) => {
+exports.default = async (options = {
+    attractions: true, dining: true, entertainment: true, hotels: true, parks: true, shops: true
+}) => {
     // setup our database connection
     const models = await index_1.createModels({
         database: 'wdw',
@@ -75,6 +77,18 @@ exports.default = async (options = { attractions: true, dining: true, entertainm
                 .list({ max: 50 });
             log_1.default.log('info', JSON.stringify(dining, null, 4));
             await models.dining.addUpdate(dining);
+        }
+        catch (e) {
+            log_1.default.log('error', e.toString());
+        }
+    }
+    if (options.shops) {
+        try {
+            const shops = await realtimeModels
+                .shops
+                .list({ max: 10 });
+            log_1.default.log('info', JSON.stringify(shops, null, 4));
+            // await models.activity.addUpdate(entertainment);
         }
         catch (e) {
             log_1.default.log('error', e.toString());

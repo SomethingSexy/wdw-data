@@ -9,15 +9,16 @@ exports.default = (_, access) => {
     return {
         async get(scheduleDate, transaction) {
             const { Date } = access;
-            const localDate = moment_1.default(scheduleDate).format('YYYY-MM-DD');
+            const mDate = moment_1.default(scheduleDate);
+            const localDate = mDate.format('YYYY-MM-DD');
             return Date
                 .findOne({ where: { date: localDate } }, { transaction })
                 .then(d => {
                 if (!d) {
-                    const mDate = moment_1.default(scheduleDate);
                     const holiday = mDate.isHoliday();
                     return Date.create({
-                        date: scheduleDate,
+                        date: localDate,
+                        dayOfWeek: mDate.format('dddd'),
                         holiday: holiday || null,
                         isHoliday: !!holiday
                     }, { transaction });

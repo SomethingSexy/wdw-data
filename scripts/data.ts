@@ -1,3 +1,3 @@
 import data from '../src/worker/data';
 
-data({ hotels: true }).then(() => process.exit);
+data({ shops: true }).then(() => process.exit);

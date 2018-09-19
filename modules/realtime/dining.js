@@ -149,7 +149,7 @@ exports.list = async (logger, options = {}) => {
 /**
  * Retrieves available reservations for a restaurant.
  *
- * TODO: Add support for multiple.
+ * TODO: This probably goes away unless we still need to get individual reservations
  *
  */
 exports.reservations = async (dining, date, time, size) => {
@@ -181,5 +181,77 @@ exports.reservations = async (dining, date, time, size) => {
     };
     const auth = await request_1.getWebSession(dining.url);
     return request_1.diningFinder(dining.url, postData, auth);
+};
+/**
+ * Gets all possible reservations for a given day, time, and party size.
+ * @param date
+ * @param time
+ * @param size
+ */
+exports.reservationsByDate = async (logger, date, time, size) => {
+    let localTime;
+    if (time === 'dinner') {
+        localTime = '80000714';
+    }
+    else if (time === 'lunch') {
+        localTime = '80000717';
+    }
+    else if (time === 'breakfast') {
+        localTime = '80000712';
+    }
+    else {
+        localTime = time;
+    }
+    logger('info', `Retrieving reservations for ${size} people at ${time} on ${date}.`);
+    const data = {
+        mobile: false,
+        partySize: size,
+        searchDate: date,
+        searchTime: localTime
+    };
+    const auth = await request_1.getAccessToken();
+    const response = await request_1.getWebApi('https://disneyworld.disney.go.com/dining/', 'dining', data, auth);
+    const { availability } = response;
+    if (!availability) {
+        return [];
+    }
+    const available = Object
+        .entries(availability)
+        .map(([key, dining]) => {
+        if (!dining.availableTimes) {
+            return null;
+        }
+        const diningTimes = dining.availableTimes
+            .reduce((all, times) => {
+            if (times.unavailableReason) {
+                // NO_SCHEDULE_FOR_DATE_TIME
+                // NOT_FULFILLABLE_AFTER_DATE
+                // NO_AVAILABILITY = should mean nothing is available for this time
+                // NO_BOOKINGS_ALLOWED_SAME_DAY
+                // NOT_AVAILABLE_ONLINE
+                return all;
+            }
+            // if there is an id, that means it is an event that
+            // has availability at the following resturante
+            if (times.id) {
+                // TODO: Figure out how to handle events
+                return all;
+            }
+            if (times.offers) {
+                return [
+                    ...all,
+                    ...times.offers.map(offer => ({ dateTime: offer.dateTime, time: offer.time }))
+                ];
+            }
+            return all;
+        }, []);
+        if (!diningTimes.length) {
+            return null;
+        }
+        return { extId: key, availability: diningTimes };
+    })
+        .filter(t => t !== null);
+    logger('info', `Retrieving found ${available.length} reservations.`);
+    return available;
 };
 //# sourceMappingURL=dining.js.map

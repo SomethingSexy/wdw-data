@@ -6,16 +6,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const cheerio_1 = __importDefault(require("cheerio"));
 const request_1 = require("./api/request");
 const utils_1 = require("./utils");
-const path = 'https://disneyworld.disney.go.com/entertainment/';
-const ageKeys = ['All Ages', 'Preschoolers', 'Kids', 'Tweens', 'Teens', 'Adults'];
+const path = 'https://disneyworld.disney.go.com/shops/';
 const NO_WHEELCHAIR_TRANSFER = 'May Remain in Wheelchair/ECV';
 const ADMISSION_REQUIRED = 'Valid Park Admission Required';
 /**
- * Retrieves detailed information about an entertainment activity, internal for processing list.
+ * Retrieves detailed information about a shop, internal for processing list.
  * @param {string} url
  */
 const get = async (item, logger) => {
     try {
+        if (!item.url) {
+            return null;
+        }
         logger('info', `Getting screen for ${item.url}.`);
         const response = await request_1.screen(item.url);
         logger('info', `Grabbed screen for ${item.url} with length ${response.length}.`);
@@ -23,21 +25,16 @@ const get = async (item, logger) => {
         const $page = $.find('#pageContent');
         const $restrictions = $page
             .find('.moreDetailsInfo .modalContainer .moreDetailsModal-accessibility');
-        const wheelchairTransfer = $restrictions
+        const wheelchairAccessible = $restrictions
             .find('.moreDetailsModalItem-wheelchair-access')
             .text()
             .trim() !== NO_WHEELCHAIR_TRANSFER;
         const admissionRequired = $page.find('.themeParkAdmission').text().trim() === ADMISSION_REQUIRED;
         const description = $page.find('.finderDetailsPageSubtitle').text().trim();
-        // <li class="moreDetailsModalItem-audio-description">Audio Description</li>
-        // <li class="moreDetailsModalItem-sign-language">Sign Language</li>
-        // <li class="moreDetailsModalItem-handheld-captioning">Handheld Captioning</li>
-        // <li class="moreDetailsModalItem-assistive-listening">Assistive Listening</li>
-        // TODO: add length if it exists
         return {
             admissionRequired,
             description,
-            wheelchairTransfer
+            wheelchairAccessible
         };
     }
     catch (error) {
@@ -46,17 +43,19 @@ const get = async (item, logger) => {
     return null;
 };
 /**
- * Retrieves all entertainment locations.
+ * Retrieves all shops.
+ *
+ * TODO: Add type
  */
 exports.list = async (logger, options = {}) => {
     logger('info', `Grabbing screen for ${path}.`);
     const response = await request_1.screen(path);
     const $ = cheerio_1.default(response);
-    const $attractionCards = $.find('li.card');
-    logger('info', `Total of ${$attractionCards.length} entertainment to process.`);
+    const $shopCards = $.find('li.card');
+    logger('info', `Total of ${$shopCards.length} shops to process.`);
     const items = [];
-    for (let i = 0; i < (options.max || $attractionCards.length); i += 1) {
-        const card = $attractionCards.get(i);
+    for (let i = 0; i < (options.max || $shopCards.length); i += 1) {
+        const card = $shopCards.get(i);
         let location = null;
         let area = null;
         let type;
@@ -89,24 +88,14 @@ exports.list = async (logger, options = {}) => {
         }
         const $description = $card.find('.descriptionLines');
         const $facets = $description.find('.facets');
-        const facets = $facets
+        // this will grab information about what type of stuff is sold at this shop
+        const tags = $facets
             .first()
             .text()
             .split(',')
             .filter(detail => detail !== '')
             .map(detail => detail.trim()) || [];
-        const ages = [];
-        const tags = [];
-        facets.forEach(detail => {
-            if (ageKeys.includes(detail)) {
-                ages.push(detail);
-            }
-            else {
-                tags.push(detail);
-            }
-        });
         items.push({
-            ages,
             area,
             extId,
             extRefName,
@@ -132,41 +121,4 @@ exports.list = async (logger, options = {}) => {
     }
     return modifiedItems;
 };
-/**
- * Retrieves the schedules for all of the entertainment for a given day.  Returns them
- * by activity extId.
- *
- * @param start
- * @param end
- */
-exports.schedule = async (start) => {
-    const data = {
-        date: start,
-        filters: 'Entertainment',
-        region: 'US',
-        scheduleOnly: true
-    };
-    const auth = await request_1.getAccessToken();
-    const response = await request_1.getWebApi('https://disneyworld.disney.go.com/entertainment/', 'entertainment', data, auth);
-    const activitySchedules = response.results.reduce((filtered, activity) => {
-        if (!activity.schedule) {
-            return filtered;
-        }
-        return [
-            ...filtered,
-            {
-                id: activity.id,
-                schedule: {
-                    [start]: activity.schedule.schedules.map(s => ({
-                        closing: s.endTime,
-                        isSpecialHours: false,
-                        opening: s.startTime,
-                        type: s.type
-                    }))
-                }
-            }
-        ];
-    }, []);
-    return activitySchedules;
-};
-//# sourceMappingURL=entertainment.js.map
+//# sourceMappingURL=shops.js.map

@@ -8,24 +8,22 @@ const pick_1 = __importDefault(require("lodash/pick")); // tslint:disable-line
 const utils_1 = require("../utils");
 const location_1 = __importDefault(require("./location"));
 // Note: returning extId for jobs
-const RAW_ACTIVITY_ATTRIBUTES = [
+const RAW_DINING_ATTRIBUTES = [
     'admissionRequired',
-    'allowServiceAnimals',
+    'costDescription',
     'description',
+    'diningEvent',
     'extId',
-    'fastPass',
-    'fastPassPlus',
-    'height',
     'id',
     'name',
-    'riderSwapAvailable',
+    'quickService',
+    'tableService',
     'type',
     'url',
-    'wheelchairTransfer',
     'locationId',
     'areaId'
 ];
-const normalizeActivity = activity => (Object.assign({}, pick_1.default(activity, RAW_ACTIVITY_ATTRIBUTES), { ages: activity.ActivityAges.map(age => age.name), tags: activity.ActivityTags.map(tag => tag.name), thrills: activity.ThrillFactors.map(factor => factor.name) }));
+const normalizeDining = dining => (Object.assign({}, pick_1.default(dining, RAW_DINING_ATTRIBUTES), { cuisine: dining.DiningCuisines.map(cuisine => cuisine.name), tags: dining.DiningTags.map(tag => tag.name) }));
 exports.types = {
     ENTERTAINMENT: 'entertainment'
 };
@@ -79,8 +77,12 @@ const addUpdateDining = async (item, Location, access, transaction, logger) => {
         }
     }
     if (item.cuisine) {
+        // either sync or async with Promise.all
         for (const cuisine of item.cuisine) {
-            await utils_1.upsert(Cuisine, { name: cuisine, diningId: diningInst.get('id') }, { name: cuisine }, transaction);
+            const cuisineInst = await utils_1.upsert(Cuisine, { name: cuisine }, { name: cuisine }, transaction);
+            if (!await diningInst.hasDiningCuisines(cuisineInst)) {
+                await diningInst.addDiningCuisines(cuisineInst, { transaction });
+            }
         }
     }
     logger('debug', `Finished adding/updating dining ${item.extId}.`);
@@ -123,71 +125,60 @@ exports.default = (sequelize, access, logger) => {
             });
         },
         /**
-         * Returns a raw activity by id.
+         * Returns a raw dining by id.
          * @param id
          */
         async get(id) {
-            const { Activity, Age, Tag, ThrillFactor } = access;
+            const { Dining, Tag, Cuisine } = access;
             // setting to any because I am not gonna repeat sequelize's api
             const queryInclude = [{
-                    as: 'ActivityAges',
-                    attributes: ['name'],
-                    model: Age
-                }, {
-                    as: 'ActivityTags',
+                    as: 'DiningTags',
                     attributes: ['name'],
                     model: Tag
                 }, {
-                    as: 'ThrillFactors',
+                    as: 'DiningCuisines',
                     attributes: ['name'],
-                    model: ThrillFactor
+                    model: Cuisine
                 }];
-            const activity = await sequelize.transaction(async (transaction) => {
-                const found = await Activity.findOne({
-                    attributes: RAW_ACTIVITY_ATTRIBUTES,
-                    include: queryInclude,
-                    where: { id }
-                }, { transaction });
-                if (!found) {
-                    // let the caller handle not found
-                    return null;
-                }
-                const raw = found.get({ plain: true });
-                return normalizeActivity(raw);
+            const found = await Dining.findOne({
+                attributes: RAW_DINING_ATTRIBUTES,
+                include: queryInclude,
+                where: { id }
             });
-            return activity;
+            if (!found) {
+                // let the caller handle not found
+                return null;
+            }
+            const raw = found.get({ plain: true });
+            return normalizeDining(raw);
         },
         /**
          * List all activities
          * @param where - search parameters
          */
         async list(where) {
-            const { Activity, Age, Tag, ThrillFactor } = access;
+            const { Dining, Tag, Cuisine } = access;
             let query = {
-                attributes: RAW_ACTIVITY_ATTRIBUTES,
+                attributes: RAW_DINING_ATTRIBUTES,
                 include: [{
-                        as: 'ActivityAges',
-                        attributes: ['name'],
-                        model: Age
-                    }, {
-                        as: 'ActivityTags',
+                        as: 'DiningTags',
                         attributes: ['name'],
                         model: Tag
                     }, {
-                        as: 'ThrillFactors',
+                        as: 'DiningCuisines',
                         attributes: ['name'],
-                        model: ThrillFactor
+                        model: Cuisine
                     }]
             };
             if (where) {
                 invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for activities.');
                 query = Object.assign({}, query, { where });
             }
-            const found = Activity.findAll(query);
+            const found = Dining.findAll(query);
             return found.map(item => {
                 // need to further normalize
                 const raw = item.get({ plain: true });
-                return normalizeActivity(raw);
+                return normalizeDining(raw);
             });
         }
     };

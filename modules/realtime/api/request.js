@@ -7,9 +7,9 @@ const cheerio_1 = __importDefault(require("cheerio"));
 const debug_1 = __importDefault(require("debug"));
 const https_1 = __importDefault(require("https"));
 const invariant_1 = __importDefault(require("invariant"));
-const node_fetch_1 = __importDefault(require("node-fetch"));
 const querystring_1 = __importDefault(require("querystring"));
 const random_useragent_1 = __importDefault(require("random-useragent"));
+const url_1 = require("url");
 const debug = debug_1.default('request');
 const SESSION_KEY = 'PHPSESSID=';
 const ORIGIN = 'https://disneyworld.disney.go.com';
@@ -20,24 +20,47 @@ const API_HOST = 'api.wdpro.disney.go.com';
 const accessTokenURLBody = 'grant_type=assertion&assertion_type=public&client_id=WDPRO-MOBILE.MDX.WDW.ANDROID-PROD';
 // use the same user-agent for all WDW park requests
 const authUserAgent = random_useragent_1.default.getRandom(ua => ua.osName === 'Android');
+// meh
+const WEB_API_TYPES = {
+    dining: 'dining-availability',
+    entertainment: 'list/ancestor'
+};
 /**
  * Retrieves the HTML for a screen.
  * @param path
  */
-exports.screen = async (path) => {
-    const response = await node_fetch_1.default(path, {
-        headers: {
-            Accept: '*/*',
-            'Accept-Language': 'en-US,en;q=0.8',
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            Host: SITE_HOST,
-            Origin: ORIGIN,
-            'X-Requested-With': 'XMLHttpRequest',
-            'User-Agent': random_useragent_1.default.getRandom() // tslint:disable-line
-        },
-        method: 'get'
+exports.screen = async (url) => {
+    debug(`Requesting html for ${url}`);
+    const parsedUrl = url_1.parse(url);
+    return new Promise((resolve, reject) => {
+        const options = {
+            headers: {
+                Accept: '*/*',
+                'Accept-Language': 'en-US,en;q=0.8',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                Host: SITE_HOST,
+                Origin: ORIGIN,
+                'X-Requested-With': 'XMLHttpRequest',
+                'User-Agent': random_useragent_1.default.getRandom() // tslint:disable-line
+            },
+            hostname: parsedUrl.host,
+            method: 'get',
+            path: parsedUrl.pathname
+        };
+        const request = https_1.default.request(options, response => {
+            let html = '';
+            response.on('data', chunk => {
+                html += chunk;
+            });
+            response.on('end', () => {
+                debug(`Retrieved html for ${url}`);
+                resolve(html);
+            });
+        }).on('error', error => {
+            reject(`Cannot retrieve html for ${url} - ${error}`);
+        });
+        request.end();
     });
-    return response.text();
 };
 /**
  * Retrieves a session cookie for a url.
@@ -45,28 +68,35 @@ exports.screen = async (path) => {
  */
 exports.getWebSession = async (url) => {
     debug(`Requesting session for ${url}`);
-    const response = await node_fetch_1.default(url);
-    if (!response.ok) {
-        throw new Error(`Cannot retrieve session for ${url}`);
-    }
-    const setCookie = response.headers.get('set-cookie');
-    if (!setCookie) {
-        throw new Error(`Cannot retrieve session cookie for ${url}`);
-    }
-    let sessionId = setCookie.split(';').find(test => test.indexOf('PHPSESSID=') > -1);
-    if (!sessionId) {
-        throw new Error(`Cannot retrieve session cookie for ${url}`);
-    }
-    sessionId = sessionId.substring(sessionId.indexOf(SESSION_KEY));
-    sessionId = sessionId.substring(SESSION_KEY.length);
-    const html = await response.text();
-    const $ = cheerio_1.default.load(html);
-    const csrfToken = $('#pep_csrf').val();
-    debug(`Retrieved session for ${url}`);
-    return {
-        csrfToken,
-        cookie: sessionId // tslint:disable-line
-    };
+    return new Promise((resolve, reject) => {
+        https_1.default.get(url, response => {
+            const setCookie = response.headers['set-cookie'];
+            if (!setCookie) {
+                throw new Error(`Cannot retrieve session cookie for ${url}`);
+            }
+            let sessionId = setCookie.find(test => test.indexOf('PHPSESSID=') > -1);
+            if (!sessionId) {
+                throw new Error(`Cannot retrieve session cookie for ${url}`);
+            }
+            sessionId = sessionId.substring(sessionId.indexOf(SESSION_KEY));
+            sessionId = sessionId.substring(SESSION_KEY.length, sessionId.indexOf(';'));
+            let html = '';
+            response.on('data', chunk => {
+                html += chunk;
+            });
+            response.on('end', () => {
+                const $ = cheerio_1.default.load(html);
+                const csrfToken = $('#pep_csrf').val();
+                debug(`Retrieved session for ${url}`);
+                resolve({
+                    csrfToken,
+                    cookie: sessionId // tslint:disable-line
+                });
+            });
+        }).on('error', error => {
+            reject(`Cannot retrieve session for ${url} - ${error}`);
+        });
+    });
 };
 exports.diningFinder = async (url, data, auth) => {
     let postData = data;
@@ -139,7 +169,7 @@ exports.diningFinder = async (url, data, auth) => {
  * Retrieves data from a web/browser based api.  We probably want to merge this with
  * the mobile api get function.
  */
-exports.getWebApi = async (url, params, auth) => {
+exports.getWebApi = async (url, type, params, auth) => {
     return new Promise((resolve, reject) => {
         const options = {
             headers: {
@@ -155,7 +185,7 @@ exports.getWebApi = async (url, params, auth) => {
             },
             hostname: SITE_HOST,
             method: 'get',
-            path: `/api/wdpro/explorer-service/public/finder/list/ancestor/80007798;entityType=destination?${querystring_1.default.stringify(params)}` // tslint:disable-line
+            path: `/api/wdpro/explorer-service/public/finder/${WEB_API_TYPES[type]}/80007798;entityType=destination?${querystring_1.default.stringify(params)}` // tslint:disable-line
         };
         const request = https_1.default
             .request(options, response => {

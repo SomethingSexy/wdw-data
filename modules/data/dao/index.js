@@ -8,15 +8,18 @@ const activitySchedule_1 = __importDefault(require("./activitySchedule"));
 const address_1 = __importDefault(require("./address"));
 const age_1 = __importDefault(require("./age"));
 const area_1 = __importDefault(require("./area"));
+const busStop_1 = __importDefault(require("./busStop"));
 const cuisine_1 = __importDefault(require("./cuisine"));
 const date_1 = __importDefault(require("./date"));
 const dining_1 = __importDefault(require("./dining"));
 const hotel_1 = __importDefault(require("./hotel"));
 const location_1 = __importDefault(require("./location"));
 const locationSchedule_1 = __importDefault(require("./locationSchedule"));
+const reservation_1 = __importDefault(require("./reservation"));
 const room_1 = __importDefault(require("./room"));
 const roomConfiguration_1 = __importDefault(require("./roomConfiguration"));
 const schedule_1 = __importDefault(require("./schedule"));
+const shop_1 = __importDefault(require("./shop"));
 const tag_1 = __importDefault(require("./tag"));
 const thrillFactor_1 = __importDefault(require("./thrillFactor"));
 const waitTime_1 = __importDefault(require("./waitTime"));
@@ -27,6 +30,7 @@ exports.default = sequelize => {
     const Address = address_1.default(sequelize);
     const Age = age_1.default(sequelize);
     const Area = area_1.default(sequelize);
+    const BusStop = busStop_1.default(sequelize);
     const Location = location_1.default(sequelize);
     const LocationSchedule = locationSchedule_1.default(sequelize);
     const Schedule = schedule_1.default(sequelize);
@@ -34,11 +38,13 @@ exports.default = sequelize => {
     const Dining = dining_1.default(sequelize);
     const Cuisine = cuisine_1.default(sequelize);
     const Hotel = hotel_1.default(sequelize);
+    const Reservation = reservation_1.default(sequelize);
+    const Room = room_1.default(sequelize);
+    const RoomConfiguration = roomConfiguration_1.default(sequelize);
+    const Shop = shop_1.default(sequelize);
     const Tag = tag_1.default(sequelize);
     const ThrillFactor = thrillFactor_1.default(sequelize);
     const WaitTime = waitTime_1.default(sequelize);
-    const Room = room_1.default(sequelize);
-    const RoomConfiguration = roomConfiguration_1.default(sequelize);
     // setup assocations
     Date.belongsToMany(Schedule, { through: LocationSchedule });
     Schedule.belongsToMany(Date, { through: LocationSchedule });
@@ -49,6 +55,7 @@ exports.default = sequelize => {
     Hotel.belongsTo(Location);
     Room.hasMany(RoomConfiguration);
     Hotel.hasMany(Room);
+    Hotel.hasMany(BusStop);
     Location.belongsTo(Address);
     Location.hasMany(Area);
     Dining.belongsTo(Location);
@@ -56,7 +63,15 @@ exports.default = sequelize => {
     Location.hasMany(Dining);
     Tag.belongsToMany(Dining, { as: 'DiningTags', through: 'dinings_tags' });
     Dining.belongsToMany(Tag, { as: 'DiningTags', through: 'dinings_tags' });
-    Dining.hasMany(Cuisine);
+    Cuisine.belongsToMany(Dining, { as: 'DiningCuisines', through: 'cuisines_dinings' });
+    Dining.belongsToMany(Cuisine, { as: 'DiningCuisines', through: 'cuisines_dinings' });
+    Dining.hasMany(Reservation);
+    Date.hasMany(Reservation);
+    Shop.belongsTo(Location);
+    Shop.belongsTo(Area);
+    Location.hasMany(Shop);
+    Tag.belongsToMany(Shop, { as: 'ShopTags', through: 'shops_tags' });
+    Shop.belongsToMany(Tag, { as: 'ShopTags', through: 'shops_tags' });
     // Splitting Area and Location but since they might not
     // always have an Area, instead of doing a join of the ids
     Activity.belongsTo(Location);
@@ -85,6 +100,7 @@ exports.default = sequelize => {
         Address,
         Age,
         Area,
+        BusStop,
         Cuisine,
         Date,
         Dining,
@@ -94,6 +110,7 @@ exports.default = sequelize => {
         Room,
         RoomConfiguration,
         Schedule,
+        Shop,
         Tag,
         ThrillFactor,
         WaitTime

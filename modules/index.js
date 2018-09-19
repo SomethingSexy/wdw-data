@@ -35,7 +35,8 @@ exports.realtime = (logger) => {
         dining: index_2.dining(internalLogger),
         entertainment: index_2.entertainment(internalLogger),
         hotels: index_2.hotels(internalLogger),
-        parks: index_2.parks(internalLogger)
+        parks: index_2.parks(internalLogger),
+        shops: index_2.shops(internalLogger)
     };
 };
 //# sourceMappingURL=index.js.map

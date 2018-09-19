@@ -5,6 +5,7 @@ const dining_1 = require("./dining");
 const entertainment_1 = require("./entertainment");
 const hotels_1 = require("./hotels");
 const parks_1 = require("./parks");
+const shops_1 = require("./shops");
 exports.attractions = (logger) => {
     return {
         get: attractions_1.get,
@@ -20,6 +21,7 @@ exports.entertainment = (logger) => {
 exports.dining = (logger) => {
     return {
         reservations: dining_1.reservations,
+        reservationsByDate: dining_1.reservationsByDate.bind(undefined, logger),
         get: dining_1.get,
         list: (options) => dining_1.list(logger, options),
     };
@@ -34,6 +36,11 @@ exports.parks = (logger) => {
         waitTimes: parks_1.waitTimes,
         hours: parks_1.parkHours,
         list: () => parks_1.list(logger)
+    };
+};
+exports.shops = (logger) => {
+    return {
+        list: shops_1.list.bind(undefined, logger)
     };
 };
 //# sourceMappingURL=index.js.map
