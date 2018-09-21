@@ -63,8 +63,6 @@ const addUpdateDining = async (item: IDining, Location, access, transaction, log
     if (locationInstance) {
       await diningInst.setLocation(locationInstance, { transaction });
     }
-    // TODO: else log an issue if we cannot find a location
-    // if there is a location, we might also have an area, however
     // we have to add the area here because there is no other way
     // to easily generate them
     if (item.area) {
@@ -115,23 +113,23 @@ const addUpdateDining = async (item: IDining, Location, access, transaction, log
  */
 const validateDining = (item: IDining) => {
   if (!item.type) {
-    return 'Type is required for an activity.';
+    return 'Type is required for dining.';
   }
 
   if (!item.extId) {
-    return 'ExtId is required for activity.';
+    return 'ExtId is required for dining.';
   }
 
   return true;
 };
 
 /**
- * Validates all activities.
+ * Validates all dining.
  * @param items
  */
 export const validateAllDining = (items: IDining[]) => {
   if (!items || !items.length) {
-    return 'Activities are required to add or update.';
+    return 'Dining are required to add or update.';
   }
   const errors = items
     .map(validateDining)
@@ -184,7 +182,7 @@ export default (sequelize, access, logger) => {
       return normalizeDining(raw);
     },
     /**
-     * List all activities
+     * List all dining
      * @param where - search parameters
      */
     async list(where?: { [key: string]: string | boolean }) {

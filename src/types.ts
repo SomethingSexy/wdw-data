@@ -17,6 +17,21 @@ export interface IDining {
   url: string;
 }
 
+export interface IShop {
+  admissionRequired: boolean;
+  area: string;
+  description: string;
+  extId: string;
+  extRefName: string;
+  id: string;
+  location: string;
+  name: string;
+  tags: string[];
+  type: string;
+  url: string;
+  wheelchairAccessible: boolean;
+}
+
 export interface IActivity {
   admissionRequired: boolean;
   ages?: string[];

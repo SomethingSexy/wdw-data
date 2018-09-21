@@ -1,5 +1,5 @@
 import cheerio from 'cheerio';
-import { ILogger } from '../types';
+import { ILogger, IShop } from '../types';
 import { screen } from './api/request';
 import { parseExternal, parseLocation } from './utils';
 
@@ -46,10 +46,10 @@ const get = async (item, logger: ILogger) => {
 
 /**
  * Retrieves all shops.
- *
- * TODO: Add type
  */
-export const list = async (logger: ILogger, options: { max?: number} = {}) => {
+export const list = async (
+  logger: ILogger, options: { max?: number} = {}
+): Promise<IShop[] | undefined> => {
   logger('info', `Grabbing screen for ${path}.`);
   const response = await screen(path);
 
