@@ -4,6 +4,7 @@ import createAccessObjects from './dao/index';
 import createActivity from './model/activity';
 import createDining from './model/dining';
 import createLocation from './model/location';
+import createShop from './model/shop';
 import { Error, Success } from './utils';
 
 export const responseHandlers = { Error, Success };
@@ -34,10 +35,12 @@ export default async (connection: any | IConnection, logger: ILogger) => {
   const activity = createActivity(sequelize, accessObjects, logger);
   const dining = createDining(sequelize, accessObjects, logger);
   const location = createLocation(sequelize, accessObjects, logger);
+  const shop = createShop(sequelize, accessObjects, logger);
 
   return {
     activity,
     dining,
-    location
+    location,
+    shop
   };
 };

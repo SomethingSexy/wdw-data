@@ -8,6 +8,7 @@ const index_1 = __importDefault(require("./dao/index"));
 const activity_1 = __importDefault(require("./model/activity"));
 const dining_1 = __importDefault(require("./model/dining"));
 const location_1 = __importDefault(require("./model/location"));
+const shop_1 = __importDefault(require("./model/shop"));
 const utils_1 = require("./utils");
 exports.responseHandlers = { Error: utils_1.Error, Success: utils_1.Success };
 /**
@@ -34,10 +35,12 @@ exports.default = async (connection, logger) => {
     const activity = activity_1.default(sequelize, accessObjects, logger);
     const dining = dining_1.default(sequelize, accessObjects, logger);
     const location = location_1.default(sequelize, accessObjects, logger);
+    const shop = shop_1.default(sequelize, accessObjects, logger);
     return {
         activity,
         dining,
-        location
+        location,
+        shop
     };
 };
 //# sourceMappingURL=index.js.map

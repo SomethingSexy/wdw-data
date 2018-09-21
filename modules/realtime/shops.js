@@ -44,8 +44,6 @@ const get = async (item, logger) => {
 };
 /**
  * Retrieves all shops.
- *
- * TODO: Add type
  */
 exports.list = async (logger, options = {}) => {
     logger('info', `Grabbing screen for ${path}.`);
