@@ -20,7 +20,7 @@ const RAW_SHOP_ATTRIBUTES = [
     'areaId',
     'wheelchairAccessible'
 ];
-const normalizeShop = shop => (Object.assign({}, pick_1.default(shop, RAW_SHOP_ATTRIBUTES), { tags: shop.DiningTags.map(tag => tag.name) }));
+const normalizeShop = shop => (Object.assign({}, pick_1.default(shop, RAW_SHOP_ATTRIBUTES), { tags: shop.ShopTags.map(tag => tag.name) }));
 const addUpdateShop = async (item, Location, access, transaction, logger) => {
     logger('debug', `Adding/updating shops ${item.extId}.`);
     const { Shop, Tag } = access;
@@ -54,11 +54,12 @@ const addUpdateShop = async (item, Location, access, transaction, logger) => {
             await shopInst.setArea(areaInst, { transaction });
         }
     }
+    console.log('tags', item.tags);
     if (item.tags) {
         for (const tagName of item.tags) {
             const tagInst = await utils_1.upsert(Tag, { name: tagName, from: 'shop' }, { name: tagName }, transaction);
-            if (!await shopInst.hasDiningTags(tagInst)) {
-                await shopInst.addDiningTags(tagInst, { transaction });
+            if (!await shopInst.hasShopTags(tagInst)) {
+                await shopInst.addShopTags(tagInst, { transaction });
             }
         }
     }

@@ -20,7 +20,7 @@ const RAW_SHOP_ATTRIBUTES = [
 
 const normalizeShop = shop => ({
   ...pick(shop, RAW_SHOP_ATTRIBUTES),
-  tags: shop.DiningTags.map(tag => tag.name)
+  tags: shop.ShopTags.map(tag => tag.name)
 });
 
 const addUpdateShop = async (item: IShop, Location, access, transaction, logger) => {
@@ -70,8 +70,8 @@ const addUpdateShop = async (item: IShop, Location, access, transaction, logger)
       const tagInst = await upsert(
         Tag, { name: tagName, from: 'shop' }, { name: tagName }, transaction
       );
-      if (!await shopInst.hasDiningTags(tagInst)) {
-        await shopInst.addDiningTags(tagInst, { transaction });
+      if (!await shopInst.hasShopTags(tagInst)) {
+        await shopInst.addShopTags(tagInst, { transaction });
       }
     }
   }
@@ -117,6 +117,8 @@ export default (sequelize, access, logger) => {
     async addUpdate(items: IShop[] = []) {
       const Location = location(sequelize, access, logger);
 
+      // TODO: Make more sense to do the get outside of the transction? if the
+      // get fails, the whole transaction is going to roll back
       return syncTransaction(sequelize, items, async (item, transaction) => {
         const shop = await addUpdateShop(item, Location, access, transaction, logger);
         return api.get(shop);
