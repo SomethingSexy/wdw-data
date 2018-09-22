@@ -1,12 +1,31 @@
 import cheerio from 'cheerio';
-import { ILogger, IShop } from '../types';
-import { screen } from './api/request';
+import { IDiscount, ILogger, IShop } from '../types';
+import { getHtml, screen } from './api/request';
 import { parseExternal, parseLocation } from './utils';
 
 const path = 'https://disneyworld.disney.go.com/shops/';
+const passholderDiscountPath = 'https://disneyworld.disney.go.com/passholder-program/passholder-benefits-and-discounts/merchandise-discounts/'; // tslint:disable-line
 
 const NO_WHEELCHAIR_TRANSFER = 'May Remain in Wheelchair/ECV';
 const ADMISSION_REQUIRED = 'Valid Park Admission Required';
+
+const addDiscount = (item: IShop, itemDiscount: IDiscount) => {
+  const { description, discount, type } = itemDiscount;
+  if (!item.discounts) {
+    return {
+      ...item,
+      discsounts: [{ description, discount, type }]
+    };
+  }
+
+  return {
+    ...item,
+    discounts: [
+      ...item.discounts,
+      { description, discount, type }
+    ]
+  };
+};
 
 /**
  * Retrieves detailed information about a shop, internal for processing list.
@@ -42,6 +61,61 @@ const get = async (item, logger: ILogger) => {
   }
 
   return null;
+};
+
+/**
+ * Retrieves passholder discount information.  TODO: Move this to a common spot, we will need it
+ * for dining.
+ *
+ * @param logger
+ */
+const getPassholderDiscounts = async (
+  logger: ILogger
+): Promise<{[name: string]: IDiscount} | null> => {
+  logger('info', 'Grabbing passholder discounts.');
+  const response = await getHtml(passholderDiscountPath);
+  logger('debug', `Discount response length ${response.length}`);
+  const $ = cheerio.load(response);
+  const $body = $('body');
+  const $table = $body.find('#offer-table');
+  // if we cannot find the table, then return null to indicate bad request
+  if (!$table.length) {
+    return null;
+  }
+  const $discountRows = $table.find('tr.row.show');
+  logger('info', `Found ${$discountRows.length} discounts.`);
+  const items: any[] = [];
+  for (let i = 0; i < $discountRows.length; i += 1) {
+    logger('info', `${i}`);
+    const row = $discountRows.get(i);
+
+    const $row = cheerio(row);
+
+    const $contentName = $row.find('td.name .cellWrapper .content');
+    const $anchor = $contentName.find('a');
+        // if anchor doesn't exist, grab text directly from content
+    const name = $anchor.length ? $contentName.text() : $contentName.text();
+
+    const $contentLocation = $row.find('td.location .cellWrapper .content');
+    const location = $contentLocation.text();
+
+    const $contentDiscount = $row.find('td.percent .cellWrapper .content');
+    const discount = $contentDiscount.text();
+
+    const $contentDescription = $row.find('td.valid .cellWrapper .content');
+    const description = $contentDescription.text();
+
+    items.push({
+      description,
+      discount,
+      location,
+      name,
+      type: 'passholder'
+    });
+  }
+
+  logger('info', `Grabbed ${items.length} discount items.`);
+  return Object.values(items).reduce((all, item) => ({ ...all, [item.name]: item }), {});
 };
 
 /**
@@ -125,7 +199,7 @@ export const list = async (
 
   // We are getting a lot of data here, so lets play nice with them and call them
   // one at a time instead of blasting the server
-  const modifiedItems: any[] = [];
+  let modifiedItems: any[] = [];
   for (const item of items) {
     const diningItem = await get(item, logger);
     if (typeof diningItem === 'object') {
@@ -136,6 +210,21 @@ export const list = async (
     } else {
       modifiedItems.push(item);
     }
+  }
+
+  // Add in discounts, both passholder and visa card.  We can retrieve these
+  // all once and then process them
+  const passholderDiscounts = await getPassholderDiscounts(logger);
+
+  if (passholderDiscounts) {
+    modifiedItems = modifiedItems.map(item => {
+      const discount = passholderDiscounts[item.name];
+      if (passholderDiscounts[item.name]) {
+        return addDiscount(item, discount);
+      }
+
+      return item;
+    });
   }
 
   return modifiedItems;

@@ -17,10 +17,25 @@ export interface IDining {
   url: string;
 }
 
+export interface IDiscount {
+  description: string;
+  discount: string;
+  location: string;
+  name: string;
+  type: string;
+}
+
+interface IShopDiscount {
+  description: string;
+  discount: string;
+  type: string;
+}
+
 export interface IShop {
   admissionRequired: boolean;
   area: string;
   description: string;
+  discounts?: IShopDiscount[];
   extId: string;
   extRefName: string;
   id: string;

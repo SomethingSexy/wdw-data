@@ -29,23 +29,19 @@ const WEB_API_TYPES = {
   entertainment: 'list/ancestor'
 };
 
-/**
- * Retrieves the HTML for a screen.
- * @param path
- */
-export const screen = async (url: string): Promise<any> => {
+export const getHtml = async (url: string, headers?: any): Promise<any> => {
   debug(`Requesting html for ${url}`);
   const parsedUrl = parse(url);
   return new Promise((resolve, reject) => {
     const options = {
       headers: {
-        Accept: '*/*',
-        'Accept-Language': 'en-US,en;q=0.8',
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        Host: SITE_HOST,
-        Origin: ORIGIN,
-        'X-Requested-With': 'XMLHttpRequest',
-        'User-Agent': randomUseragent.getRandom() // tslint:disable-line
+        ...headers,
+        // Make sure it is at least one of the standard browsers
+        // this might account for some weirdness I was seeing with html
+        // not coming back as expected
+        'User-Agent': randomUseragent.getRandom(ua => {
+          return ua.browserName === 'Firefox';
+        })
       },
       hostname: parsedUrl.host,
       method: 'get',
@@ -66,6 +62,22 @@ export const screen = async (url: string): Promise<any> => {
     });
 
     request.end();
+  });
+};
+
+/**
+ * Retrieves the HTML for a "subsequent" screen in a workflow.
+ * @param path
+ */
+export const screen = async (url: string): Promise<any> => {
+  debug(`Requesting html for ${url}`);
+  return getHtml(url, {
+    Accept: '*/*',
+    'Accept-Language': 'en-US,en;q=0.8',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    Host: SITE_HOST,
+    Origin: ORIGIN,
+    'X-Requested-With': 'XMLHttpRequest'
   });
 };
 

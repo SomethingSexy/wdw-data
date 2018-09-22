@@ -100,10 +100,9 @@ export default async (options: IOptions = {
     try {
       const shops = await realtimeModels
         .shops
-        .list({ max: 10 });
+        .list({ max: 60 });
 
       logger.log('info', JSON.stringify(shops, null, 4));
-      // await models.activity.addUpdate(entertainment);
     } catch (e) {
       logger.log('error', e.toString());
     }
