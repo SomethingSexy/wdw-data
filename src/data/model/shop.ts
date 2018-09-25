@@ -23,7 +23,16 @@ const normalizeShop = shop => ({
   tags: shop.ShopTags.map(tag => tag.name)
 });
 
-const addUpdateShop = async (item: IShop, Location, access, transaction, logger) => {
+/**
+ * Upserts a shop.
+ *
+ * @param item
+ * @param Location
+ * @param access
+ * @param transaction
+ * @param logger
+ */
+export const addUpdateShop = async (item: IShop, Location, access, transaction, logger) => {
   logger('debug', `Adding/updating shops ${item.extId}.`);
   const { Shop, Tag } = access;
   const shopItem: any = {

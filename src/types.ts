@@ -38,7 +38,7 @@ export interface IShop {
   discounts?: IShopDiscount[];
   extId: string;
   extRefName: string;
-  id: string;
+  id?: string;
   location: string;
   name: string;
   tags: string[];

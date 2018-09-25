@@ -34,7 +34,7 @@ const allDiningSuccess = {
   }
 };
 
-describe('dinning', () => {
+describe('realtime - dinning', () => {
   describe('reservationsByDate', () => {
     it('should find a list of reservations', async () => {
       nock('https://authorization.go.com')
