@@ -14,7 +14,7 @@ const addDiscount = (item: IShop, itemDiscount: IDiscount) => {
   if (!item.discounts) {
     return {
       ...item,
-      discsounts: [{ description, discount, type }]
+      discounts: [{ description, discount, type }]
     };
   }
 
@@ -80,13 +80,13 @@ const getPassholderDiscounts = async (
   const $table = $body.find('#offer-table');
   // if we cannot find the table, then return null to indicate bad request
   if (!$table.length) {
+    logger('error', 'Request did not return the correct html for us to process the discounts.');
     return null;
   }
   const $discountRows = $table.find('tr.row.show');
   logger('info', `Found ${$discountRows.length} discounts.`);
   const items: any[] = [];
   for (let i = 0; i < $discountRows.length; i += 1) {
-    logger('info', `${i}`);
     const row = $discountRows.get(i);
 
     const $row = cheerio(row);

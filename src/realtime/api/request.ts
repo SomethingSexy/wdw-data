@@ -35,6 +35,8 @@ export const getHtml = async (url: string, headers?: any): Promise<any> => {
   return new Promise((resolve, reject) => {
     const options = {
       headers: {
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.8',
         ...headers,
         // Make sure it is at least one of the standard browsers
         // this might account for some weirdness I was seeing with html

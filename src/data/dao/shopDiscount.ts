@@ -12,7 +12,8 @@ export default sequelize => {
         primaryKey: true,
         type: Sequelize.UUID,
       },
-      thruDate: Sequelize.DATEONLY
+      thruDate: Sequelize.DATEONLY,
+      type: Sequelize.TEXT
     }
   );
 

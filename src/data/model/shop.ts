@@ -1,5 +1,7 @@
 import invariant from 'invariant';
+import differenceWith from 'lodash/differenceWith'; // tslint:disable-line
 import pick from 'lodash/pick'; // tslint:disable-line
+import moment from 'moment';
 import { IShop } from '../../types';
 import { syncTransaction, upsert } from '../utils';
 import location from './location';
@@ -22,6 +24,39 @@ const normalizeShop = shop => ({
   ...pick(shop, RAW_SHOP_ATTRIBUTES),
   tags: shop.ShopTags.map(tag => tag.name)
 });
+// TODO: Move this discount stuff out of here when we add dining discounts, etc
+export const createDiscounts = async (Model, discounts, shopId, transaction) =>
+  Promise.all(discounts.map(async discount =>
+    Model.create(
+      {
+        description: discount.description,
+        discount: discount.discount,
+        fromDate: moment().format('YYYY-MM-DD'),
+        shopId, // tslint:disable-line
+        thruDate: null,
+        type: discount.type
+      },
+      { transaction }
+    )
+  ));
+
+/**
+ * Turns off the discount by updating the thruDate.
+ * @param Model
+ * @param discounts
+ * @param transaction
+ */
+export const removedDiscounts = async (Model, discounts, transaction) =>
+  Promise.all(discounts.map(async discount => {
+    const instance = await Model.findById(discount.id, { transaction });
+    return instance.update({ thruDate: moment().format('YYYY-MM-DD') });
+  }));
+
+export const updateDiscounts = async (Model, discounts, transaction) =>
+  Promise.all(discounts.map(async discount => {
+    const instance = await Model.findById(discount.id, { transaction });
+    return instance.update(pick(discount, ['discount', 'description']));
+  }));
 
 /**
  * Upserts a shop.
@@ -34,7 +69,7 @@ const normalizeShop = shop => ({
  */
 export const addUpdateShop = async (item: IShop, Location, access, transaction, logger) => {
   logger('debug', `Adding/updating shops ${item.extId}.`);
-  const { Shop, Tag } = access;
+  const { Shop, ShopDiscount, Tag } = access;
   const shopItem: any = {
     admissionRequired: item.admissionRequired,
     description: item.description,
@@ -82,6 +117,92 @@ export const addUpdateShop = async (item: IShop, Location, access, transaction, 
       if (!await shopInst.hasShopTags(tagInst)) {
         await shopInst.addShopTags(tagInst, { transaction });
       }
+    }
+  }
+
+  // if this is null, then we are assuming we do not have any updates
+  // if it is an empty discount then that means we need to clear out
+  // all existing discounts
+  if (item.discounts) {
+    logger('debug', `Shop ${item.extId} has ${item.discounts.length} discounts.`);
+    // get all current discounts
+    // if incoming discounts is empty, clear them out
+    // if incoming is not empty, see if there are any updates
+    const activeDiscounts = await ShopDiscount
+      .findAll({ where: { shopId: shopInst.get('id'), thruDate: null } }, { transaction })
+      .map(discount => discount.get({ plain: true }));
+
+    logger('debug', `Shop ${item.extId} has ${activeDiscounts.length} active discounts.`);
+
+    if (activeDiscounts.length && !item.discounts.length) {
+        // we have active discounts but we do not have any now... remove the current ones
+    } else if (activeDiscounts.length && item.discounts.length) {
+      // we have active discounts and we have incoming ones
+      // find the ones that do not exist, close them down
+      // find the ones that still eixst, ignore
+      // add new ones
+      const add = differenceWith(item.discounts, activeDiscounts, (incoming, active: any) => {
+        if (incoming.type !== active.type && incoming.discount !== active.discount) {
+          return false;
+        }
+
+        return true;
+      });
+
+      const remove = activeDiscounts.filter(active =>
+        !(item.discounts || [])
+          .find(discount => discount.type === active.type && discount.discount === active.discount)
+      );
+
+      // if we find one that has the same type but the discount or description is not the same
+      // const update = activeDiscounts.filter(active =>
+      //   !!(item.discounts || [])
+      //     .find(discount =>
+      //       discount.type === active.type
+      //       && (discount.discount !== active.discount
+      //         || discount.description !== active.description)
+      //     )
+      // );
+
+      const update = activeDiscounts.reduce(
+        (all, active) => {
+          const shouldUpdate = (item.discounts || [])
+            .find(discount =>
+              discount.type === active.type
+              && (discount.discount !== active.discount
+                || discount.description !== active.description));
+
+          // If we found one, merge the new props with the old, so we can update later
+          if (shouldUpdate) {
+            return [
+              ...all,
+              {
+                ...active,
+                ...shouldUpdate
+              }
+            ];
+          }
+
+          return all;
+        },
+        []
+      );
+
+      if (add.length) {
+        await createDiscounts(ShopDiscount, add, shopInst.get('id'), transaction);
+      }
+
+      if (remove.length) {
+        // TODO: If we keep the instance, might be easier to update?
+        await removedDiscounts(ShopDiscount, remove, transaction);
+      }
+
+      if (update.length) {
+        await updateDiscounts(ShopDiscount, update, transaction);
+      }
+    } else if (!activeDiscounts.length && item.discounts.length) {
+      // we do not have active discounts and we have incoming ones, add
+      await createDiscounts(ShopDiscount, item.discounts, shopInst.get('id'), transaction);
     }
   }
 

@@ -15,6 +15,7 @@ import room from './room';
 import roomConfiguration from './roomConfiguration';
 import schedule from './schedule';
 import shop from './shop';
+import shopDiscount from './shopDiscount';
 import tag from './tag';
 import thrillFactor from './thrillFactor';
 import waitTime from './waitTime';
@@ -38,6 +39,7 @@ export default sequelize => {
   const Room = room(sequelize);
   const RoomConfiguration = roomConfiguration(sequelize);
   const Shop = shop(sequelize);
+  const ShopDiscount = shopDiscount(sequelize);
   const Tag = tag(sequelize);
   const ThrillFactor = thrillFactor(sequelize);
   const WaitTime = waitTime(sequelize);
@@ -72,6 +74,8 @@ export default sequelize => {
   Location.hasMany(Shop);
   Tag.belongsToMany(Shop, { as: 'ShopTags', through: 'shops_tags' });
   Shop.belongsToMany(Tag, { as: 'ShopTags', through: 'shops_tags' });
+  Shop.hasMany(ShopDiscount);
+  ShopDiscount.belongsTo(Shop);
 
   // Splitting Area and Location but since they might not
   // always have an Area, instead of doing a join of the ids
@@ -123,6 +127,7 @@ export default sequelize => {
     RoomConfiguration,
     Schedule,
     Shop,
+    ShopDiscount,
     Tag,
     ThrillFactor,
     WaitTime

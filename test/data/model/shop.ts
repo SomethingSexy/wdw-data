@@ -29,7 +29,7 @@ describe('model - shop', () => {
       const mockShop = {
         addShopTags: stub(),
         findOne: stub(),
-        get: stub().returns({ balls: 1 }),
+        get: stub().returns({ id: '123-456' }),
         hasShopTags: stub(),
         setArea: stub(),
         setLocation: stub()
@@ -64,6 +64,9 @@ describe('model - shop', () => {
       const output = await shop.addUpdateShop(
         item, MockLocation, access, mockTransaction, mockLogger
       );
+
+      // this not really what gets returned in prod
+      expect(output).to.deep.equal({ id: '123-456' });
 
       expect(upsertStub.called).to.equal(true);
       const firstCall = upsertStub.getCall(0);

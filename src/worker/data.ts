@@ -20,7 +20,7 @@ export default async (options: IOptions = {
   const models = await createModels(
     {
       database: 'wdw',
-      logging: true,
+      logging: false,
       pool: {
         max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
       },
@@ -101,8 +101,8 @@ export default async (options: IOptions = {
       const shops = await realtimeModels
         .shops
         .list({ max: 60 });
-
       logger.log('info', JSON.stringify(shops, null, 4));
+      await models.shop.addUpdate(shops);
     } catch (e) {
       logger.log('error', e.toString());
     }
