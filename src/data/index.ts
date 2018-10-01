@@ -3,8 +3,9 @@ import { IConnection, ILogger } from '../types';
 import createAccessObjects from './dao/index';
 import createActivity from './model/activity';
 import createDining from './model/dining';
-import createLocation from './model/location';
-import createShop from './model/shop';
+import Location from './model/Location';
+import Shop from './model/Shop';
+import Shops from './model/Shops';
 import { Error, Success } from './utils';
 
 export const responseHandlers = { Error, Success };
@@ -31,11 +32,13 @@ export default async (connection: any | IConnection, logger: ILogger) => {
   await sequelize.sync();
 
   // setup models, these will be higher level objects that will handle the business logic
-  // around the data access objects
+  // around the data access objects,
+  // for now we are creating a single instance here, turn into factory methods if we want
+  // to create instances outside of here
   const activity = createActivity(sequelize, accessObjects, logger);
   const dining = createDining(sequelize, accessObjects, logger);
-  const location = createLocation(sequelize, accessObjects, logger);
-  const shop = createShop(sequelize, accessObjects, logger);
+  const location = Location(sequelize, accessObjects, logger);
+  const shop = new Shops(sequelize, accessObjects, logger, { Location, Shop });
 
   return {
     activity,

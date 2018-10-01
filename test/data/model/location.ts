@@ -4,14 +4,17 @@ import moment from 'moment';
 import proxyquire from 'proxyquire';
 import { spy, stub } from 'sinon';
 import uuid from 'uuid/v4'; // tslint:disable-line
+import LocationModel from '../../../src/data/model/Location';
 import { IShop } from '../../../src/types';
+
 import {
-  createShopInstance,
+  createLocationInstance,
+  mockActivityDao,
+  mockAddressDao,
+  mockAreaDao,
   MockLocation,
   mockLocationDao,
-  mockLogger,
-  mockShopDao,
-  mockShopDiscountDao
+  mockLogger
 } from './utils';
 
 const mockAreaInstance = {
@@ -20,81 +23,127 @@ const mockAreaInstance = {
 
 const mockTransaction = {};
 
-class MockDiscount {
-  private discount: any;
-  constructor(discount) {
-    this.discount = discount;
-  }
-
-  public get() {
-    return this.discount;
-  }
-}
-
-describe('model - shop', () => {
+describe('model - location', () => {
   describe('create and find', () => {
-    it('should create a new instance with extId', async () => {
-      const upsertStub = stub().returns(mockShopDao);
-      const Shop = proxyquire(
-        '../../../src/data/model/Shop',
-        { '../utils': { upsert: upsertStub } }
-      );
-
+    it('should create a new instance and load it via extId', async () => {
       const id = uuid();
-      const data = { id, name: 'Foo', ShopTags: [] };
-
-      const getMockShopStub = stub(mockShopDao, 'findOne').returns(createShopInstance(id, data));
-      const access = {
-        Shop: mockShopDao,
-        ShopDiscount: mockShopDiscountDao
+      const data = {
+        Address: {
+          city: 'Foo',
+          number: '123',
+          plus4: '4567',
+          prefix: '',
+          state: 'WI',
+          street: 'Bar',
+          type: 'Street',
+          zip: '11111'
+        },
+        Areas: [{ name: 'fun' }],
+        id, // tslint:disable-line
+        name: 'Foo'
       };
-      const models = { Location: MockLocation };
-      const shop = new Shop.default({}, access, mockLogger, models, '123');
-      expect(shop.id).to.equal('123');
-      expect(shop.isExt).to.equal(true);
-      expect(shop.idKey).to.equal('extId');
 
-      const found = await shop.load();
+      const findOneMockLocationStub = stub(mockLocationDao, 'findOne')
+        .returns(createLocationInstance(id, data));
+      const access = {
+        Activity: mockActivityDao,
+        Address: mockAddressDao,
+        Area: mockAreaDao,
+        Location: mockLocationDao
+      };
+
+      const location = new LocationModel({}, access, mockLogger, '123');
+      expect(location.id).to.equal('123');
+
+      const found = await location.load();
       expect(found).to.equal(true);
-      // expect(shop.instance instanceof InstanceShop).to.equal(true);
-      expect(shop.id).to.equal(id);
-      expect(shop.isExt).to.equal(false);
-      expect(shop.idKey).to.equal('id');
-      expect(shop.data).to.deep.equal({ id, name: 'Foo', tags: [] });
+      expect(location.id).to.equal(id);
+      expect(location.data).to.deep.equal({
+        address: {
+          city: 'Foo',
+          number: '123',
+          plus4: '4567',
+          prefix: '',
+          state: 'WI',
+          street: 'Bar',
+          type: 'Street',
+          zip: '11111'
+        },
+        areas: ['fun'],
+        id,
+        name: 'Foo'
+      });
+      expect(findOneMockLocationStub.callCount).to.equal(1);
+      expect(findOneMockLocationStub.args[0][0]).to.deep.equal({
+        attributes: ['id', 'name', 'description', 'type', 'url', 'extId'],
+        include: [{
+          as: 'Address',
+          attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+          model: mockAddressDao
+        }, {
+          as: 'Areas',
+          attributes: ['name'],
+          model: mockAreaDao
+        }],
+        where: { extId: '123' }
+      });
 
-      getMockShopStub.restore();
+      findOneMockLocationStub.restore();
     });
 
-    it('should create a new instance with internal id', async () => {
-      const upsertStub = stub().returns(mockShopDao);
-      const Shop = proxyquire(
-        '../../../src/data/model/Shop',
-        { '../utils': { upsert: upsertStub } }
-      );
-
+    it('should find an existing with internal id', async () => {
       const id = uuid();
-      const data = { id, name: 'Foo', ShopTags: [{ name: 'fun' }] };
-
-      const getMockShopStub = stub(mockShopDao, 'findOne').returns(createShopInstance(id, data));
-      const access = {
-        Shop: mockShopDao,
-        ShopDiscount: mockShopDiscountDao
+      const data = {
+        Areas: [],
+        id, // tslint:disable-line
+        name: 'Foo'
       };
 
-      const models = { Location: MockLocation };
-      const shop = new Shop.default({}, access, mockLogger, models, id);
-      expect(shop.id).to.equal(id);
-      expect(shop.isExt).to.equal(false);
-      expect(shop.idKey).to.equal('id');
-      const found = await shop.load();
-      expect(found).to.equal(true);
-      // expect(shop.instance instanceof InstanceShop).to.equal(true);
-      expect(shop.id).to.equal(id);
-      expect(shop.isExt).to.equal(false);
-      expect(shop.idKey).to.equal('id');
-      expect(shop.data).to.deep.equal({ id, name: 'Foo', tags: ['fun'] });
+      const findOneMockLocationStub = stub(mockLocationDao, 'findOne')
+        .returns(createLocationInstance(id, data));
+      const access = {
+        Activity: mockActivityDao,
+        Address: mockAddressDao,
+        Area: mockAreaDao,
+        Location: mockLocationDao
+      };
 
-      getMockShopStub.restore();
+      const location = new LocationModel({}, access, mockLogger, id);
+      expect(location.id).to.equal(id);
+
+      const found = await location.load();
+      expect(found).to.equal(true);
+      expect(location.id).to.equal(id);
+      expect(location.data).to.deep.equal({
+        address: null,
+        areas: [],
+        id,
+        name: 'Foo'
+      });
+      expect(findOneMockLocationStub.callCount).to.equal(1);
+      expect(findOneMockLocationStub.args[0][0]).to.deep.equal({
+        attributes: ['id', 'name', 'description', 'type', 'url', 'extId'],
+        include: [{
+          as: 'Address',
+          attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+          model: mockAddressDao
+        }, {
+          as: 'Areas',
+          attributes: ['name'],
+          model: mockAreaDao
+        }],
+        where: { id }
+      });
+
+      findOneMockLocationStub.restore();
+    });
+
+    it('should not find a location with additional queries', async () => {
+
+    });
+
+    it('should not find a location', async () => {
+
     });
   });
 
@@ -112,7 +161,7 @@ describe('model - shop', () => {
         .returns(mockLocationDao);
 
       const Shop = proxyquire(
-        '../../../src/data/model/Shop',
+        '../../../src/data/model/shop',
         { '../utils': { upsert: upsertStub } }
       );
 
@@ -195,7 +244,7 @@ describe('model - shop', () => {
       ]);
 
       const Shop = proxyquire(
-        '../../../src/data/model/Shop',
+        '../../../src/data/model/shop',
         { '../utils': { upsert: upsertStub } }
       );
 

@@ -134,3 +134,12 @@ export interface IConnection {
 export interface ILogType { log: (type: string, message: string) => void; }
 
 export type ILogger = (type: string, message: string) => void;
+
+export interface IShopsModels {
+  Location: any;
+  Shop: any;
+}
+
+export interface IShopModels {
+  Location: any;
+}
