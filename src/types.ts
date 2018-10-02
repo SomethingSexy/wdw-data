@@ -143,3 +143,7 @@ export interface IShopsModels {
 export interface IShopModels {
   Location: any;
 }
+
+export interface ILocationModels {
+  Date: any:
+}

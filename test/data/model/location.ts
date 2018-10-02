@@ -4,24 +4,24 @@ import moment from 'moment';
 import proxyquire from 'proxyquire';
 import { spy, stub } from 'sinon';
 import uuid from 'uuid/v4'; // tslint:disable-line
-import LocationModel from '../../../src/data/model/Location';
-import { IShop } from '../../../src/types';
+import LocationModel, { GetTypes } from '../../../src/data/model/Location';
+import { ILocation } from '../../../src/types';
 
 import {
   createLocationInstance,
   mockActivityDao,
   mockAddressDao,
   mockAreaDao,
-  MockLocation,
+  MockDate,
   mockLocationDao,
-  mockLogger
+  mockLocationScheduleDao,
+  mockLogger,
+  mockTransaction
 } from './utils';
 
 const mockAreaInstance = {
 
 };
-
-const mockTransaction = {};
 
 describe('model - location', () => {
   describe('create and find', () => {
@@ -51,8 +51,11 @@ describe('model - location', () => {
         Area: mockAreaDao,
         Location: mockLocationDao
       };
+      const models = {
+        Date: null
+      };
 
-      const location = new LocationModel({}, access, mockLogger, '123');
+      const location = new LocationModel({}, access, mockLogger, models, '123');
       expect(location.id).to.equal('123');
 
       const found = await location.load();
@@ -70,7 +73,7 @@ describe('model - location', () => {
           zip: '11111'
         },
         areas: ['fun'],
-        id,
+        id, // tslint:disable-line
         name: 'Foo'
       });
       expect(findOneMockLocationStub.callCount).to.equal(1);
@@ -107,8 +110,11 @@ describe('model - location', () => {
         Area: mockAreaDao,
         Location: mockLocationDao
       };
+      const models = {
+        Date: null
+      };
 
-      const location = new LocationModel({}, access, mockLogger, id);
+      const location = new LocationModel({}, access, mockLogger, models, id);
       expect(location.id).to.equal(id);
 
       const found = await location.load();
@@ -117,7 +123,7 @@ describe('model - location', () => {
       expect(location.data).to.deep.equal({
         address: null,
         areas: [],
-        id,
+        id, // tslint:disable-line
         name: 'Foo'
       });
       expect(findOneMockLocationStub.callCount).to.equal(1);
@@ -138,174 +144,188 @@ describe('model - location', () => {
       findOneMockLocationStub.restore();
     });
 
-    it('should not find a location with additional queries', async () => {
+    it('should find a location with additional queries', async () => {
+      const id = uuid();
+      const data = {
+        Areas: [],
+        id, // tslint:disable-line
+        name: 'Foo'
+      };
 
+      const findOneMockLocationStub = stub(mockLocationDao, 'findOne')
+        .returns(createLocationInstance(id, data));
+      const access = {
+        Activity: mockActivityDao,
+        Address: mockAddressDao,
+        Area: mockAreaDao,
+        Location: mockLocationDao
+      };
+      const models = {
+        Date: null
+      };
+
+      const location = new LocationModel({}, access, mockLogger, models, id);
+      expect(location.id).to.equal(id);
+
+      const found = await location.load([GetTypes.Activities]);
+      expect(found).to.equal(true);
+      expect(location.id).to.equal(id);
+      expect(location.data).to.deep.equal({
+        address: null,
+        areas: [],
+        id, // tslint:disable-line
+        name: 'Foo'
+      });
+      expect(findOneMockLocationStub.callCount).to.equal(1);
+      expect(findOneMockLocationStub.args[0][0]).to.deep.equal({
+        attributes: ['id', 'name', 'description', 'type', 'url', 'extId'],
+        include: [{
+          as: 'Address',
+          attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+          model: mockAddressDao
+        }, {
+          as: 'Areas',
+          attributes: ['name'],
+          model: mockAreaDao
+        }, {
+          as: 'Activities',
+          attributes: ['id', 'name', 'description', 'type', 'url'],
+          include: [{
+            as: 'Area',
+            attributes: ['name'],
+            model: mockAreaDao
+          }],
+          model: mockActivityDao
+        }],
+        where: { id }
+      });
+
+      findOneMockLocationStub.restore();
     });
 
     it('should not find a location', async () => {
+      const id = uuid();
+      const findOneMockLocationStub = stub(mockLocationDao, 'findOne')
+        .returns(null);
+      const access = {
+        Activity: mockActivityDao,
+        Address: mockAddressDao,
+        Area: mockAreaDao,
+        Location: mockLocationDao
+      };
+      const models = {
+        Date: null
+      };
 
+      const location = new LocationModel({}, access, mockLogger, models, id);
+      expect(location.id).to.equal(id);
+
+      const found = await location.load([GetTypes.Activities]);
+      expect(found).to.equal(false);
+
+      findOneMockLocationStub.restore();
     });
   });
 
   describe('upsert', () => {
-    it('should add a shop', async () => {
-      const mockShopDiscount = {
-        create: spy(),
-        findAll: stub().returns([])
+    it('should add a location', async () => {
+      const id = uuid();
+      const data = {
+        Areas: [],
+        id, // tslint:disable-line
+        name: 'Foo'
       };
-
-      // setup our stubs and spies
-      const getMockShopStub = stub(mockShopDao, 'get').returns('123-456');
-      const upsertStub = stub().returns(mockShopDao);
-      const findByNameLocationStub = stub(MockLocation.prototype, 'findByName')
-        .returns(mockLocationDao);
-
-      const Shop = proxyquire(
-        '../../../src/data/model/shop',
+      const upsertStub = stub().returns(createLocationInstance(id, data));
+      const getMockLocationStub = stub(mockLocationDao, 'get').returns();
+      const Location = proxyquire(
+        '../../../src/data/model/Location',
         { '../utils': { upsert: upsertStub } }
       );
 
       const access = {
-        Shop: mockShopDao,
-        ShopDiscount: mockShopDiscount
+        Activity: mockActivityDao,
+        Address: mockAddressDao,
+        Area: mockAreaDao,
+        Location: mockLocationDao
       };
 
-      const item: IShop = {
-        admissionRequired: true,
-        area: 'Bar',
-        description: '',
-        discounts: [{
-          description: 'woot',
-          discount: '30%',
-          type: 'passholder'
-        }],
+      const location = new Location.default({}, access, mockLogger, '123');
+
+      const item: ILocation = {
+        // address?: any;
+        // busStops?: string[];
+        // internal id
+        // id?: string;
         extId: '123',
-        extRefName: 'Fun',
-        location: 'Foo',
-        name: 'Fun',
-        tags: ['woot'],
-        type: 'merchant',
-        url: 'http://balls.com',
-        wheelchairAccessible: true
+        extRefName: 'foo',
+        name: 'Foo',
+        // rooms?: any[];
+        tier: 'deluxe',
+        type: 'theme-park',
+        url: 'http://foo.com'
       };
 
-      const models = { Location: MockLocation };
-      const shop = new Shop.default({}, access, mockLogger, models, '123');
+      const output =  await location.upsert(item);
+      expect(output).to.equal(id);
 
-      const output = await shop.upsert(item, mockTransaction);
+      getMockLocationStub.restore();
 
-      // this not really what gets returned in prod
-      expect(output).to.deep.equal('123-456');
+    });
+  });
 
-      expect(upsertStub.called).to.equal(true);
-      const firstCall = upsertStub.getCall(0);
-      expect(firstCall.args[1]).to.deep.equal({
-        admissionRequired: true,
-        description: '',
-        extId: '123',
-        extRefName: 'Fun',
-        name: 'Fun',
-        type: 'merchant',
-        url: 'http://balls.com',
-        wheelchairAccessible: true
-      });
-      expect(firstCall.args[2]).to.deep.equal({ extId: '123' });
+  describe('getLocationSchedule', () => {
 
-      expect(mockShopDiscount.create.callCount).to.equal(1);
-      expect(mockShopDiscount.create.firstCall.args[0]).to.deep.equal({
-        description: 'woot',
-        discount: '30%',
-        fromDate: moment().format('YYYY-MM-DD'),
-        shopId: '123-456',
-        thruDate: null,
-        type: 'passholder'
-      });
+  });
 
-      getMockShopStub.restore();
-      findByNameLocationStub.restore();
+  describe('bulkAddSchedules', () => {
+
+  });
+
+  describe('addSchedule', () => {
+    it('should not add a schedule because instance cannot be found', async () => {
+      const id = uuid();
+      const models = {
+        Date: null
+      };
+      const location = new LocationModel({}, {}, mockLogger, models, id);
+      const loadMockLocationStub = stub(location, 'load').returns(null);
+
+      const output = await location.addSchedule('2018/30/1', [], mockTransaction);
+      expect(output).to.equal(null);
+
+      loadMockLocationStub.restore();
     });
 
-    it('should update discounts', async () => {
-      const getMockShopStub = stub(mockShopDao, 'get').returns('123-456');
-      const upsertStub = stub().returns(mockShopDao);
-      const findByNameLocationStub = stub(MockLocation.prototype, 'findByName')
-        .returns(mockLocationDao);
-      const createShopDiscountStub = spy(mockShopDiscountDao, 'create');
-      const findAllShopDiscountStub = stub(mockShopDiscountDao, 'findAll').returns([
-        new MockDiscount({
-          description: 'woot',
-          discount: '30%',
-          fromDate: moment().format('YYYY-MM-DD'),
-          id: '1',
-          shopId: '123-456',
-          thruDate: null,
-          type: 'passholder'
-        })
-      ]);
-
-      const Shop = proxyquire(
-        '../../../src/data/model/shop',
-        { '../utils': { upsert: upsertStub } }
-      );
-
-      const removedDiscountsShopStub = stub(Shop.default, 'removedDiscounts');
-      const updateDiscountsShopStub = stub(Shop.default, 'updateDiscounts');
-
+    it('should add a schedule', async () => {
+      const id = uuid();
       const access = {
-        Shop: mockShopDao,
-        ShopDiscount: mockShopDiscountDao
+        Activity: mockActivityDao,
+        Address: mockAddressDao,
+        Area: mockAreaDao,
+        Location: mockLocationDao,
+        LocationSchedule: mockLocationScheduleDao
+      };
+      const models = {
+        Date: MockDate
       };
 
-      const item: IShop = {
-        admissionRequired: true,
-        area: 'Bar',
-        description: '',
-        discounts: [{
-          description: 'woot',
-          discount: '40%',
-          type: 'passholder'
-        }],
-        extId: '123',
-        extRefName: 'Fun',
-        location: 'Foo',
-        name: 'Fun',
-        tags: ['woot'],
-        type: 'merchant',
-        url: 'http://balls.com',
-        wheelchairAccessible: true
-      };
+      // stub date get
+      // stub mockLocationScheduleDao findOne, test call
+      const location = new LocationModel({}, access, mockLogger, models, id);
+      const loadMockLocationStub = stub(location, 'load').returns(true);
 
-      const models = { Location: MockLocation };
-      const shop = new Shop.default({}, access, mockLogger, models, '123');
+      const schedules = [{
+        closing: '23:00',
+        isSpecialHours: false,
+        opening: '10:00',
+        type: 'stuff'
+      }];
 
-      const output = await shop.upsert(item, mockTransaction);
+      const output = await location.addSchedule('2018/30/1', schedules, mockTransaction);
+    });
 
-      // this not really what gets returned in prod
-      expect(output).to.deep.equal('123-456');
+    it('should not add a schedule because one already exists', () => {
 
-      expect(upsertStub.called).to.equal(true);
-      const firstCall = upsertStub.getCall(0);
-      expect(firstCall.args[1]).to.deep.equal({
-        admissionRequired: true,
-        description: '',
-        extId: '123',
-        extRefName: 'Fun',
-        name: 'Fun',
-        type: 'merchant',
-        url: 'http://balls.com',
-        wheelchairAccessible: true
-      });
-      expect(firstCall.args[2]).to.deep.equal({ extId: '123' });
-
-      expect(createShopDiscountStub.callCount).to.equal(0);
-      expect(removedDiscountsShopStub.callCount).to.equal(0);
-      expect(updateDiscountsShopStub.callCount).to.equal(1);
-
-      getMockShopStub.restore();
-      findByNameLocationStub.restore();
-      findAllShopDiscountStub.restore();
-      createShopDiscountStub.restore();
-      removedDiscountsShopStub.restore();
     });
   });
 });

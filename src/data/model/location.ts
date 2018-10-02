@@ -1,9 +1,8 @@
 import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import pick from 'lodash/pick'; // tslint:disable-line
-import { ILocation, ILogger, ISchedule } from '../../types';
+import { ILocation, ILocationModels, ILogger, ISchedule } from '../../types';
 import { Success, upsert } from '../utils';
-import date from './date';
 
 // Note: extId is on here right now for the jobs
 const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url', 'extId'];
@@ -11,8 +10,9 @@ const RAW_ADDRESS_ATTRIBUTES = [
   'city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
+const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
 
-enum GetTypes {
+export enum GetTypes {
   Activities = 'activities'
 }
 
@@ -26,7 +26,7 @@ class LocationModel {
   private sequelize: any;
   private dao: any;
   private logger: ILogger;
-  // private models: IShopModels;
+  private models: ILocationModels;
   private _id: string = '';
   private isExt: boolean = false;
   private idKey: string = 'id';
@@ -42,14 +42,14 @@ class LocationModel {
     return this._id;
   }
 
-  constructor(sequelize, access, logger, id) {
+  constructor(sequelize, access, logger,  models: ILocationModels, id) {
     this.sequelize = sequelize;
     this.dao = access;
     this.logger = logger;
     this.id = id;
     this.isExt = !isUUID.v4(id);
     this.idKey = this.isExt ? 'extId' : 'id';
-    // this.models = models;
+    this.models = models;
     this.instance = null;
   }
 
@@ -88,25 +88,35 @@ class LocationModel {
     return Area.create({ locationId, name }, { transaction });
   }
 
-  public async addSchedule(
-    locationId: string, scheduleDate: string, parkSchedules, transaction
-  ) {
+  public async addSchedule(scheduleDate: string, parkSchedules, transaction) {
     const { LocationSchedule, Schedule } = this.dao;
+    let found = true;
+    if (!this.instance) {
+      found = await this.load();
+    }
+    // if we are trying to find schedules for a location that doesn't exist
+    // throw an exception here.
+    if (!found) {
+      this.logger('error', `Location ${this.id} not found when adding a schedule.`);
+      return null;
+    }
 
-    const DateModel = date(this.sequelize, this.dao);
-    const dateInstance = await DateModel.get(scheduleDate, transaction);
-    const dateId = dateInstance.get('id');
+    const { Date } = this.models;
+    const dateModel = new Date(this.sequelize, this.dao, this.logger);
+    const dateInstance = await dateModel.load(scheduleDate);
 
     // Check to see if we have any schedules for this location and date already
     // this might cause issues in the future if we did not update everything,
     // worry about that if it comes up
     const alreadyAdded = await LocationSchedule
-      .findOne({ where: { locationId, dateId } });
+      .findOne({ where: { dateId: dateInstance.get('id'), locationId: this.id } });
 
     if (alreadyAdded) {
       return null;
     }
 
+    // TODO: This is going to return the instance, we probably don't want that in
+    // the long run
     return Promise.all(
       parkSchedules.map(data => Schedule.create(data, { transaction }))
     )
@@ -117,7 +127,7 @@ class LocationModel {
             scheduleInstance,
             {
               transaction,
-              through: { locationId } // tslint:disable-line
+              through: { locationId: this.id } // tslint:disable-line
             }
           )
         )
@@ -174,10 +184,10 @@ class LocationModel {
       include.forEach(i => {
         if (i === GetTypes.Activities) {
           queryInclude.push({
-            as: 'activities',
-            attributes: ['id', 'name', 'description', 'type', 'url'],
+            as: 'Activities',
+            attributes: RAW_ACTIVITIES_ATTRIBUTES,
             include: [{
-              as: 'area',
+              as: 'Area',
               attributes: ['name'],
               model: Area
             }],
@@ -221,7 +231,6 @@ class LocationModel {
     // First lets verify that this location exists
     const { Date, LocationSchedule, Schedule } = this.dao;
     let found = true;
-
     if (!this.instance) {
       found = await this.load();
     }
@@ -260,17 +269,22 @@ class LocationModel {
     });
   }
 
-  public async upsert (item: ILocation, access, transaction, logger) {
-    const { Location } = access;
-    logger('debug', `Adding/updating location ${item.extId}.`);
+  public async upsert (item: ILocation, transaction?) {
+    const { Location } = this.dao;
+    this.logger('debug', `Adding/updating location ${this.id}.`);
 
     const data = {
       ...item,
       fetchSchedule: item.type !== 'entertainment-venue'
     };
-    const locationInstance = await upsert(Location, data, { extId: item.extId }, transaction);
+    const locationInstance = await upsert(Location, data, {  [this.idKey]: this.id  }, transaction);
 
-    logger('debug', `Finished adding/updating location ${item.extId}.`);
+    this.logger('debug', `Finished adding/updating location ${this.id}.`);
+
+    // set the instance after we created,
+    // TODO: Should we call update on existing instance if we already have it?
+    this.instance = locationInstance;
+
     return locationInstance.get('id');
   }
 }

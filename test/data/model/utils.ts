@@ -96,3 +96,16 @@ export const createShopInstance = (id, data) =>  {
 
   return new InstanceShop();
 };
+
+export const mockTransaction = {};
+
+// tslint:disable-next-line:max-classes-per-file
+export class MockDate {
+  // tslint:disable-next-line:no-empty
+  public async load() {}
+}
+
+export const mockLocationScheduleDao = {
+  // tslint:disable-next-line:no-empty
+  findOne: () => {}
+};
