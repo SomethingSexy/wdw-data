@@ -138,6 +138,7 @@ class Locations {
 
     const found = await Location.findAll(query);
 
+    // TODO: create new Location object, call load, passing in the instance, then get the data for each
     return found.map(item => item.get({ plain: true }));
   }
 }

@@ -105,7 +105,44 @@ export class MockDate {
   public async load() {}
 }
 
+export const createDateInstance = (id, data) =>  {
+  // tslint:disable-next-line:max-classes-per-file
+  class InstanceDate {
+    // tslint:disable-next-line:no-empty
+    public async addSchedule() {}
+    public get(options: any) {
+      if (options === 'id') {
+        return id;
+      }
+      return data;
+    }
+  }
+
+  return new InstanceDate();
+};
+
 export const mockLocationScheduleDao = {
   // tslint:disable-next-line:no-empty
   findOne: () => {}
+};
+
+export const mockScheduleDao = {
+  // tslint:disable-next-line:no-empty
+  async create() {}
+};
+
+export const createScheduleInstance = (id, data) =>  {
+  // tslint:disable-next-line:max-classes-per-file
+  class InstanceSchedule {
+    // tslint:disable-next-line:no-empty
+    public async addSchedule() {}
+    public get(options: any) {
+      if (options === 'id') {
+        return id;
+      }
+      return data;
+    }
+  }
+
+  return new InstanceSchedule();
 };

@@ -5,10 +5,12 @@ import proxyquire from 'proxyquire';
 import { spy, stub } from 'sinon';
 import uuid from 'uuid/v4'; // tslint:disable-line
 import LocationModel, { GetTypes } from '../../../src/data/model/Location';
+import { Success } from '../../../src/data/utils';
 import { ILocation } from '../../../src/types';
-
 import {
+  createDateInstance,
   createLocationInstance,
+  createScheduleInstance,
   mockActivityDao,
   mockAddressDao,
   mockAreaDao,
@@ -16,7 +18,9 @@ import {
   mockLocationDao,
   mockLocationScheduleDao,
   mockLogger,
-  mockTransaction
+  mockScheduleDao,
+  mockSequelize,
+  mockTransaction,
 } from './utils';
 
 const mockAreaInstance = {
@@ -278,7 +282,41 @@ describe('model - location', () => {
   });
 
   describe('bulkAddSchedules', () => {
+    it('should add multiple schedules', async () => {
+      const id = uuid();
+      const models = {
+        Date: null
+      };
+      const schedules = {
+        '2018/30/1': [{
+          closing: '23:00',
+          isSpecialHours: false,
+          opening: '10:00',
+          type: 'stuff'
+        }],
+        '2018/30/2': [{
+          closing: '23:00',
+          isSpecialHours: false,
+          opening: '10:00',
+          type: 'stuff'
+        }]
+      };
 
+      const location = new LocationModel(mockSequelize, {}, mockLogger, models, id);
+      const loadMockLocationStub = stub(location, 'load').returns(true);
+      const addScheduleMockLocationStub = stub(location, 'addSchedule');
+
+      const output = await location.bulkAddSchedules(schedules);
+      expect(output).to.deep.equal({ [Success]: true });
+      expect(addScheduleMockLocationStub.callCount).to.equal(2);
+      expect(addScheduleMockLocationStub.args[0][0]).to.equal('2018/30/1');
+      expect(addScheduleMockLocationStub.args[0][1]).to.deep.equal(schedules['2018/30/1']);
+      expect(addScheduleMockLocationStub.args[1][0]).to.equal('2018/30/2');
+      expect(addScheduleMockLocationStub.args[1][1]).to.deep.equal(schedules['2018/30/2']);
+
+      loadMockLocationStub.restore();
+      addScheduleMockLocationStub.restore();
+    });
   });
 
   describe('addSchedule', () => {
@@ -287,7 +325,8 @@ describe('model - location', () => {
       const models = {
         Date: null
       };
-      const location = new LocationModel({}, {}, mockLogger, models, id);
+
+      const location = new LocationModel(mockSequelize, {}, mockLogger, models, id);
       const loadMockLocationStub = stub(location, 'load').returns(null);
 
       const output = await location.addSchedule('2018/30/1', [], mockTransaction);
@@ -303,14 +342,22 @@ describe('model - location', () => {
         Address: mockAddressDao,
         Area: mockAreaDao,
         Location: mockLocationDao,
-        LocationSchedule: mockLocationScheduleDao
+        LocationSchedule: mockLocationScheduleDao,
+        Schedule: mockScheduleDao
       };
       const models = {
         Date: MockDate
       };
+      const dateId = uuid();
+      const dateData = { id: dateId };
 
-      // stub date get
-      // stub mockLocationScheduleDao findOne, test call
+      const dateInstance = createDateInstance(dateId, dateData);
+      const addScheduleMockDateStub = stub(dateInstance, 'addSchedule');
+      const loadMockDateStub = stub(MockDate.prototype, 'load').returns(dateInstance);
+
+      const createMockScheduleStub = stub(mockScheduleDao, 'create')
+        .returns(createScheduleInstance('', {})) ;
+
       const location = new LocationModel({}, access, mockLogger, models, id);
       const loadMockLocationStub = stub(location, 'load').returns(true);
 
@@ -322,10 +369,62 @@ describe('model - location', () => {
       }];
 
       const output = await location.addSchedule('2018/30/1', schedules, mockTransaction);
+
+      expect(loadMockDateStub.args[0][0]).to.equal('2018/30/1');
+      expect(createMockScheduleStub.callCount).to.equal(1);
+      expect(createMockScheduleStub.args[0][0]).to.deep.equal(schedules[0]);
+      expect(addScheduleMockDateStub.callCount).to.equal(1);
+      expect(addScheduleMockDateStub.args[0][1]).to.deep.equal({
+        through: { locationId: id },
+        transaction: mockTransaction
+      });
+
+      loadMockDateStub.restore();
+      createMockScheduleStub.restore();
+      addScheduleMockDateStub.restore();
     });
 
-    it('should not add a schedule because one already exists', () => {
+    it('should not add a schedule because one already exists', async () => {
+      const id = uuid();
+      const access = {
+        Activity: mockActivityDao,
+        Address: mockAddressDao,
+        Area: mockAreaDao,
+        Location: mockLocationDao,
+        LocationSchedule: mockLocationScheduleDao,
+        Schedule: mockScheduleDao
+      };
+      const models = {
+        Date: MockDate
+      };
+      const dateId = uuid();
+      const dateData = { id: dateId };
 
+      const dateInstance = createDateInstance(dateId, dateData);
+
+      // just needs to return something, don't care what
+      const findOneMockLocationScheduleStub = stub(mockLocationScheduleDao, 'findOne').returns({});
+      const loadMockDateStub = stub(
+        MockDate.prototype, 'load'
+      )
+        .returns(dateInstance);
+
+      const location = new LocationModel({}, access, mockLogger, models, id);
+      const loadMockLocationStub = stub(location, 'load').returns(true);
+
+      const schedules = [{
+        closing: '23:00',
+        isSpecialHours: false,
+        opening: '10:00',
+        type: 'stuff'
+      }];
+
+      const output = await location.addSchedule('2018/30/1', schedules, mockTransaction);
+      expect(loadMockDateStub.args[0][0]).to.equal('2018/30/1');
+      expect(output).to.equal(null);
+
+      findOneMockLocationScheduleStub.restore();
+      loadMockDateStub.restore();
     });
   });
 });

@@ -117,7 +117,7 @@ class LocationModel {
 
     // TODO: This is going to return the instance, we probably don't want that in
     // the long run
-    return Promise.all(
+    await Promise.all(
       parkSchedules.map(data => Schedule.create(data, { transaction }))
     )
     .then(scheduleInstances => {
@@ -133,6 +133,8 @@ class LocationModel {
         )
       );
     });
+
+    return { [Success]: true };
   }
   public async bulkAddSchedules(parkSchedules: {[date: string]: ISchedule[]}) {
     let found = true;
@@ -152,7 +154,7 @@ class LocationModel {
         .entries(parkSchedules)
         .map(([key, value]) => {
           return this.sequelize.transaction(t => {
-            return this.addSchedule(this.instance.get('id'), key, value, t);
+            return this.addSchedule(key, value, t);
           });
         })
         .filter(schedule => schedule !== null)
