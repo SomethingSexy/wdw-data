@@ -125,15 +125,30 @@ class ShopModel {
     return new Location(this.sequelize, this.dao, this.logger);
   }
 
+  /**
+   *
+   * @param sequelize
+   * @param access
+   * @param logger
+   * @param models
+   * @param id - string id or instance
+   */
   constructor(sequelize, access, logger, models: IShopModels, id) {
     invariant(id, 'Internal or external id is required to create a Shop.');
 
     this.sequelize = sequelize;
     this.dao = access;
     this.logger = logger;
-    this.id = id;
-    this.instance = null;
     this.models = models;
+
+    if (typeof id === 'string') {
+      this.id = id;
+      this.instance = null;
+    } else {
+      // we are assuming instance for now
+      this.instance = id;
+      this.id = this.instance.get('id');
+    }
   }
 
   public get data() {

@@ -2,7 +2,7 @@ import invariant from 'invariant';
 import pick from 'lodash/pick'; // tslint:disable-line
 import { IDining } from '../../types';
 import { syncTransaction, upsert } from '../utils';
-import location from './Location';
+import location from './Park';
 
 // Note: returning extId for jobs
 const RAW_DINING_ATTRIBUTES = [

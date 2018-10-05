@@ -145,5 +145,11 @@ export interface IShopModels {
 }
 
 export interface ILocationModels {
-  Date: any:
+  Date: any;
+}
+
+export interface ILocationsModels {
+  Date: any;
+  Park: any;
+  Hotel: any;
 }

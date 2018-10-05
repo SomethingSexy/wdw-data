@@ -103,6 +103,8 @@ export const mockTransaction = {};
 export class MockDate {
   // tslint:disable-next-line:no-empty
   public async load() {}
+  public get data() { return {}; }
+  public get instance() { return {}; }
 }
 
 export const createDateInstance = (id, data) =>  {

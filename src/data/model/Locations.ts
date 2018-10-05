@@ -1,6 +1,7 @@
 import invariant from 'invariant';
-import { ILocation, ILogger, ISchedule, IShopsModels } from '../../types';
-import { asyncTransaction, Error, Success, } from '../utils';
+import { ILocation, ILocationsModels, ILogger } from '../../types';
+import { Error, Success, syncTransaction } from '../utils';
+import { RAW_LOCATION_ATTRIBUTES } from './Park';
 
 /**
  * Validates a single location.  The following fields are considered
@@ -38,9 +39,9 @@ class Locations {
   private sequelize: any;
   private dao: any;
   private logger: ILogger;
-  private models: IShopsModels;
+  private models: ILocationsModels;
 
-  constructor(sequelize, access, logger, models: IShopsModels) {
+  constructor(sequelize, access, logger, models: ILocationsModels) {
     this.sequelize = sequelize;
     this.dao = access;
     this.logger = logger;
@@ -59,13 +60,20 @@ class Locations {
       // if it not valid, return the known errors
       return { [Error]: valid };
     }
-    this.logger('debug', `Adding and updating ${items.length} locations.`);
-    const locations = await asyncTransaction(this.sequelize, items, async (item, transaction) => {
-      const id = item.type === HOTEL_TYPE
-        ? await addUpdateHotel(item, access, transaction, logger)
-        : await addUpdateLocation(item, access, transaction, logger);
 
-      return api.get(id);
+    this.logger('debug', `Adding and updating ${items.length} locations.`);
+
+    const locations = await syncTransaction(this.sequelize, items, async (item, transaction) => {
+      // TODO; Figure out what we are doing with this
+    //   const id = item.type === HOTEL_TYPE
+    //     ? await addUpdateHotel(item, access, transaction, logger)
+    //     : await addUpdateLocation(item, access, transaction, logger);
+      // create a model for this shop,
+      const location = this.createLocation(item.id || item.extId);
+      // update it with the latest coming in
+      await location.upsert(item, transaction);
+      // then retrieve the data
+      return location.data;
     });
 
     this.logger('debug', `Finished adding and updating ${locations.length} of ${items.length}.`);
@@ -78,21 +86,8 @@ class Locations {
    */
   public createLocation(id: string) {
     invariant(id, 'Id is required to create a shop.');
-    const { Shop } = this.models;
-    return new Shop(this.sequelize, this.dao, this.logger, this.models, id);
-  }
-
-  /**
-   * Searches for an area instance.
-   * @param locationId
-   * @param name
-   * @param transaction
-   */
-  public async findAreaByName(locationId, name, transaction) {
-    const { Area } = this.dao;
-    return Area.findOne(
-      { where: { locationId, name } }, { transaction }
-    );
+    const { Location } = this.models;
+    return new Location(this.sequelize, this.dao, this.logger, this.models, id);
   }
 
   /**
@@ -101,20 +96,45 @@ class Locations {
    * @param transaction
    */
   public async findByName(name, transaction) {
-    const { Location } = this.dao;
-    return Location.findOne(
-      { where: { name } }, { transaction }
+    const { Park, Hotel } = this.models;
+    // find the instance of the model
+    const instance = this.dao.Location.findOne(
+      {
+        attributes: ['id', 'type'],
+        where: { name }
+      },
+      { transaction }
     );
+
+    if (instance) {
+      return null;
+    }
+
+    let type;
+    // tslint:disable-next-line:prefer-conditional-expression
+    if (instance.get('type') === 'resort') {
+      type = new Hotel(this.sequelize, this.dao, this.logger, this.models, instance.get('id'));
+    } else {
+      type = new Park(this.sequelize, this.dao, this.logger, this.models, instance.get('id'));
+    }
+
+    // So this kind of sucks but allows us to break out what we need to do to load this data
+    // based on the type of instance we are loading.
+    await type.load();
+
+    return type;
   }
 
   /**
-   * List all locations
+   * Returns a list of raw locations.
+   *
    * @param where - search parameters
    */
   public async list(where?: { [key: string]: string | boolean }) {
-    const { Address, Area, Location } = this.dao;
+    const { Location } = this.models;
+    const { Address, Area } = this.dao;
     let query: { attributes: string[], include: any[], where?: any } = {
-      attributes: RAW_LOCATION_ATTRIBUTES, // tslint:disable-line
+      attributes: RAW_LOCATION_ATTRIBUTES,
       include: [{
         as: 'address',
         attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
@@ -136,10 +156,13 @@ class Locations {
       };
     }
 
-    const found = await Location.findAll(query);
+    const found = await this.dao.Location.findAll(query);
 
-    // TODO: create new Location object, call load, passing in the instance, then get the data for each
-    return found.map(item => item.get({ plain: true }));
+    // create new locations objects then parse the data
+    return found.map(item => {
+      const location = new Location(this.sequelize, this.dao, this.logger, this.models, item);
+      return location.data;
+    });
   }
 }
 

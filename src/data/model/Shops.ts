@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import { ILogger, IShop, IShopsModels } from '../../types';
-import { syncTransaction } from '../utils';
-import { normalizeShop, RAW_SHOP_ATTRIBUTES } from './Shop';
+import { Success, syncTransaction } from '../utils';
+import { RAW_SHOP_ATTRIBUTES } from './Shop';
 
 class Shops {
   private sequelize: any;
@@ -21,7 +21,7 @@ class Shops {
    * @param items
    */
   public async bulkAddUpdate(items: IShop[] = []) {
-    return syncTransaction(this.sequelize, items, async (item, transaction) => {
+    const shops = await syncTransaction(this.sequelize, items, async (item, transaction) => {
       // create a model for this shop,
       const shop = this.createShop(item.id || item.extId);
       // update it with the latest coming in
@@ -29,6 +29,8 @@ class Shops {
       // then retrieve the data
       return shop.data;
     });
+
+    return { [Success]: shops };
   }
 
   /**
@@ -62,7 +64,8 @@ class Shops {
    * @param where - search parameters
    */
   public async list(where?: { [key: string]: string | boolean }) {
-    const { Shop, Tag } = this.dao;
+    const { Tag } = this.dao;
+    const { Shop } = this.models;
     let query: { attributes: string[], include: any[], where?: any } = {
       attributes: RAW_SHOP_ATTRIBUTES,
       include: [{
@@ -83,12 +86,12 @@ class Shops {
       };
     }
 
-    const found = Shop.findAll(query);
+    const found = this.dao.Shop.findAll(query);
 
+    // create new shop objects then parse the data
     return found.map(item => {
-      // need to further normalize
-      const raw = item.get({ plain: true });
-      return normalizeShop(raw);
+      const shop = new Shop(this.sequelize, this.dao, this.logger, this.models, item);
+      return shop.data;
     });
   }
 }

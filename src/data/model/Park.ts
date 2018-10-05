@@ -4,13 +4,14 @@ import pick from 'lodash/pick'; // tslint:disable-line
 import { ILocation, ILocationModels, ILogger, ISchedule } from '../../types';
 import { Success, upsert } from '../utils';
 
-// Note: extId is on here right now for the jobs
-const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url', 'extId'];
 const RAW_ADDRESS_ATTRIBUTES = [
   'city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
 const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+
+// Note: extId is on here right now for the jobs
+export const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url', 'extId'];
 
 export enum GetTypes {
   Activities = 'activities'
@@ -22,7 +23,7 @@ export const normalizeLocation = location => ({
   areas: location.Areas.map(area => area.name)
 });
 
-class LocationModel {
+class ParkModel {
   private sequelize: any;
   private dao: any;
   private logger: ILogger;
@@ -42,15 +43,31 @@ class LocationModel {
     return this._id;
   }
 
-  constructor(sequelize, access, logger,  models: ILocationModels, id) {
+  /**
+   *
+   * @param sequelize
+   * @param access
+   * @param logger
+   * @param models
+   * @param id - string or location instance to preload
+   */
+  constructor(sequelize, access, logger, models: ILocationModels, id: any) {
+    invariant(id, 'Internal or external id is required to create a Location.');
     this.sequelize = sequelize;
     this.dao = access;
     this.logger = logger;
-    this.id = id;
-    this.isExt = !isUUID.v4(id);
-    this.idKey = this.isExt ? 'extId' : 'id';
     this.models = models;
-    this.instance = null;
+
+    if (typeof id === 'string') {
+      this.id = id;
+      this.isExt = !isUUID.v4(id);
+      this.idKey = this.isExt ? 'extId' : 'id';
+      this.instance = null;
+    } else {
+      // we are assuming instance for now
+      this.instance = id;
+      this.id = this.instance.get('id');
+    }
   }
 
   public get data() {
@@ -103,13 +120,14 @@ class LocationModel {
 
     const { Date } = this.models;
     const dateModel = new Date(this.sequelize, this.dao, this.logger);
-    const dateInstance = await dateModel.load(scheduleDate);
+    await dateModel.load(scheduleDate);
+    const dateId = dateModel.data.id;
 
     // Check to see if we have any schedules for this location and date already
     // this might cause issues in the future if we did not update everything,
     // worry about that if it comes up
     const alreadyAdded = await LocationSchedule
-      .findOne({ where: { dateId: dateInstance.get('id'), locationId: this.id } });
+      .findOne({ where: { dateId, locationId: this.id } });
 
     if (alreadyAdded) {
       return null;
@@ -123,7 +141,8 @@ class LocationModel {
     .then(scheduleInstances => {
       return Promise.all(
         scheduleInstances.map(scheduleInstance =>
-          dateInstance.addSchedule(
+          // TODO: is this better than putting this function on the model?
+          dateModel.instance.addSchedule(
             scheduleInstance,
             {
               transaction,
@@ -291,4 +310,4 @@ class LocationModel {
   }
 }
 
-export default LocationModel;
+export default ParkModel;

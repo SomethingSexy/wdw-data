@@ -4,7 +4,7 @@ import moment from 'moment';
 import proxyquire from 'proxyquire';
 import { spy, stub } from 'sinon';
 import uuid from 'uuid/v4'; // tslint:disable-line
-import LocationModel, { GetTypes } from '../../../src/data/model/Location';
+import ParkModel, { GetTypes } from '../../../src/data/model/Park';
 import { Success } from '../../../src/data/utils';
 import { ILocation } from '../../../src/types';
 import {
@@ -27,7 +27,7 @@ const mockAreaInstance = {
 
 };
 
-describe('model - location', () => {
+describe('model - park', () => {
   describe('create and find', () => {
     it('should create a new instance and load it via extId', async () => {
       const id = uuid();
@@ -59,7 +59,7 @@ describe('model - location', () => {
         Date: null
       };
 
-      const location = new LocationModel({}, access, mockLogger, models, '123');
+      const location = new ParkModel({}, access, mockLogger, models, '123');
       expect(location.id).to.equal('123');
 
       const found = await location.load();
@@ -118,7 +118,7 @@ describe('model - location', () => {
         Date: null
       };
 
-      const location = new LocationModel({}, access, mockLogger, models, id);
+      const location = new ParkModel({}, access, mockLogger, models, id);
       expect(location.id).to.equal(id);
 
       const found = await location.load();
@@ -168,7 +168,7 @@ describe('model - location', () => {
         Date: null
       };
 
-      const location = new LocationModel({}, access, mockLogger, models, id);
+      const location = new ParkModel({}, access, mockLogger, models, id);
       expect(location.id).to.equal(id);
 
       const found = await location.load([GetTypes.Activities]);
@@ -221,7 +221,7 @@ describe('model - location', () => {
         Date: null
       };
 
-      const location = new LocationModel({}, access, mockLogger, models, id);
+      const location = new ParkModel({}, access, mockLogger, models, id);
       expect(location.id).to.equal(id);
 
       const found = await location.load([GetTypes.Activities]);
@@ -242,7 +242,7 @@ describe('model - location', () => {
       const upsertStub = stub().returns(createLocationInstance(id, data));
       const getMockLocationStub = stub(mockLocationDao, 'get').returns();
       const Location = proxyquire(
-        '../../../src/data/model/Location',
+        '../../../src/data/model/Park',
         { '../utils': { upsert: upsertStub } }
       );
 
@@ -252,8 +252,11 @@ describe('model - location', () => {
         Area: mockAreaDao,
         Location: mockLocationDao
       };
+      const models = {
+        Date: null
+      };
 
-      const location = new Location.default({}, access, mockLogger, '123');
+      const location = new Location.default({}, access, mockLogger, models, '123');
 
       const item: ILocation = {
         // address?: any;
@@ -302,7 +305,7 @@ describe('model - location', () => {
         }]
       };
 
-      const location = new LocationModel(mockSequelize, {}, mockLogger, models, id);
+      const location = new ParkModel(mockSequelize, {}, mockLogger, models, id);
       const loadMockLocationStub = stub(location, 'load').returns(true);
       const addScheduleMockLocationStub = stub(location, 'addSchedule');
 
@@ -326,7 +329,7 @@ describe('model - location', () => {
         Date: null
       };
 
-      const location = new LocationModel(mockSequelize, {}, mockLogger, models, id);
+      const location = new ParkModel(mockSequelize, {}, mockLogger, models, id);
       const loadMockLocationStub = stub(location, 'load').returns(null);
 
       const output = await location.addSchedule('2018/30/1', [], mockTransaction);
@@ -353,12 +356,14 @@ describe('model - location', () => {
 
       const dateInstance = createDateInstance(dateId, dateData);
       const addScheduleMockDateStub = stub(dateInstance, 'addSchedule');
-      const loadMockDateStub = stub(MockDate.prototype, 'load').returns(dateInstance);
+      const loadMockDateStub = stub(MockDate.prototype, 'load');
+      const dataMockDateStub = stub(MockDate.prototype, 'data').get(() => dateData);
+      const instanceMockDateStub = stub(MockDate.prototype, 'instance').get(() => dateInstance);
 
       const createMockScheduleStub = stub(mockScheduleDao, 'create')
         .returns(createScheduleInstance('', {})) ;
 
-      const location = new LocationModel({}, access, mockLogger, models, id);
+      const location = new ParkModel({}, access, mockLogger, models, id);
       const loadMockLocationStub = stub(location, 'load').returns(true);
 
       const schedules = [{
@@ -382,6 +387,8 @@ describe('model - location', () => {
       loadMockDateStub.restore();
       createMockScheduleStub.restore();
       addScheduleMockDateStub.restore();
+      dataMockDateStub.restore();
+      instanceMockDateStub.restore();
     });
 
     it('should not add a schedule because one already exists', async () => {
@@ -409,7 +416,7 @@ describe('model - location', () => {
       )
         .returns(dateInstance);
 
-      const location = new LocationModel({}, access, mockLogger, models, id);
+      const location = new ParkModel({}, access, mockLogger, models, id);
       const loadMockLocationStub = stub(location, 'load').returns(true);
 
       const schedules = [{

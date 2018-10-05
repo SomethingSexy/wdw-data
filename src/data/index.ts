@@ -3,7 +3,7 @@ import { IConnection, ILogger } from '../types';
 import createAccessObjects from './dao/index';
 import createActivity from './model/activity';
 import createDining from './model/dining';
-import Location from './model/Location';
+import Location from './model/Park';
 import Shop from './model/Shop';
 import Shops from './model/Shops';
 import { Error, Success } from './utils';
