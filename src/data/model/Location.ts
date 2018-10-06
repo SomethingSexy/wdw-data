@@ -204,7 +204,7 @@ class ParkModel {
    * @param id
    */
   public async load(include?: GetTypes[]) {
-    const { Activity, Address, Area, Location } = this.dao;
+    const { Activity, Address, Area, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
     // setting to any because I am not gonna repeat sequelize's api
     const queryInclude: any[] = [{
       as: 'Address',
@@ -214,6 +214,24 @@ class ParkModel {
       as: 'Areas',
       attributes: RAW_AREA_ATTRIBUTES,
       model: Area
+    }, {
+      as: 'Hotel',
+      attributes: ['tier'],
+      include: [{
+        as: 'BusStops',
+        attributes: ['name'],
+        model: BusStop
+      }],
+      model: Hotel
+    }, {
+      as: 'Rooms',
+      attributes: RAW_ROOM_ATTRIBUTES,
+      include: [{
+        as: 'RoomConfigurations',
+        attributes: ['count', 'description'],
+        model: RoomConfiguration
+      }],
+      model: Room
     }];
 
     // check to see if we are including different associations

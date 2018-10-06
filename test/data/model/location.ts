@@ -15,10 +15,14 @@ import {
   mockActivityDao,
   mockAddressDao,
   mockAreaDao,
+  mockBusStop,
   MockDate,
+  mockHotelDao,
   mockLocationDao,
   mockLocationScheduleDao,
   mockLogger,
+  mockRoomConfigurationDao,
+  mockRoomDao,
   mockScheduleDao,
   mockSequelize,
   mockTransaction,
@@ -69,7 +73,11 @@ describe('model - park', () => {
         Activity: mockActivityDao,
         Address: mockAddressDao,
         Area: mockAreaDao,
-        Location: mockLocationDao
+        BusStop: mockBusStop,
+        Hotel: mockHotelDao,
+        Location: mockLocationDao,
+        Room: mockRoomDao,
+        RoomConfiguration: mockRoomConfigurationDao
       };
       const models = {
         Date: null
@@ -107,6 +115,33 @@ describe('model - park', () => {
           as: 'Areas',
           attributes: ['name'],
           model: mockAreaDao
+        }, {
+          as: 'Hotel',
+          attributes: ['tier'],
+          include: [{
+            as: 'BusStops',
+            attributes: ['name'],
+            model: mockBusStop
+          }],
+          model: mockHotelDao
+        }, {
+          as: 'Rooms',
+          attributes: [
+            'bedsDescription',
+            'occupancy',
+            'occupancyDescription',
+            'view',
+            'description',
+            'extId',
+            'name',
+            'pricingUrl'
+          ],
+          include: [{
+            as: 'RoomConfigurations',
+            attributes: ['count', 'description'],
+            model: mockRoomConfigurationDao
+          }],
+          model: mockRoomDao
         }],
         where: { extId: '123' }
       });
@@ -128,7 +163,11 @@ describe('model - park', () => {
         Activity: mockActivityDao,
         Address: mockAddressDao,
         Area: mockAreaDao,
-        Location: mockLocationDao
+        BusStop: mockBusStop,
+        Hotel: mockHotelDao,
+        Location: mockLocationDao,
+        Room: mockRoomDao,
+        RoomConfiguration: mockRoomConfigurationDao
       };
       const models = {
         Date: null
@@ -157,6 +196,33 @@ describe('model - park', () => {
           as: 'Areas',
           attributes: ['name'],
           model: mockAreaDao
+        }, {
+          as: 'Hotel',
+          attributes: ['tier'],
+          include: [{
+            as: 'BusStops',
+            attributes: ['name'],
+            model: mockBusStop
+          }],
+          model: mockHotelDao
+        }, {
+          as: 'Rooms',
+          attributes: [
+            'bedsDescription',
+            'occupancy',
+            'occupancyDescription',
+            'view',
+            'description',
+            'extId',
+            'name',
+            'pricingUrl'
+          ],
+          include: [{
+            as: 'RoomConfigurations',
+            attributes: ['count', 'description'],
+            model: mockRoomConfigurationDao
+          }],
+          model: mockRoomDao
         }],
         where: { id }
       });
@@ -178,7 +244,11 @@ describe('model - park', () => {
         Activity: mockActivityDao,
         Address: mockAddressDao,
         Area: mockAreaDao,
-        Location: mockLocationDao
+        BusStop: mockBusStop,
+        Hotel: mockHotelDao,
+        Location: mockLocationDao,
+        Room: mockRoomDao,
+        RoomConfiguration: mockRoomConfigurationDao
       };
       const models = {
         Date: null
@@ -207,6 +277,33 @@ describe('model - park', () => {
           as: 'Areas',
           attributes: ['name'],
           model: mockAreaDao
+        }, {
+          as: 'Hotel',
+          attributes: ['tier'],
+          include: [{
+            as: 'BusStops',
+            attributes: ['name'],
+            model: mockBusStop
+          }],
+          model: mockHotelDao
+        }, {
+          as: 'Rooms',
+          attributes: [
+            'bedsDescription',
+            'occupancy',
+            'occupancyDescription',
+            'view',
+            'description',
+            'extId',
+            'name',
+            'pricingUrl'
+          ],
+          include: [{
+            as: 'RoomConfigurations',
+            attributes: ['count', 'description'],
+            model: mockRoomConfigurationDao
+          }],
+          model: mockRoomDao
         }, {
           as: 'Activities',
           attributes: ['id', 'name', 'description', 'type', 'url'],
@@ -316,14 +413,9 @@ describe('model - park', () => {
       const location = new Location.default({}, access, mockLogger, models, '123');
 
       const item: ILocation = {
-        // address?: any;
-        // busStops?: string[];
-        // internal id
-        // id?: string;
         extId: '123',
         extRefName: 'foo',
         name: 'Foo',
-        // rooms?: any[];
         tier: 'deluxe',
         type: 'resort',
         url: 'http://foo.com'
@@ -384,7 +476,11 @@ describe('model - park', () => {
         extRefName: 'foo',
         name: 'Foo',
         rooms: [{
-          extId: 'room123'
+          configurations: [{
+            count: 1,
+            description: 'stuff'
+          }],
+          extId: 'room123',
         }],
         tier: 'deluxe',
         type: 'resort',
@@ -393,8 +489,8 @@ describe('model - park', () => {
 
       const output =  await location.upsert(item);
       expect(output).to.equal(id);
-      // location, hotel, room
-      expect(upsertFake.callCount).to.equal(3);
+      // location, hotel, room, room configuration
+      expect(upsertFake.callCount).to.equal(4);
       // first call for location
       expect(upsertFake.args[0][1]).to.deep.equal({ ...item, fetchSchedule: false });
       // make sure the address is getting include in the save for the location

@@ -165,3 +165,11 @@ export const createScheduleInstance = (id, data) =>  {
 
   return new InstanceSchedule();
 };
+
+export const mockHotelDao = {};
+
+export const mockBusStop = {};
+
+export const mockRoomConfigurationDao = {};
+
+export const mockRoomDao = {};
