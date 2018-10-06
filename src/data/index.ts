@@ -2,8 +2,10 @@ import Sequelize from 'sequelize';
 import { IConnection, ILogger } from '../types';
 import createAccessObjects from './dao/index';
 import createActivity from './model/activity';
+import Date from './model/Date';
 import createDining from './model/dining';
 import Location from './model/Location';
+import Locations from './model/Locations';
 import Shop from './model/Shop';
 import Shops from './model/Shops';
 import { Error, Success } from './utils';
@@ -37,7 +39,7 @@ export default async (connection: any | IConnection, logger: ILogger) => {
   // to create instances outside of here
   const activity = createActivity(sequelize, accessObjects, logger);
   const dining = createDining(sequelize, accessObjects, logger);
-  const location = Location(sequelize, accessObjects, logger);
+  const location = new Locations(sequelize, accessObjects, logger, { Date, Location });
   const shop = new Shops(sequelize, accessObjects, logger, { Location, Shop });
 
   return {

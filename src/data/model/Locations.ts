@@ -64,10 +64,6 @@ class Locations {
     this.logger('debug', `Adding and updating ${items.length} locations.`);
 
     const locations = await syncTransaction(this.sequelize, items, async (item, transaction) => {
-      // TODO; Figure out what we are doing with this
-    //   const id = item.type === HOTEL_TYPE
-    //     ? await addUpdateHotel(item, access, transaction, logger)
-    //     : await addUpdateLocation(item, access, transaction, logger);
       // create a model for this shop,
       const location = this.createLocation(item.id || item.extId);
       // update it with the latest coming in

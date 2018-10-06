@@ -31,7 +31,9 @@ export enum GetTypes {
 export const normalizeLocation = location => ({
   ...pick(location, RAW_LOCATION_ATTRIBUTES),
   address: location.Address || null,
-  areas: location.Areas.map(area => area.name)
+  areas: location.Areas ? location.Areas.map(area => area.name) : [],
+  // TODO: don't do this if it doesn't exist
+  tier: location.Hotel ? location.Hotel.tier : null
 });
 
 class ParkModel {

@@ -39,7 +39,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(parks, null, 4));
-      await models.location.addUpdate(parks);
+      await models.location.bulkAddUpdate(parks);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -52,7 +52,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(hotels, null, 4));
-      await models.location.addUpdate(hotels);
+      await models.location.bulkAddUpdate(hotels);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -102,7 +102,7 @@ export default async (options: IOptions = {
         .shops
         .list({ max: 60 });
       logger.log('info', JSON.stringify(shops, null, 4));
-      await models.shop.addUpdate(shops);
+      await models.shop.bulkAddUpdate(shops);
     } catch (e) {
       logger.log('error', e.toString());
     }
