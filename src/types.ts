@@ -81,8 +81,9 @@ export interface IDate {
   holiday?: string;
 }
 
-export interface ILocation {
+export interface ILocationItem {
   address?: any;
+  areas?: any[];
   busStops?: string[];
   // internal id
   id?: string;
@@ -134,6 +135,11 @@ export interface IConnection {
 export interface ILogType { log: (type: string, message: string) => void; }
 
 export type ILogger = (type: string, message: string) => void;
+
+export interface ILocation {
+  data: ILocationItem;
+  bulkAddSchedules: (parkSchedules: {[date: string]: ISchedule[]}) => {};
+}
 
 export interface IShopsModels {
   Location: any;

@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import pick from 'lodash/pick'; // tslint:disable-line
-import { ILocation, ILocationModels, ILogger, ISchedule } from '../../types';
+import { ILocation, ILocationItem, ILocationModels, ILogger, ISchedule } from '../../types';
 import { Success, upsert } from '../utils';
 
 const RAW_ADDRESS_ATTRIBUTES = [
@@ -20,7 +20,9 @@ const RAW_ROOM_ATTRIBUTES = [
   'pricingUrl'
 ];
 // Note: extId is on here right now for the jobs
-export const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url', 'extId'];
+export const RAW_LOCATION_ATTRIBUTES = [
+  'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
+];
 
 const HOTEL_TYPE = 'resort';
 
@@ -28,15 +30,15 @@ export enum GetTypes {
   Activities = 'activities'
 }
 
-export const normalizeLocation = location => ({
-  ...pick(location, RAW_LOCATION_ATTRIBUTES),
+export const normalizeLocation = (location: any): ILocationItem => ({
+  ...location,
   address: location.Address || null,
   areas: location.Areas ? location.Areas.map(area => area.name) : [],
   // TODO: don't do this if it doesn't exist
   tier: location.Hotel ? location.Hotel.tier : null
 });
 
-class ParkModel {
+class LocationModel implements ILocation {
   private sequelize: any;
   private dao: any;
   private logger: ILogger;
@@ -83,25 +85,12 @@ class ParkModel {
     }
   }
 
-  public get data() {
+  public get data(): ILocationItem {
     // if no instance, throw an error
     invariant(this.instance, 'An instance is required to retrieve data, call load first.');
     const raw = this.instance.get({ plain: true });
 
     return normalizeLocation(raw);
-
-    // if this is a resort, then we need to grab the resort information
-    // if (raw.get('type') === 'resort') {
-    //   const hotel = await Hotel
-    //     .findOne({ where: { locationId: found.get('id') } }, { transaction });
-    //   // just save off tier for now
-    //   raw = {
-    //     ...raw,
-    //     tier: hotel.get('tier')
-    //   };
-    // }
-
-    // return raw;
   }
 
   public async addArea(locationId, name, transaction) {
@@ -132,8 +121,8 @@ class ParkModel {
     }
 
     const { Date } = this.models;
-    const dateModel = new Date(this.sequelize, this.dao, this.logger);
-    await dateModel.load(scheduleDate);
+    const dateModel = new Date(this.sequelize, this.dao, this.logger, scheduleDate);
+    await dateModel.load(transaction);
     const dateId = dateModel.data.id;
 
     // Check to see if we have any schedules for this location and date already
@@ -326,7 +315,7 @@ class ParkModel {
     });
   }
 
-  public async upsert (item: ILocation, transaction?) {
+  public async upsert (item: ILocationItem, transaction?) {
     const { Address, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
     this.logger('debug', `Adding/updating location ${this.id}.`);
 
@@ -398,4 +387,4 @@ class ParkModel {
   }
 }
 
-export default ParkModel;
+export default LocationModel;

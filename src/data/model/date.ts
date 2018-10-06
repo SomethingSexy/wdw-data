@@ -37,7 +37,7 @@ class DateModel {
     const mDate = moment(this.date);
     const localDate = mDate.format('YYYY-MM-DD');
 
-    const instance = Date
+    const instance = await Date
       .findOne({ where: { date: localDate } }, { transaction })
       .then(d => {
         if (!d) {
