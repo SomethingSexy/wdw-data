@@ -3,7 +3,7 @@ import pick from 'lodash/pick'; // tslint:disable-line
 import { IActivity, ISchedule } from '../../types';
 import { Error, Success, syncTransaction, upsert } from '../utils';
 import date from './Date';
-import location from './Park';
+import location from './Location';
 
 // Note: returning extId for jobs
 const RAW_ACTIVITY_ATTRIBUTES = [

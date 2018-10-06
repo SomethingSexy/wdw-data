@@ -9,9 +9,20 @@ const RAW_ADDRESS_ATTRIBUTES = [
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
 const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
-
+const RAW_ROOM_ATTRIBUTES = [
+  'bedsDescription',
+  'occupancy',
+  'occupancyDescription',
+  'view',
+  'description',
+  'extId',
+  'name',
+  'pricingUrl'
+];
 // Note: extId is on here right now for the jobs
 export const RAW_LOCATION_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url', 'extId'];
+
+const HOTEL_TYPE = 'resort';
 
 export enum GetTypes {
   Activities = 'activities'
@@ -168,6 +179,11 @@ class ParkModel {
       return null;
     }
 
+    if (!this.instance.get('fetchSchedule')) {
+      this.logger('error', `Location ${this.id} does not support schedules.`);
+      return null;
+    }
+
     await Promise.all(
       Object
         .entries(parkSchedules)
@@ -291,16 +307,68 @@ class ParkModel {
   }
 
   public async upsert (item: ILocation, transaction?) {
-    const { Location } = this.dao;
+    const { Address, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
     this.logger('debug', `Adding/updating location ${this.id}.`);
 
     const data = {
       ...item,
-      fetchSchedule: item.type !== 'entertainment-venue'
+      fetchSchedule: item.type !== 'entertainment-venue' && item.type !== HOTEL_TYPE
     };
-    const locationInstance = await upsert(Location, data, {  [this.idKey]: this.id  }, transaction);
+    const locationInstance = await upsert(
+      Location, data, {  [this.idKey]: this.id  }, transaction, item.address ? [Address] : null
+    );
 
     this.logger('debug', `Finished adding/updating location ${this.id}.`);
+
+      // TODO; Figure out what we are doing with this
+    if (item.type === HOTEL_TYPE) {
+      const hotelInstance = await upsert(
+        Hotel,
+        { tier: item.tier, locationId: locationInstance.get('id') },
+        { locationId: locationInstance.get('id') },
+        transaction,
+      );
+      // need to handle adding rooms separately because we want to update
+      // if we have them already based on the extId
+      if (item.rooms) {
+        for (const room of item.rooms) {
+          const roomInstance = await upsert(
+            Room,
+            { ...pick(room, RAW_ROOM_ATTRIBUTES), hotelId: hotelInstance.get('id') },
+            { extId: room.extId },
+            transaction
+          );
+
+          if (room.configurations) {
+            for (const configuration of room.configurations) {
+              await upsert(
+                RoomConfiguration,
+                { ...configuration, roomId: roomInstance.get('id') },
+                { description: configuration.description, roomId: roomInstance.get('id') },
+                transaction
+              );
+            }
+          }
+        }
+      }
+
+      if (item.busStops) {
+        // either sync or async with Promise.all
+        for (const stop of item.busStops) {
+          await BusStop
+            .findOne({ where: { hotelId: hotelInstance.get('id'), name: stop } }, { transaction })
+            .then(obj => {
+              if (!obj) {
+                return BusStop.create(
+                  { hotelId: hotelInstance.get('id'), name: stop }, { transaction }
+                );
+              }
+
+              return Promise.resolve();
+            });
+        }
+      }
+    }
 
     // set the instance after we created,
     // TODO: Should we call update on existing instance if we already have it?

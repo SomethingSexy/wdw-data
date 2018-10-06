@@ -150,6 +150,5 @@ export interface ILocationModels {
 
 export interface ILocationsModels {
   Date: any;
-  Park: any;
-  Hotel: any;
+  Location: any;
 }

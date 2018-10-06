@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import { ILocation, ILocationsModels, ILogger } from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
-import { RAW_LOCATION_ATTRIBUTES } from './Park';
+import { RAW_LOCATION_ATTRIBUTES } from './Location';
 
 /**
  * Validates a single location.  The following fields are considered
@@ -96,7 +96,7 @@ class Locations {
    * @param transaction
    */
   public async findByName(name, transaction) {
-    const { Park, Hotel } = this.models;
+    const { Location } = this.models;
     // find the instance of the model
     const instance = this.dao.Location.findOne(
       {
@@ -110,19 +110,7 @@ class Locations {
       return null;
     }
 
-    let type;
-    // tslint:disable-next-line:prefer-conditional-expression
-    if (instance.get('type') === 'resort') {
-      type = new Hotel(this.sequelize, this.dao, this.logger, this.models, instance.get('id'));
-    } else {
-      type = new Park(this.sequelize, this.dao, this.logger, this.models, instance.get('id'));
-    }
-
-    // So this kind of sucks but allows us to break out what we need to do to load this data
-    // based on the type of instance we are loading.
-    await type.load();
-
-    return type;
+    return new Location(this.sequelize, this.dao, this.logger, this.models, instance);
   }
 
   /**

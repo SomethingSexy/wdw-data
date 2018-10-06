@@ -76,11 +76,28 @@ export const createLocationInstance = (id, data) =>  {
       if (options === 'id') {
         return id;
       }
+      if (options === 'fetchSchedule') {
+        return data.fetchSchedule;
+      }
       return data;
     }
   }
 
   return new InstanceLocation();
+};
+
+export const createHotelInstance = (id, data) =>  {
+  // tslint:disable-next-line:max-classes-per-file
+  class InstanceHotel {
+    public get(options: any) {
+      if (options === 'id') {
+        return id;
+      }
+      return data;
+    }
+  }
+
+  return new InstanceHotel();
 };
 
 export const createShopInstance = (id, data) =>  {
