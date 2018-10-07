@@ -136,18 +136,33 @@ export interface ILogType { log: (type: string, message: string) => void; }
 
 export type ILogger = (type: string, message: string) => void;
 
+interface ILocationsConstructor {
+  new (sequelize: any, access: any, logger: ILogger, models: ILocationsModels): ILocations;
+}
+
+export interface ILocations {
+  findByName: (name: string, transaction?: any) => Promise<ILocation | null>;
+}
+
+interface ILocationConstructor {
+  new (sequelize: any, access: any, logger: ILogger, models: ILocationModels, id: any): ILocation;
+}
+
 export interface ILocation {
   data: ILocationItem;
+  instance: any;
+  addArea: (name: string, transaction?: any) => Promise<any | null>;
   bulkAddSchedules: (parkSchedules: {[date: string]: ISchedule[]}) => {};
+  findAreaByName: (name: string, transaction?: any) => Promise<any | null>;
 }
 
 export interface IShopsModels {
-  Location: any;
+  Locations: ILocationsConstructor;
   Shop: any;
 }
 
 export interface IShopModels {
-  Location: any;
+  Locations: ILocationsConstructor;
 }
 
 export interface ILocationModels {
@@ -156,5 +171,5 @@ export interface ILocationModels {
 
 export interface ILocationsModels {
   Date: any;
-  Location: any;
+  Location: ILocationConstructor;
 }

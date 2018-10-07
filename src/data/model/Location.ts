@@ -39,6 +39,8 @@ export const normalizeLocation = (location: any): ILocationItem => ({
 });
 
 class LocationModel implements ILocation {
+  public instance: any = null;
+
   private sequelize: any;
   private dao: any;
   private logger: ILogger;
@@ -46,7 +48,6 @@ class LocationModel implements ILocation {
   private _id: string = '';
   private isExt: boolean = false;
   private idKey: string = 'id';
-  private instance: any = null;
 
   public set id(id: string) {
     this._id = id;
@@ -66,7 +67,7 @@ class LocationModel implements ILocation {
    * @param models
    * @param id - string or location instance to preload
    */
-  constructor(sequelize, access, logger, models: ILocationModels, id: any) {
+  constructor(sequelize: any, access: any, logger: ILogger, models: ILocationModels, id: any) {
     invariant(id, 'Internal or external id is required to create a Location.');
     this.sequelize = sequelize;
     this.dao = access;
@@ -93,8 +94,23 @@ class LocationModel implements ILocation {
     return normalizeLocation(raw);
   }
 
-  public async addArea(locationId, name, transaction) {
+  /**
+   * Adds area and returns the instance for now.
+   * @param name
+   * @param transaction
+   */
+  public async addArea(name: string, transaction?: any): Promise<any | null> {
+    let found = true;
+    if (!this.instance) {
+      found = await this.load();
+    }
+    if (!found) {
+      this.logger('error', `Location ${this.id} not found when trying to find an area.`);
+      return null;
+    }
+
     const { Area } = this.dao;
+    const locationId = this.instance.get('id');
     // location and name should be unique combination
     const exist = await Area.findOne(
       { where: { locationId, name } }, { transaction }
@@ -189,7 +205,29 @@ class LocationModel implements ILocation {
     // TODO: Figure out what to return from here, probably call get location schedule
     return { [Success]: true };
   }
+  /**
+   * Searches for an area instance.
+   * @param name
+   * @param transaction
+   */
+  public async findAreaByName(name: string, transaction?: any): Promise<any | null> {
+    let found = true;
+    if (!this.instance) {
+      found = await this.load();
+    }
+    if (!found) {
+      this.logger('error', `Location ${this.id} not found when trying to find an area.`);
+      return null;
+    }
 
+    const { Area } = this.dao;
+    const locationId = this.instance.get('id');
+
+    // TODO; Return model
+    return Area.findOne(
+      { where: { locationId, name } }, { transaction }
+    );
+  }
   /**
    * Returns a raw location by id.
    * @param id

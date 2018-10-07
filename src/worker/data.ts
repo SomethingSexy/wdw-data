@@ -100,7 +100,7 @@ export default async (options: IOptions = {
     try {
       const shops = await realtimeModels
         .shops
-        .list({ max: 60 });
+        .list({ max: 5 });
       logger.log('info', JSON.stringify(shops, null, 4));
       await models.shop.bulkAddUpdate(shops);
     } catch (e) {

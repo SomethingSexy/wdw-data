@@ -1,5 +1,5 @@
 import invariant from 'invariant';
-import { ILocation, ILocationsModels, ILogger } from '../../types';
+import { ILocation, ILocationItem, ILocations, ILocationsModels, ILogger } from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
 import { RAW_LOCATION_ATTRIBUTES } from './Location';
 
@@ -8,7 +8,7 @@ import { RAW_LOCATION_ATTRIBUTES } from './Location';
  * required: type and extId.
  * @param item
  */
-const validateLocation = (item: ILocation) => {
+const validateLocation = (item: ILocationItem) => {
   if (!item.type) {
     return 'Type is required for location';
   }
@@ -24,7 +24,7 @@ const validateLocation = (item: ILocation) => {
  * Validates all locations.
  * @param items
  */
-export const validateLocations = (items: ILocation[]) => {
+export const validateLocations = (items: ILocationItem[]) => {
   if (!items || !items.length) {
     return 'Locations are required to add or update.';
   }
@@ -35,7 +35,7 @@ export const validateLocations = (items: ILocation[]) => {
   return errors.length ? errors : true;
 };
 
-class Locations {
+class Locations implements ILocations {
   private sequelize: any;
   private dao: any;
   private logger: ILogger;
@@ -53,7 +53,9 @@ class Locations {
    * otherwise will throw an exception for everything else.
    * @param items
    */
-  public async bulkAddUpdate(items: ILocation[] = []): Promise<{[Error]?: any; [Success]?: any; }> {
+  public async bulkAddUpdate(
+    items: ILocationItem[] = []
+  ): Promise<{[Error]?: any; [Success]?: any; }> {
     // if there are no items, just return an empty array
     const valid = validateLocations(items);
     if (valid !== true) {
@@ -82,7 +84,8 @@ class Locations {
    */
   public createLocation(id: string) {
     invariant(id, 'Id is required to create a shop.');
-    const { Location } = this.models;
+    // TODO: figure out why I need any here
+    const Location: any = this.models.Location;
     return new Location(this.sequelize, this.dao, this.logger, this.models, id);
   }
 
@@ -91,8 +94,7 @@ class Locations {
    * @param name
    * @param transaction
    */
-  public async findByName(name, transaction) {
-    const { Location } = this.models;
+  public async findByName(name: string, transaction?: any): Promise<ILocation | null> {
     // find the instance of the model
     const instance = this.dao.Location.findOne(
       {
@@ -106,16 +108,15 @@ class Locations {
       return null;
     }
 
-    return new Location(this.sequelize, this.dao, this.logger, this.models, instance);
+    return this.createLocation(instance);
   }
 
   /**
-   * Returns a list of raw locations.
+   * Returns a list of location models.
    *
    * @param where - search parameters
    */
-  public async list(where?: { [key: string]: string | boolean }) {
-    const { Location } = this.models;
+  public async findAll(where?: { [key: string]: string | boolean }): Promise<ILocation[]> {
     const { Address, Area } = this.dao;
     let query: { attributes: string[], include: any[], where?: any } = {
       attributes: RAW_LOCATION_ATTRIBUTES,
@@ -143,10 +144,17 @@ class Locations {
     const found = await this.dao.Location.findAll(query);
 
     // create new locations objects then parse the data
-    return found.map(item => {
-      const location = new Location(this.sequelize, this.dao, this.logger, this.models, item);
-      return location.data;
-    });
+    return found.map(item => this.createLocation(item));
+  }
+
+  /**
+   * Returns a list of raw locations.
+   *
+   * @param where - search parameters
+   */
+  public async list(where?: { [key: string]: string | boolean }): Promise<any[]> {
+    const found = await this.findAll(where);
+    return found.map(item => item.data);
   }
 }
 

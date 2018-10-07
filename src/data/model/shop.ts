@@ -3,7 +3,7 @@ import isUUID from 'is-uuid';
 import differenceWith from 'lodash/differenceWith'; // tslint:disable-line
 import pick from 'lodash/pick'; // tslint:disable-line
 import moment from 'moment';
-import { ILogger, IShop, IShopModels } from '../../types';
+import { ILocations, ILogger, IShop, IShopModels } from '../../types';
 import { upsert } from '../utils';
 
 // Note: returning extId for jobs
@@ -120,9 +120,10 @@ class ShopModel {
     return this._id;
   }
 
-  private get location() {
-    const { Location } = this.models;
-    return new Location(this.sequelize, this.dao, this.logger);
+  private get locations(): ILocations {
+    // TODO: Figure out why I need any here
+    const Locations: any = this.models.Locations;
+    return new Locations(this.sequelize, this.dao, this.logger);
   }
 
   /**
@@ -202,7 +203,7 @@ class ShopModel {
    */
   public async upsert (item: IShop, transaction) {
     this.logger('debug', `Adding/updating shops ${item.extId}.`);
-    const Location = this.location;
+    const Locations = this.locations;
     const { Shop, ShopDiscount, Tag } = this.dao;
 
     const shopItem: any = {
@@ -224,22 +225,21 @@ class ShopModel {
     );
 
     if (item.location) {
-      const locationInstance = await Location.findByName(item.location, transaction);
-      if (locationInstance) {
-        await shopInst.setLocation(locationInstance, { transaction });
-      }
-      // we have to add the area here because there is no other way
-      // to easily generate them
-      if (item.area) {
-        const locationId = locationInstance.get('id');
-        let areaInst =
-          await Location.findAreaByName(locationId, item.area, transaction);
+      const location = await Locations.findByName(item.location, transaction);
+      if (location) {
+        await shopInst.setLocation(location.instance, { transaction });
+        // we have to add the area here because there is no other way
+        // to easily generate them
+        if (item.area) {
+          let areaInst =
+            await location.findAreaByName(item.area, transaction);
 
-        if (!areaInst) {
-          areaInst = await Location.addArea(locationId, item.area, transaction);
+          if (!areaInst) {
+            areaInst = await location.addArea(item.area, transaction);
+          }
+
+          await shopInst.setArea(areaInst, { transaction });
         }
-
-        await shopInst.setArea(areaInst, { transaction });
       }
     }
 
