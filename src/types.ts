@@ -157,6 +157,7 @@ export interface ILocation {
 }
 
 export interface IShopsModels {
+  Location: any;
   Locations: ILocationsConstructor;
   Shop: any;
 }

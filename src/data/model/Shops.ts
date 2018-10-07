@@ -24,10 +24,9 @@ class Shops {
     const shops = await syncTransaction(this.sequelize, items, async (item, transaction) => {
       // create a model for this shop,
       const shop = this.createShop(item.id || item.extId);
-      // update it with the latest coming in
-      await shop.upsert(item, transaction);
-      // then retrieve the data
-      return shop.data;
+      // update it with the latest coming in and return the id for now
+      const id = await shop.upsert(item, transaction);
+      return id;
     });
 
     return { [Success]: shops };

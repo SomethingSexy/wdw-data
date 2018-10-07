@@ -96,7 +96,7 @@ class Locations implements ILocations {
    */
   public async findByName(name: string, transaction?: any): Promise<ILocation | null> {
     // find the instance of the model
-    const instance = this.dao.Location.findOne(
+    const instance = await this.dao.Location.findOne(
       {
         attributes: ['id', 'type'],
         where: { name }
@@ -104,7 +104,7 @@ class Locations implements ILocations {
       { transaction }
     );
 
-    if (instance) {
+    if (!instance) {
       return null;
     }
 

@@ -59,7 +59,7 @@ export const validateAllShops = (items: IShop[]) => {
 
 class ShopModel {
   private static async createDiscounts (Model, discounts, shopId, transaction) {
-    Promise.all(discounts.map(async discount =>
+    return Promise.all(discounts.map(async discount =>
       Model.create(
         {
           description: discount.description,
@@ -81,7 +81,7 @@ class ShopModel {
  * @param transaction
  */
   private static async removedDiscounts (Model, discounts, transaction) {
-    return  Promise.all(discounts.map(async discount => {
+    return Promise.all(discounts.map(async discount => {
       const instance = await Model.findById(discount.id, { transaction });
       return instance.update({ thruDate: moment().format('YYYY-MM-DD') });
     }));
@@ -123,7 +123,7 @@ class ShopModel {
   private get locations(): ILocations {
     // TODO: Figure out why I need any here
     const Locations: any = this.models.Locations;
-    return new Locations(this.sequelize, this.dao, this.logger);
+    return new Locations(this.sequelize, this.dao, this.logger, this.models);
   }
 
   /**
@@ -226,7 +226,9 @@ class ShopModel {
 
     if (item.location) {
       const location = await Locations.findByName(item.location, transaction);
+      this.logger('debug', `location ${location}`);
       if (location) {
+        this.logger('debug', `location instance ${location.instance}`);
         await shopInst.setLocation(location.instance, { transaction });
         // we have to add the area here because there is no other way
         // to easily generate them
@@ -339,7 +341,6 @@ class ShopModel {
     // set the instance after we created,
     // TODO: Should we call update on existing instance if we already have it?
     this.instance = shopInst;
-
     // return the id of the shop we created/updated
     return shopInst.get('id');
   }

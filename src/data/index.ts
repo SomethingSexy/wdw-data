@@ -39,9 +39,8 @@ export default async (connection: any | IConnection, logger: ILogger) => {
   // to create instances outside of here
   const activity = createActivity(sequelize, accessObjects, logger);
   const dining = createDining(sequelize, accessObjects, logger);
-  const locationsModels: ILocationsModels = { Date, Location };
-  const location = new Locations(sequelize, accessObjects, logger, locationsModels);
-  const shop = new Shops(sequelize, accessObjects, logger, { Locations, Shop });
+  const location = new Locations(sequelize, accessObjects, logger, { Date, Location });
+  const shop = new Shops(sequelize, accessObjects, logger, { Location, Locations, Shop });
 
   return {
     activity,
