@@ -47,7 +47,7 @@ const schedules = {
   }]
 };
 
-describe('model - park', () => {
+describe('model - location', () => {
   describe('create and find', () => {
     it('should create a new instance and load it via extId', async () => {
       const id = uuid();
@@ -63,8 +63,14 @@ describe('model - park', () => {
           zip: '11111'
         },
         Areas: [{ name: 'fun' }],
+        description: 'stuff',
+        extId: '123',
+        extRefName: 'foo',
+        fetchSchedule: false,
         id, // tslint:disable-line
-        name: 'Foo'
+        name: 'Foo',
+        type: 'theme-park',
+        url: 'http://foo.com'
       };
 
       const findOneMockLocationStub = stub(mockLocationDao, 'findOne')
@@ -101,12 +107,18 @@ describe('model - park', () => {
           zip: '11111'
         },
         areas: ['fun'],
+        description: 'stuff',
+        extId: '123',
+        extRefName: 'foo',
+        fetchSchedule: false,
         id, // tslint:disable-line
-        name: 'Foo'
+        name: 'Foo',
+        type: 'theme-park',
+        url: 'http://foo.com'
       });
       expect(findOneMockLocationStub.callCount).to.equal(1);
       expect(findOneMockLocationStub.args[0][0]).to.deep.equal({
-        attributes: ['id', 'name', 'description', 'type', 'url', 'extId'],
+        attributes: ['id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'],
         include: [{
           as: 'Address',
           attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
@@ -153,8 +165,14 @@ describe('model - park', () => {
       const id = uuid();
       const data = {
         Areas: [],
+        description: 'stuff',
+        extId: '123',
+        extRefName: 'foo',
+        fetchSchedule: false,
         id, // tslint:disable-line
-        name: 'Foo'
+        name: 'Foo',
+        type: 'theme-park',
+        url: 'http://foo.com'
       };
 
       const findOneMockLocationStub = stub(mockLocationDao, 'findOne')
@@ -182,12 +200,18 @@ describe('model - park', () => {
       expect(location.data).to.deep.equal({
         address: null,
         areas: [],
+        description: 'stuff',
+        extId: '123',
+        extRefName: 'foo',
+        fetchSchedule: false,
         id, // tslint:disable-line
-        name: 'Foo'
+        name: 'Foo',
+        type: 'theme-park',
+        url: 'http://foo.com'
       });
       expect(findOneMockLocationStub.callCount).to.equal(1);
       expect(findOneMockLocationStub.args[0][0]).to.deep.equal({
-        attributes: ['id', 'name', 'description', 'type', 'url', 'extId'],
+        attributes: ['id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'],
         include: [{
           as: 'Address',
           attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
@@ -234,8 +258,14 @@ describe('model - park', () => {
       const id = uuid();
       const data = {
         Areas: [],
+        description: 'stuff',
+        extId: '123',
+        extRefName: 'foo',
+        fetchSchedule: false,
         id, // tslint:disable-line
-        name: 'Foo'
+        name: 'Foo',
+        type: 'theme-park',
+        url: 'http://foo.com'
       };
 
       const findOneMockLocationStub = stub(mockLocationDao, 'findOne')
@@ -263,12 +293,18 @@ describe('model - park', () => {
       expect(location.data).to.deep.equal({
         address: null,
         areas: [],
+        description: 'stuff',
+        extId: '123',
+        extRefName: 'foo',
+        fetchSchedule: false,
         id, // tslint:disable-line
-        name: 'Foo'
+        name: 'Foo',
+        type: 'theme-park',
+        url: 'http://foo.com'
       });
       expect(findOneMockLocationStub.callCount).to.equal(1);
       expect(findOneMockLocationStub.args[0][0]).to.deep.equal({
-        attributes: ['id', 'name', 'description', 'type', 'url', 'extId'],
+        attributes: ['id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'],
         include: [{
           as: 'Address',
           attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
@@ -632,7 +668,8 @@ describe('model - park', () => {
 
       const output = await location.addSchedule('2018/30/1', dateSchedule, mockTransaction);
 
-      expect(loadMockDateStub.args[0][0]).to.equal('2018/30/1');
+      // load accepts an optional transaction
+      expect(loadMockDateStub.args[0][0]).to.equal(mockTransaction);
       expect(createMockScheduleStub.callCount).to.equal(1);
       expect(createMockScheduleStub.args[0][0]).to.deep.equal(dateSchedule[0]);
       expect(addScheduleMockDateStub.callCount).to.equal(1);
@@ -680,7 +717,7 @@ describe('model - park', () => {
       }];
 
       const output = await location.addSchedule('2018/30/1', dateSchedule, mockTransaction);
-      expect(loadMockDateStub.args[0][0]).to.equal('2018/30/1');
+      expect(loadMockDateStub.args[0][0]).to.equal(mockTransaction);
       expect(output).to.equal(null);
 
       sinon.restore();

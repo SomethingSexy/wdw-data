@@ -85,10 +85,12 @@ export interface ILocationItem {
   address?: any;
   areas?: any[];
   busStops?: string[];
+  description: string;
   // internal id
   id?: string;
   extId: string;
   extRefName: string;
+  fetchSchedule?: boolean;
   name: string;
   rooms?: any[];
   tier?: string;

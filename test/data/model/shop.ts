@@ -9,6 +9,7 @@ import {
   createShopInstance,
   MockLocation,
   mockLocationDao,
+  MockLocations,
   mockLogger,
   mockShopDao,
   mockShopDiscountDao
@@ -48,7 +49,7 @@ describe('model - shop', () => {
         Shop: mockShopDao,
         ShopDiscount: mockShopDiscountDao
       };
-      const models = { Location: MockLocation };
+      const models = { Locations: MockLocations };
       const shop = new Shop.default({}, access, mockLogger, models, '123');
       expect(shop.id).to.equal('123');
       expect(shop.isExt).to.equal(true);
@@ -81,7 +82,7 @@ describe('model - shop', () => {
         ShopDiscount: mockShopDiscountDao
       };
 
-      const models = { Location: MockLocation };
+      const models = { Locations: MockLocations };
       const shop = new Shop.default({}, access, mockLogger, models, id);
       expect(shop.id).to.equal(id);
       expect(shop.isExt).to.equal(false);
@@ -140,7 +141,7 @@ describe('model - shop', () => {
         wheelchairAccessible: true
       };
 
-      const models = { Location: MockLocation };
+      const models = { Locations: MockLocations };
       const shop = new Shop.default({}, access, mockLogger, models, '123');
 
       const output = await shop.upsert(item, mockTransaction);
@@ -226,7 +227,7 @@ describe('model - shop', () => {
         wheelchairAccessible: true
       };
 
-      const models = { Location: MockLocation };
+      const models = { Locations: MockLocations };
       const shop = new Shop.default({}, access, mockLogger, models, '123');
 
       const output = await shop.upsert(item, mockTransaction);

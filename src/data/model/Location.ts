@@ -30,13 +30,26 @@ export enum GetTypes {
   Activities = 'activities'
 }
 
-export const normalizeLocation = (location: any): ILocationItem => ({
-  ...location,
-  address: location.Address || null,
-  areas: location.Areas ? location.Areas.map(area => area.name) : [],
-  // TODO: don't do this if it doesn't exist
-  tier: location.Hotel ? location.Hotel.tier : null
-});
+export const normalizeLocation = (location: any): ILocationItem => {
+  const core: ILocationItem = {
+    address: location.Address || null,
+    areas: location.Areas ? location.Areas.map(area => area.name) : [],
+    description: location.description,
+    extId: location.extId,
+    extRefName: location.extRefName,
+    fetchSchedule: location.fetchSchedule,
+    id: location.id,
+    name: location.name,
+    type: location.type,
+    url: location.url
+  };
+
+  if (location.Hotel) {
+    core.tier = location.Hotel.tier || null;
+  }
+
+  return core;
+};
 
 class LocationModel implements ILocation {
   public instance: any = null;

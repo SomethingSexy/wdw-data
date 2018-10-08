@@ -25,6 +25,12 @@ export class MockLocation {
   public findByName() {}
 }
 
+// tslint:disable-next-line:max-classes-per-file
+export class MockLocations {
+  // tslint:disable-next-line:no-empty
+  public findByName() {}
+}
+
 export const mockShopDao = {
   // tslint:disable-next-line:no-empty
   addShopTags: () => {},
