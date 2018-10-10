@@ -1,7 +1,8 @@
 import Sequelize from 'sequelize';
-import { IConnection, ILocationsModels, ILogger } from '../types';
+import { IConnection, ILogger } from '../types';
 import createAccessObjects from './dao/index';
-import createActivity from './model/activity';
+import Activity from './model/Activity';
+import Activities  from './model/Activities';
 import Date from './model/Date';
 import createDining from './model/dining';
 import Location from './model/Location';
@@ -37,7 +38,7 @@ export default async (connection: any | IConnection, logger: ILogger) => {
   // around the data access objects,
   // for now we are creating a single instance here, turn into factory methods if we want
   // to create instances outside of here
-  const activity = createActivity(sequelize, accessObjects, logger);
+  const activity = new Activities(sequelize, accessObjects, logger, { Activity, Date, Location, Locations });
   const dining = createDining(sequelize, accessObjects, logger);
   const location = new Locations(sequelize, accessObjects, logger, { Date, Location });
   const shop = new Shops(sequelize, accessObjects, logger, { Location, Locations, Shop });

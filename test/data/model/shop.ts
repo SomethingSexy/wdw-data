@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import 'mocha';
 import moment from 'moment';
 import proxyquire from 'proxyquire';
-import { spy, stub } from 'sinon';
+import sinon, { spy, stub } from 'sinon';
 import uuid from 'uuid/v4'; // tslint:disable-line
 import { IShop } from '../../../src/types';
 import {
@@ -63,7 +63,7 @@ describe('model - shop', () => {
       expect(shop.idKey).to.equal('id');
       expect(shop.data).to.deep.equal({ id, name: 'Foo', tags: [] });
 
-      getMockShopStub.restore();
+      sinon.restore();
     });
 
     it('should create a new instance with internal id', async () => {
@@ -95,7 +95,7 @@ describe('model - shop', () => {
       expect(shop.idKey).to.equal('id');
       expect(shop.data).to.deep.equal({ id, name: 'Foo', tags: ['fun'] });
 
-      getMockShopStub.restore();
+      sinon.restore();
     });
   });
 
@@ -173,8 +173,7 @@ describe('model - shop', () => {
         type: 'passholder'
       });
 
-      getMockShopStub.restore();
-      findByNameLocationStub.restore();
+      sinon.restore();
     });
 
     it('should update discounts', async () => {
@@ -253,11 +252,82 @@ describe('model - shop', () => {
       expect(removedDiscountsShopStub.callCount).to.equal(0);
       expect(updateDiscountsShopStub.callCount).to.equal(1);
 
-      getMockShopStub.restore();
-      findByNameLocationStub.restore();
-      findAllShopDiscountStub.restore();
-      createShopDiscountStub.restore();
-      removedDiscountsShopStub.restore();
+      sinon.restore();
+    });
+
+    it('should remove discounts', async () => {
+      const getMockShopStub = stub(mockShopDao, 'get').returns('123-456');
+      const upsertStub = stub().returns(mockShopDao);
+      const findByNameLocationStub = stub(MockLocation.prototype, 'findByName')
+        .returns(mockLocationDao);
+      const createShopDiscountStub = spy(mockShopDiscountDao, 'create');
+      const findAllShopDiscountStub = stub(mockShopDiscountDao, 'findAll').returns([
+        new MockDiscount({
+          description: 'woot',
+          discount: '30%',
+          fromDate: moment().format('YYYY-MM-DD'),
+          id: '1',
+          shopId: '123-456',
+          thruDate: null,
+          type: 'passholder'
+        })
+      ]);
+
+      const Shop = proxyquire(
+        '../../../src/data/model/Shop',
+        { '../utils': { upsert: upsertStub } }
+      );
+
+      const removedDiscountsShopStub = stub(Shop.default, 'removedDiscounts');
+      const updateDiscountsShopStub = stub(Shop.default, 'updateDiscounts');
+
+      const access = {
+        Shop: mockShopDao,
+        ShopDiscount: mockShopDiscountDao
+      };
+
+      const item: IShop = {
+        admissionRequired: true,
+        area: 'Bar',
+        description: '',
+        discounts: [],
+        extId: '123',
+        extRefName: 'Fun',
+        location: 'Foo',
+        name: 'Fun',
+        tags: ['woot'],
+        type: 'merchant',
+        url: 'http://balls.com',
+        wheelchairAccessible: true
+      };
+
+      const models = { Locations: MockLocations };
+      const shop = new Shop.default({}, access, mockLogger, models, '123');
+
+      const output = await shop.upsert(item, mockTransaction);
+
+      // this not really what gets returned in prod
+      expect(output).to.deep.equal('123-456');
+
+      expect(upsertStub.called).to.equal(true);
+      const firstCall = upsertStub.getCall(0);
+      expect(firstCall.args[1]).to.deep.equal({
+        admissionRequired: true,
+        description: '',
+        extId: '123',
+        extRefName: 'Fun',
+        name: 'Fun',
+        type: 'merchant',
+        url: 'http://balls.com',
+        wheelchairAccessible: true
+      });
+      expect(firstCall.args[2]).to.deep.equal({ extId: '123' });
+
+      expect(createShopDiscountStub.callCount).to.equal(0);
+      expect(removedDiscountsShopStub.callCount).to.equal(1);
+      expect(updateDiscountsShopStub.callCount).to.equal(0);
+
+      sinon.restore();
     });
   });
 });

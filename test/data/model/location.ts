@@ -6,7 +6,7 @@ import sinon, { fake, spy, stub } from 'sinon';
 import uuid from 'uuid/v4'; // tslint:disable-line
 import LocationModel, { GetTypes } from '../../../src/data/model/Location';
 import { Success } from '../../../src/data/utils';
-import { ILocation } from '../../../src/types';
+import { ILocation, ILocationItem } from '../../../src/types';
 import {
   createDateInstance,
   createHotelInstance,
@@ -406,7 +406,8 @@ describe('model - location', () => {
 
       const location = new Location.default({}, access, mockLogger, models, '123');
 
-      const item: ILocation = {
+      const item: ILocationItem = {
+        description: 'stuff',
         extId: '123',
         extRefName: 'foo',
         name: 'Foo',
@@ -448,7 +449,8 @@ describe('model - location', () => {
 
       const location = new Location.default({}, access, mockLogger, models, '123');
 
-      const item: ILocation = {
+      const item: ILocationItem = {
+        description: 'stuff',
         extId: '123',
         extRefName: 'foo',
         name: 'Foo',
@@ -503,10 +505,11 @@ describe('model - location', () => {
 
       const location = new Location.default({}, access, mockLogger, models, '123');
 
-      const item: ILocation = {
+      const item: ILocationItem = {
         address: {
           street: '123'
         },
+        description: 'stuff',
         // busStops?: string[];
         extId: '123',
         extRefName: 'foo',

@@ -13,7 +13,9 @@
       "import-name": false,
       "jsx-boolean-value": "never",
       "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-pascal-case"],
-      "no-implicit-dependencies": [true, "dev"]
+      "no-implicit-dependencies": [true, "dev"],
+      "object-literal-sort-keys": true,
+      "object-shorthand-properties-first": false,
     },
     "rulesDirectory": []
 }

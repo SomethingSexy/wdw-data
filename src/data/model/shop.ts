@@ -226,9 +226,7 @@ class ShopModel {
 
     if (item.location) {
       const location = await Locations.findByName(item.location, transaction);
-      this.logger('debug', `location ${location}`);
       if (location) {
-        this.logger('debug', `location instance ${location.instance}`);
         await shopInst.setLocation(location.instance, { transaction });
         // we have to add the area here because there is no other way
         // to easily generate them
@@ -272,6 +270,10 @@ class ShopModel {
 
       if (activeDiscounts.length && !item.discounts.length) {
           // we have active discounts but we do not have any now... remove the current ones
+        await Promise.all(
+          activeDiscounts
+            .map(async discount => ShopModel.removedDiscounts(ShopDiscount, discount, transaction))
+        );
       } else if (activeDiscounts.length && item.discounts.length) {
         // we have active discounts and we have incoming ones
         // find the ones that do not exist, close them down

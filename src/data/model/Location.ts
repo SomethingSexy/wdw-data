@@ -142,8 +142,7 @@ class LocationModel implements ILocation {
     if (!this.instance) {
       found = await this.load();
     }
-    // if we are trying to find schedules for a location that doesn't exist
-    // throw an exception here.
+
     if (!found) {
       this.logger('error', `Location ${this.id} not found when adding a schedule.`);
       return null;
@@ -245,7 +244,7 @@ class LocationModel implements ILocation {
    * Returns a raw location by id.
    * @param id
    */
-  public async load(include?: GetTypes[]) {
+  public async load(include?: GetTypes[]): Promise<boolean> {
     const { Activity, Address, Area, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
     // setting to any because I am not gonna repeat sequelize's api
     const queryInclude: any[] = [{
@@ -324,7 +323,7 @@ class LocationModel implements ILocation {
    * @returns - Array of schedules for the given day.  Returns null if the location cannot b
    *            found or an empty array if no schedules are found.
    */
-  public async getLocationSchedule(byDate: string) {
+  public async getSchedule(byDate: string) {
     // First lets verify that this location exists
     const { Date, LocationSchedule, Schedule } = this.dao;
     let found = true;
@@ -366,7 +365,7 @@ class LocationModel implements ILocation {
     });
   }
 
-  public async upsert (item: ILocationItem, transaction?) {
+  public async upsert (item: ILocationItem, transaction?): Promise<string> {
     const { Address, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
     this.logger('debug', `Adding/updating location ${this.id}.`);
 

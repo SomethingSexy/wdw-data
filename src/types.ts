@@ -47,7 +47,7 @@ export interface IShop {
   wheelchairAccessible: boolean;
 }
 
-export interface IActivity {
+export interface IActivityItem {
   admissionRequired: boolean;
   ages?: string[];
   allowServiceAnimals: boolean;
@@ -69,7 +69,7 @@ export interface IActivity {
   name: string;
   riderSwapAvailable: boolean;
   tags?: string[];
-  thrillFactor?: string[];
+  thrills?: string[];
   type: string;
   url: string;
   wheelchairTransfer: boolean;
@@ -156,6 +156,33 @@ export interface ILocation {
   addArea: (name: string, transaction?: any) => Promise<any | null>;
   bulkAddSchedules: (parkSchedules: {[date: string]: ISchedule[]}) => {};
   findAreaByName: (name: string, transaction?: any) => Promise<any | null>;
+}
+
+export interface IActivities {
+  findAll: (where?: { [key: string]: string | boolean }) => Promise<IActivity[]>;
+}
+
+export interface IActivitiesModels {
+  Activity: any;
+  Date: any;
+  Location: any;
+  Locations: ILocationsConstructor;
+}
+
+export interface IActivityModels {
+  Date: any;
+  Location: any;
+  Locations: ILocationsConstructor;
+}
+
+export interface IActivity {
+  data: IActivityItem;
+  load: (include?: any[]) => Promise<boolean> ;
+  upsert: (item: IActivityItem, transaction?) => Promise<string>;
+}
+
+export interface IShopModels {
+  Locations: ILocationsConstructor;
 }
 
 export interface IShopsModels {

@@ -44,7 +44,7 @@ export const get = async (attraction: { extId: string }, logger: ILogger) => {
   const tags = interests && interests.map(interest => interest.value);
   const ages = age && facets.age.map(a => a.value);
   const height = facets.height && facets.height[0].value;
-  const thrillFactor = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
+  const thrills = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
   const description = descriptions.shortDescriptionMobile
     ? descriptions.shortDescriptionMobile.text : '';
 
@@ -59,7 +59,7 @@ export const get = async (attraction: { extId: string }, logger: ILogger) => {
     description,
     height,
     tags,
-    thrillFactor,
+    thrills,
     wheelchairTransfer,
     // disneyOperated: response.disneyOperated,
     // disneyOwned: response.disneyOwned,

@@ -23,56 +23,60 @@ export default async (days?: number) => {
 
   const startDate = moment().format('YYYY-MM-DD');
   const endDate = days ? moment().add(days, 'days').format('YYYY-MM-DD') : startDate;
-  const parks = await models.location.list({ fetchSchedule: true });
+  // fetch all locations that can add schedules
+  const parks = await models.location.findAll({ fetchSchedule: true });
   const responses: any[] = await Promise.all(
     parks.reduce(
-      (all, park) => {
+      (all: any[], park) => {
         return [
           ...all,
-          realtimeModels.parks.hours(park, startDate, endDate)
-            .then(p => ({ ...p, id: park.id }))
+          realtimeModels.parks.hours(park.data, startDate, endDate)
+            .then(p => ({ ...p, id: park.data.id }))
         ];
       },
       []
     )
   );
 
-  for (const parkSchedule of responses) {
-    await models.location.addSchedules(
-      parkSchedule.id,
-      parkSchedule.schedule
-    );
+  // loop through all of the locations, find if there is a schedule then add it
+  for (const park of parks) {
+    const parkSchedule = responses.find(response => response.id === park.data.id);
+    if (parkSchedule) {
+      await park.bulkAddSchedules(
+        parkSchedule.schedule
+      );
+    }
   }
 
-  // get all activities that can fetch schedules
-  const entertainment = await models.activity.list({ fetchSchedule: true });
+  // // get all activities that can fetch schedules
+  // const entertainment = await models.activity.list({ fetchSchedule: true });
 
-  logger.log('info', 'retrieving entertainment schedules');
-  let entertainmentSchedules: any[] = await realtimeModels.entertainment.schedule(startDate);
-  logger.log('info', 'retrieved entertainment schedules');
+  // logger.log('info', 'retrieving entertainment schedules');
+  // let entertainmentSchedules: any[] = await realtimeModels.entertainment.schedule(startDate);
+  // logger.log('info', 'retrieved entertainment schedules');
 
-  entertainmentSchedules = entertainmentSchedules
-    .reduce(
-      (all, eS) => {
-        const found = entertainment.find(e => e.extId === eS.id);
-        if (!found) {
-          return all;
-        }
+  // entertainmentSchedules = entertainmentSchedules
+  //   .reduce(
+  //     (all, eS) => {
+  //       const found = entertainment.find(e => e.extId === eS.id);
+  //       if (!found) {
+  //         return all;
+  //       }
 
-        return [
-          ...all,
-          { ...eS, id: found.id }
-        ];
-      },
-      []
-    );
+  //       return [
+  //         ...all,
+  //         { ...eS, id: found.id }
+  //       ];
+  //     },
+  //     []
+  //   );
 
-  for (const entertainmentSchedule of entertainmentSchedules) {
-    logger.log('info', 'Adding schedule to database');
-    await models.activity.addSchedules(
-      entertainmentSchedule.id,
-      entertainmentSchedule.schedule
-    );
-  }
+  // for (const entertainmentSchedule of entertainmentSchedules) {
+  //   logger.log('info', 'Adding schedule to database');
+  //   await models.activity.addSchedules(
+  //     entertainmentSchedule.id,
+  //     entertainmentSchedule.schedule
+  //   );
+  // }
   return null;
 };

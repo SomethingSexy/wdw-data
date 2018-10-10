@@ -20,7 +20,7 @@ export default async (options: IOptions = {
   const models = await createModels(
     {
       database: 'wdw',
-      logging: false,
+      logging: true,
       pool: {
         max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
       },
@@ -65,7 +65,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(attractions, null, 4));
-      await models.activity.addUpdate(attractions);
+      await models.activity.bulkAddUpdate(attractions);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -78,7 +78,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(entertainment, null, 4));
-      await models.activity.addUpdate(entertainment);
+      await models.activity.bulkAddUpdate(entertainment);
     } catch (e) {
       logger.log('error', e.toString());
     }
