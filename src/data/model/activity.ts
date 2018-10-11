@@ -2,7 +2,7 @@ import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import { omit, pick } from 'lodash';
 import { IActivity, IActivityItem, ISchedule, ILogger, ILocations, IActivityModels, IWaitTime } from '../../types';
-import { Success, syncTransaction, upsert } from '../utils';
+import { Success, upsert } from '../utils';
 
 // Note: returning extId for jobs
 export const RAW_ACTIVITY_ATTRIBUTES = [
@@ -200,10 +200,6 @@ class ActivityModel implements IActivity {
     );
   }
 
-  /**
-   * Returns a raw activity by id.
-   * @param id
-   */
   public async load(): Promise<boolean> {
     const { Activity, Age, Tag, ThrillFactor } = this.dao;
     // setting to any because I am not gonna repeat sequelize's api

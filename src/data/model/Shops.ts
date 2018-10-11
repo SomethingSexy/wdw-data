@@ -85,7 +85,7 @@ class Shops {
       };
     }
 
-    const found = this.dao.Shop.findAll(query);
+    const found = await this.dao.Shop.findAll(query);
 
     // create new shop objects then parse the data
     return found.map(item => {

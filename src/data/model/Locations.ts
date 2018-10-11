@@ -117,7 +117,7 @@ class Locations implements ILocations {
    * @param where - search parameters
    */
   public async findAll(where?: { [key: string]: string | boolean }): Promise<ILocation[]> {
-    const { Address, Area } = this.dao;
+    const { Address, Area, Location } = this.dao;
     let query: { attributes: string[], include: any[], where?: any } = {
       attributes: RAW_LOCATION_ATTRIBUTES,
       include: [{
@@ -141,7 +141,7 @@ class Locations implements ILocations {
       };
     }
 
-    const found = await this.dao.Location.findAll(query);
+    const found = await Location.findAll(query);
 
     // create new locations objects then parse the data
     return found.map(item => this.createLocation(item));

@@ -25,24 +25,18 @@ const WEB_API_TYPES = {
     dining: 'dining-availability',
     entertainment: 'list/ancestor'
 };
-/**
- * Retrieves the HTML for a screen.
- * @param path
- */
-exports.screen = async (url) => {
+exports.getHtml = async (url, headers) => {
     debug(`Requesting html for ${url}`);
     const parsedUrl = url_1.parse(url);
     return new Promise((resolve, reject) => {
         const options = {
-            headers: {
-                Accept: '*/*',
-                'Accept-Language': 'en-US,en;q=0.8',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                Host: SITE_HOST,
-                Origin: ORIGIN,
-                'X-Requested-With': 'XMLHttpRequest',
-                'User-Agent': random_useragent_1.default.getRandom() // tslint:disable-line
-            },
+            headers: Object.assign({ Accept: '*/*', 'Accept-Language': 'en-US,en;q=0.8' }, headers, { 
+                // Make sure it is at least one of the standard browsers
+                // this might account for some weirdness I was seeing with html
+                // not coming back as expected
+                'User-Agent': random_useragent_1.default.getRandom(ua => {
+                    return ua.browserName === 'Firefox';
+                }) }),
             hostname: parsedUrl.host,
             method: 'get',
             path: parsedUrl.pathname
@@ -60,6 +54,21 @@ exports.screen = async (url) => {
             reject(`Cannot retrieve html for ${url} - ${error}`);
         });
         request.end();
+    });
+};
+/**
+ * Retrieves the HTML for a "subsequent" screen in a workflow.
+ * @param path
+ */
+exports.screen = async (url) => {
+    debug(`Requesting html for ${url}`);
+    return exports.getHtml(url, {
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.8',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        Host: SITE_HOST,
+        Origin: ORIGIN,
+        'X-Requested-With': 'XMLHttpRequest'
     });
 };
 /**

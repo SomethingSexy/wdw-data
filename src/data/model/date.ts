@@ -6,15 +6,15 @@ import { ILogger } from '../../types';
 class DateModel {
   public instance: any = null;
 
-  private sequelize: any;
+  // private sequelize: any;
   private dao: any;
   private logger: ILogger;
   private date: string;
 
-  constructor(sequelize, access, logger, date: string) {
+  constructor(_, access, logger, date: string) {
     invariant(date, 'Date is required to create a date model.');
 
-    this.sequelize = sequelize;
+    // this.sequelize = sequelize;
     this.dao = access;
     this.logger = logger;
     this.date = date;
@@ -41,6 +41,7 @@ class DateModel {
       .findOne({ where: { date: localDate } }, { transaction })
       .then(d => {
         if (!d) {
+          this.logger('debug', `${localDate} does not exist, creating.`)
           const holiday = mDate.isHoliday();
           return Date.create(
             {

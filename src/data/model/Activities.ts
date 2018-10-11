@@ -123,7 +123,7 @@ class Activities implements IActivities {
    * @param where - search parameters
    */
   public async findAll(where?: { [key: string]: string | boolean }): Promise<IActivity[]> {
-    const { Age, Tag, ThrillFactor }  = this.dao;
+    const { Activity, Age, Tag, ThrillFactor }  = this.dao;
     let query: { attributes: string[], include: any[], where?: any } = {
       attributes: RAW_ACTIVITY_ATTRIBUTES,
       include: [{
@@ -152,7 +152,7 @@ class Activities implements IActivities {
       };
     }
 
-    const found = this.dao.Activity.findAll(query);
+    const found = await Activity.findAll(query);
 
     // create new shop objects then parse the data
     return found.map(item => this.createActivity(item));

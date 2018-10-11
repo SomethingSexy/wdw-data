@@ -1,4 +1,4 @@
-export interface IDining {
+export interface IRestaurantItem {
   admissionRequired: boolean;
   area: string;
   costDescription: string;
@@ -204,6 +204,14 @@ export interface ILocationModels {
 export interface ILocationsModels {
   Date: any;
   Location: ILocationConstructor;
+}
+
+export interface IRestaurant {
+
+}
+
+export interface IRestaurants {
+  
 }
 
 export interface IWaitTime {
