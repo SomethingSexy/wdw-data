@@ -1,5 +1,5 @@
 import invariant from 'invariant';
-import { IActivities, IActivitiesModels, IActivity, IActivityItem, ILogger } from '../../types';
+import { IActivities, IActivitiesModels, IActivity, IActivityItem, ILogger, IActivityWaitTime } from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
 import { RAW_ACTIVITY_ATTRIBUTES } from './Activity';
 
@@ -73,6 +73,25 @@ class Activities implements IActivities {
     return { [Success]: activities };
   }
 
+  public async bulkAddWaitTimes(timestamp: string, items: IActivityWaitTime[] = []) {
+    const { Activity } = this.dao;
+
+    return syncTransaction(this.sequelize, items, async (item, transaction) => {
+      const { extId, waitTime } = item;
+      const activityInstance = await Activity.findOne(
+        { where: { extId } }, { transaction }
+      );
+
+      if (!activityInstance) {
+        return Promise.resolve(false); // TODO log
+      }
+
+      const activity = await this.createActivity(activityInstance);
+      
+      return activity.addWaitTimes(timestamp, waitTime, transaction);
+    });
+  }
+
   /**
    * Factory for creating a activity model.
    * @param item
@@ -100,7 +119,7 @@ class Activities implements IActivities {
   }
 
   /**
-   * List all shops
+   * List all activities
    * @param where - search parameters
    */
   public async findAll(where?: { [key: string]: string | boolean }): Promise<IActivity[]> {
@@ -133,7 +152,7 @@ class Activities implements IActivities {
       };
     }
 
-    const found = this.dao.Shop.findAll(query);
+    const found = this.dao.Activity.findAll(query);
 
     // create new shop objects then parse the data
     return found.map(item => this.createActivity(item));
@@ -144,7 +163,7 @@ class Activities implements IActivities {
    *
    * @param where - search parameters
    */
-  public async list(where?: { [key: string]: string | boolean }): Promise<any[]> {
+  public async list(where?: { [key: string]: string | boolean }): Promise<IActivityItem[]> {
     const found = await this.findAll(where);
     return found.map(item => item.data);
   }

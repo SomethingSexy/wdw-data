@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import { omit, pick } from 'lodash';
-import { IActivity, IActivityItem, ISchedule, ILogger, ILocations, IActivityModels } from '../../types';
+import { IActivity, IActivityItem, ISchedule, ILogger, ILocations, IActivityModels, IWaitTime } from '../../types';
 import { Success, syncTransaction, upsert } from '../utils';
 
 // Note: returning extId for jobs
@@ -10,6 +10,7 @@ export const RAW_ACTIVITY_ATTRIBUTES = [
   'allowServiceAnimals',
   'description',
   'extId',
+  'fetchSchedule',
   'fastPass',
   'fastPassPlus',
   'height',
@@ -125,11 +126,11 @@ class ActivityModel implements IActivity {
     }
 
     return Promise.all(
-      parkSchedules.map(data => Schedule.create(data, { transaction }))
+      parkSchedules.map(async data => Schedule.create(data, { transaction }))
     )
     .then(scheduleInstances => {
       return Promise.all(
-        scheduleInstances.map(scheduleInstance =>
+        scheduleInstances.map(async scheduleInstance =>
           dateModel.instance.addActivitySchedule(
             scheduleInstance,
             {
@@ -154,7 +155,7 @@ class ActivityModel implements IActivity {
       this.logger('error', `Activity ${this.id} not found when adding schedules.`);
       return null;
     }
-
+    this.logger('debug', this.instance.get('fetchSchedule'));
     if (!this.instance.get('fetchSchedule')) {
       this.logger('error', `Activity ${this.id} does not support schedules.`);
       return null;
@@ -163,7 +164,7 @@ class ActivityModel implements IActivity {
     await Promise.all(
       Object
         .entries(schedules)
-        .map(([key, value]) => {
+        .map(async ([key, value]) => {
           return this.sequelize.transaction(t => {
             return this.addSchedule(key, value, t);
           });
@@ -174,39 +175,29 @@ class ActivityModel implements IActivity {
     return { [Success]: true };
   }
 
-  async addWaitTimes(timestamp: string, items = []) {
-    const { Activity, WaitTime } = this.dao;
+  async addWaitTimes(timestamp: string, waitTime: IWaitTime, transaction?) {
+    const { WaitTime } = this.dao;
     const { Date } = this.models;
     const dateModel = new Date(this.sequelize, this.dao, this.logger, timestamp);
     await dateModel.load();
     const dateId = dateModel.data.id;
 
-    return syncTransaction(this.sequelize, items, async (item, transaction) => {
-      const { extId, waitTime } = item;
-      const activityInstance = await Activity.findOne(
-        { where: { extId } }, { transaction }
-      );
-
-      if (!activityInstance) {
-        return Promise.resolve(false); // TODO log
-      }
-
-      // TODO: Do we want to store another id for the timestamp or
-      // just do find by activityId, dateId and groupby timestamp?
-      return WaitTime.create(
-        {
-          timestamp,
-          activityId: activityInstance.get('id'), // tslint:disable-line
-          dateId,
-          fastPassAvailable: waitTime.fastPass.available,
-          singleRider: waitTime.singleRider,
-          status: waitTime.status,
-          statusMessage: waitTime.rollUpStatus,
-          wait: waitTime.postedWaitMinutes,
-          waitMessage: waitTime.rollUpWaitTimeMessage
-        }
-      );
-    });
+    // TODO: Do we want to store another id for the timestamp or
+    // just do find by activityId, dateId and groupby timestamp?
+    return WaitTime.create(
+      {
+        timestamp,
+        activityId: this.id,
+        dateId,
+        fastPassAvailable: waitTime.fastPass.available,
+        singleRider: waitTime.singleRider,
+        status: waitTime.status,
+        statusMessage: waitTime.rollUpStatus,
+        wait: waitTime.postedWaitMinutes,
+        waitMessage: waitTime.rollUpWaitTimeMessage
+      },
+      { transaction }
+    );
   }
 
   /**

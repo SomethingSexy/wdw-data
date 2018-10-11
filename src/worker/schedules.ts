@@ -48,35 +48,37 @@ export default async (days?: number) => {
     }
   }
 
-  // // get all activities that can fetch schedules
-  // const entertainment = await models.activity.list({ fetchSchedule: true });
+  // get all activities that can fetch schedules
+  const entertainment = await models.activity.findAll({ fetchSchedule: true });
 
-  // logger.log('info', 'retrieving entertainment schedules');
-  // let entertainmentSchedules: any[] = await realtimeModels.entertainment.schedule(startDate);
-  // logger.log('info', 'retrieved entertainment schedules');
+  logger.log('info', 'retrieving entertainment schedules');
+  let entertainmentSchedules: any[] = await realtimeModels.entertainment.schedule(startDate);
+  logger.log('info', 'retrieved entertainment schedules');
 
-  // entertainmentSchedules = entertainmentSchedules
-  //   .reduce(
-  //     (all, eS) => {
-  //       const found = entertainment.find(e => e.extId === eS.id);
-  //       if (!found) {
-  //         return all;
-  //       }
+  entertainmentSchedules = entertainmentSchedules
+    .reduce(
+      (all, eS) => {
+        const found = entertainment.find(e => e.data.extId === eS.id);
+        if (!found) {
+          return all;
+        }
 
-  //       return [
-  //         ...all,
-  //         { ...eS, id: found.id }
-  //       ];
-  //     },
-  //     []
-  //   );
+        return [
+          ...all,
+          { ...eS, id: found.data.id }
+        ];
+      },
+      []
+    );
 
-  // for (const entertainmentSchedule of entertainmentSchedules) {
-  //   logger.log('info', 'Adding schedule to database');
-  //   await models.activity.addSchedules(
-  //     entertainmentSchedule.id,
-  //     entertainmentSchedule.schedule
-  //   );
-  // }
+  for (const activity of entertainment) {
+    logger.log('info', 'Adding schedule to database');
+    const activitySchedule = entertainmentSchedules.find(response => response.id === activity.data.id);
+    if (activitySchedule) {
+      await activity.bulkAddSchedules(
+        activitySchedule.schedule
+      );
+    }
+  }
   return null;
 };

@@ -1,3 +1,3 @@
 import data from '../src/worker/data';
 
-data({ attractions: true }).then(() => process.exit);
+data({ entertainment: true }).then(() => process.exit);

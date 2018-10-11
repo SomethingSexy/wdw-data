@@ -176,6 +176,8 @@ export interface IActivityModels {
 }
 
 export interface IActivity {
+  addWaitTimes: (timeStamp: string, waitTime: IWaitTime, transaction?) => Promise<{}>;
+  bulkAddSchedules: (schedules: {[date: string]: ISchedule[]}) => {};
   data: IActivityItem;
   load: (include?: any[]) => Promise<boolean> ;
   upsert: (item: IActivityItem, transaction?) => Promise<string>;
@@ -202,4 +204,20 @@ export interface ILocationModels {
 export interface ILocationsModels {
   Date: any;
   Location: ILocationConstructor;
+}
+
+export interface IWaitTime {
+  fastPass: {
+    available: boolean;
+  }
+  postedWaitMinutes: string;
+  rollUpStatus: string;
+  rollUpWaitTimeMessage: string;
+  singleRider: boolean;
+  status: string;
+}
+
+export interface IActivityWaitTime {
+  extId: 'string';
+  waitTime: IWaitTime;
 }
