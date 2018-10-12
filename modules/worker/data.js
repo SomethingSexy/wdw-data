@@ -76,7 +76,7 @@ exports.default = async (options = {
                 .dining
                 .list({ max: 50 });
             log_1.default.log('info', JSON.stringify(dining, null, 4));
-            await models.dining.addUpdate(dining);
+            await models.dining.bulkAddUpdate(dining);
         }
         catch (e) {
             log_1.default.log('error', e.toString());

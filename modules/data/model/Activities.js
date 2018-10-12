@@ -99,7 +99,7 @@ class Activities {
      * @param where - search parameters
      */
     async findAll(where) {
-        const { Age, Tag, ThrillFactor } = this.dao;
+        const { Activity, Age, Tag, ThrillFactor } = this.dao;
         let query = {
             attributes: Activity_1.RAW_ACTIVITY_ATTRIBUTES,
             include: [{
@@ -120,7 +120,7 @@ class Activities {
             invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for activites.');
             query = Object.assign({}, query, { where });
         }
-        const found = this.dao.Activity.findAll(query);
+        const found = await Activity.findAll(query);
         // create new shop objects then parse the data
         return found.map(item => this.createActivity(item));
     }

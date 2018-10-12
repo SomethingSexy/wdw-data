@@ -57,7 +57,8 @@ exports.default = async (days) => {
     }, []);
     for (const activity of entertainment) {
         log_1.default.log('info', 'Adding schedule to database');
-        const activitySchedule = entertainmentSchedules.find(response => response.id === activity.data.id);
+        const activitySchedule = entertainmentSchedules
+            .find(response => response.id === activity.data.id);
         if (activitySchedule) {
             await activity.bulkAddSchedules(activitySchedule.schedule);
         }

@@ -68,7 +68,7 @@ class Shops {
             invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for shops.');
             query = Object.assign({}, query, { where });
         }
-        const found = this.dao.Shop.findAll(query);
+        const found = await this.dao.Shop.findAll(query);
         // create new shop objects then parse the data
         return found.map(item => {
             const shop = new Shop(this.sequelize, this.dao, this.logger, this.models, item);

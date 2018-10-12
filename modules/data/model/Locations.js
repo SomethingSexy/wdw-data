@@ -96,7 +96,7 @@ class Locations {
      * @param where - search parameters
      */
     async findAll(where) {
-        const { Address, Area } = this.dao;
+        const { Address, Area, Location } = this.dao;
         let query = {
             attributes: Location_1.RAW_LOCATION_ATTRIBUTES,
             include: [{
@@ -113,7 +113,7 @@ class Locations {
             invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for locations.');
             query = Object.assign({}, query, { where });
         }
-        const found = await this.dao.Location.findAll(query);
+        const found = await Location.findAll(query);
         // create new locations objects then parse the data
         return found.map(item => this.createLocation(item));
     }

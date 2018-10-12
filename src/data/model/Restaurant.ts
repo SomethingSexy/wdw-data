@@ -2,7 +2,7 @@ import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import { omit } from 'lodash';
 import { ILocations, ILogger, IRestaurant, IRestaurantItem, IRestaurantModels } from '../../types';
-import { syncTransaction, upsert } from '../utils';
+import { upsert } from '../utils';
 
 // Note: returning extId for jobs
 const RAW_DINING_ATTRIBUTES = [

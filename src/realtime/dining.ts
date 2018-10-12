@@ -1,7 +1,7 @@
 import cheerio from 'cheerio';
 import createDebug from 'debug';
 import invariant from 'invariant';
-import { IDining, ILogger } from '../types';
+import { ILogger, IRestaurantItem } from '../types';
 import { diningFinder, getAccessToken, getWebApi, getWebSession, screen } from './api/request';
 import { parseExternal, parseLocation } from './utils';
 
@@ -86,7 +86,7 @@ export const get = async (extId: string, url: string, logger: ILogger): Promise<
  */
 export const list = async (
   logger: ILogger, options: { max?: number} = {}
-): Promise<IDining[] | undefined> => {
+): Promise<IRestaurantItem[] | undefined> => {
   logger('info', `Grabbing screen for ${path}.`);
   const response = await screen(path);
 

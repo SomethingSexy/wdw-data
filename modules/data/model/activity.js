@@ -111,8 +111,8 @@ class ActivityModel {
         return Promise.all(parkSchedules.map(async (data) => Schedule.create(data, { transaction })))
             .then(scheduleInstances => {
             return Promise.all(scheduleInstances.map(async (scheduleInstance) => dateModel.instance.addActivitySchedule(scheduleInstance, {
-                transaction,
-                through: { activityId: this.id }
+                through: { activityId: this.id },
+                transaction
             })));
         });
     }
@@ -151,21 +151,17 @@ class ActivityModel {
         // TODO: Do we want to store another id for the timestamp or
         // just do find by activityId, dateId and groupby timestamp?
         return WaitTime.create({
-            timestamp,
             activityId: this.id,
             dateId,
             fastPassAvailable: waitTime.fastPass.available,
             singleRider: waitTime.singleRider,
             status: waitTime.status,
             statusMessage: waitTime.rollUpStatus,
+            timestamp,
             wait: waitTime.postedWaitMinutes,
             waitMessage: waitTime.rollUpWaitTimeMessage
         }, { transaction });
     }
-    /**
-     * Returns a raw activity by id.
-     * @param id
-     */
     async load() {
         const { Activity, Age, Tag, ThrillFactor } = this.dao;
         // setting to any because I am not gonna repeat sequelize's api
