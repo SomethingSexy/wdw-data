@@ -1,6 +1,7 @@
 import invariant from 'invariant';
-import pick from 'lodash/pick'; // tslint:disable-line
-import { IRestaurantItem, IRestaurant, ILocations } from '../../types';
+import isUUID from 'is-uuid';
+import { omit } from 'lodash';
+import { ILocations, ILogger, IRestaurant, IRestaurantItem, IRestaurantModels } from '../../types';
 import { syncTransaction, upsert } from '../utils';
 
 // Note: returning extId for jobs
@@ -20,24 +21,27 @@ const RAW_DINING_ATTRIBUTES = [
   'areaId'
 ];
 
-const normalizeDining = (dining): IRestaurantItem => ({
-  ...pick(dining, RAW_DINING_ATTRIBUTES),
-  cuisine: dining.DiningCuisines.map(cuisine => cuisine.name),
-  tags: dining.DiningTags.map(tag => tag.name)
-});
+const normalizeDining = (dining): IRestaurantItem => {
+  const item: IRestaurantItem = omit(dining, ['DiningCuisines', 'DiningTags']);
+  item.cuisine = dining.DiningCuisines.map(cuisine => cuisine.name);
+  item.tags = dining.DiningTags.map(tag => tag.name);
+  return item;
+};
 
 export const types = {
   ENTERTAINMENT: 'entertainment'
 };
 
-
+/**
+ *
+ */
 class Restaurant implements IRestaurant {
   public instance: any = null;
 
   private sequelize: any;
   private dao: any;
   private logger: ILogger;
-  private models: IActivityModels;
+  private models: IRestaurantModels;
   private _id: string = '';
   private isExt: boolean = false;
   private idKey: string = 'id';
@@ -66,7 +70,7 @@ class Restaurant implements IRestaurant {
    * @param models
    * @param id - string or location instance to preload
    */
-  constructor(sequelize: any, access: any, logger: ILogger, models: IActivityModels, id: any) {
+  constructor(sequelize: any, access: any, logger: ILogger, models: IRestaurantModels, id: any) {
     invariant(id, 'Internal or external id is required to create an Activity.');
     this.sequelize = sequelize;
     this.dao = access;
@@ -112,15 +116,15 @@ class Restaurant implements IRestaurant {
       type: item.type,
       url: item.url
     };
-  
+
     if (item.id) {
       activityItem.id = item.id;
     }
-  
+
     const instance = await upsert(
       Dining, activityItem, { extId: item.extId }, transaction
     );
-  
+
     if (item.location) {
       const location = await Locations.findByName(item.location, transaction);
       if (location) {
@@ -137,7 +141,7 @@ class Restaurant implements IRestaurant {
         }
       }
     }
-  
+
     if (item.tags) {
       // either sync or async with Promise.all
       for (const tagName of item.tags) {
@@ -149,7 +153,7 @@ class Restaurant implements IRestaurant {
         }
       }
     }
-  
+
     if (item.cuisine) {
       // either sync or async with Promise.all
       for (const cuisine of item.cuisine) {
@@ -161,7 +165,7 @@ class Restaurant implements IRestaurant {
         }
       }
     }
-  
+
     this.logger('debug', `Finished adding/updating dining ${item.extId}.`);
     return instance.get('id');
   }
@@ -184,7 +188,6 @@ class Restaurant implements IRestaurant {
       include: queryInclude,
       where: { [this.idKey]: this.id  }
     };
-
 
     if (this.instance) {
       await this.instance.reload(query);

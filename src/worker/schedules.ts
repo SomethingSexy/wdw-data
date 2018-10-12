@@ -73,7 +73,8 @@ export default async (days?: number) => {
 
   for (const activity of entertainment) {
     logger.log('info', 'Adding schedule to database');
-    const activitySchedule = entertainmentSchedules.find(response => response.id === activity.data.id);
+    const activitySchedule = entertainmentSchedules
+      .find(response => response.id === activity.data.id);
     if (activitySchedule) {
       await activity.bulkAddSchedules(
         activitySchedule.schedule

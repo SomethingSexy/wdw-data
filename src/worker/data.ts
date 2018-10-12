@@ -90,7 +90,7 @@ export default async (options: IOptions = {
         .dining
         .list({ max: 50 });
       logger.log('info', JSON.stringify(dining, null, 4));
-      await models.dining.addUpdate(dining);
+      await models.dining.bulkAddUpdate(dining);
     } catch (e) {
       logger.log('error', e.toString());
     }

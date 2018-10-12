@@ -2,7 +2,6 @@
     "defaultSeverity": "error",
     "extends": [
         "tslint:latest",
-        "tslint-react",
         "tslint-config-airbnb"
     ],
     "jsRules": {},
@@ -16,6 +15,7 @@
       "no-implicit-dependencies": [true, "dev"],
       "object-literal-sort-keys": true,
       "object-shorthand-properties-first": false,
+      "ordered-imports": true
     },
     "rulesDirectory": []
 }

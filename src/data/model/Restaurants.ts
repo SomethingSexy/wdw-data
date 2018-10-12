@@ -1,5 +1,11 @@
 import invariant from 'invariant';
-import { IActivities, IActivitiesModels, IActivity, IActivityItem, ILogger, IActivityWaitTime, IRestaurants, IRestaurantItem, IRestaurant } from '../../types';
+import {
+  ILogger,
+  IRestaurant,
+  IRestaurantItem,
+  IRestaurants,
+  IRestaurantsModels
+} from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
 import { RAW_ACTIVITY_ATTRIBUTES } from './Activity';
 
@@ -88,7 +94,7 @@ class Restaurants implements IRestaurants {
    * @param id
    * @returns - Returns an Restaurant model with the data loaded or null if not found
    */
-  public async findById(id: string): Promise<IActivity | null> {
+  public async findById(id: string): Promise<IRestaurant | null> {
     const restaurant = this.createRestaurant(id);
     const loaded = await restaurant.load();
 

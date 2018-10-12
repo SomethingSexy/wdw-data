@@ -1,12 +1,13 @@
 import Sequelize from 'sequelize';
 import { IConnection, ILogger } from '../types';
 import createAccessObjects from './dao/index';
+import Activities from './model/Activities';
 import Activity from './model/Activity';
-import Activities  from './model/Activities';
 import Date from './model/Date';
-import createDining from './model/dining';
 import Location from './model/Location';
 import Locations from './model/Locations';
+import Restaurant from './model/Restaurant';
+import Restaurants from './model/Restaurants';
 import Shop from './model/Shop';
 import Shops from './model/Shops';
 import { Error, Success } from './utils';
@@ -38,8 +39,12 @@ export default async (connection: any | IConnection, logger: ILogger) => {
   // around the data access objects,
   // for now we are creating a single instance here, turn into factory methods if we want
   // to create instances outside of here
-  const activity = new Activities(sequelize, accessObjects, logger, { Activity, Date, Location, Locations });
-  const dining = createDining(sequelize, accessObjects, logger);
+  const activity = new Activities(
+    sequelize, accessObjects, logger, { Activity, Date, Location, Locations }
+  );
+  const dining = new Restaurants(
+    sequelize, accessObjects, logger, { Location, Locations, Restaurant }
+  );
   const location = new Locations(sequelize, accessObjects, logger, { Date, Location });
   const shop = new Shops(sequelize, accessObjects, logger, { Location, Locations, Shop });
 

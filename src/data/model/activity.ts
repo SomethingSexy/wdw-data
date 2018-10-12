@@ -1,7 +1,15 @@
 import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import { omit, pick } from 'lodash';
-import { IActivity, IActivityItem, ISchedule, ILogger, ILocations, IActivityModels, IWaitTime } from '../../types';
+import {
+  IActivity,
+  IActivityItem,
+  IActivityModels,
+  ILocations,
+  ILogger,
+  ISchedule,
+  IWaitTime
+} from '../../types';
 import { Success, upsert } from '../utils';
 
 // Note: returning extId for jobs
@@ -30,7 +38,7 @@ const normalizeActivity = (activity): IActivityItem => {
   item.tags = activity.ActivityTags.map(tag => tag.name);
   item.thrills = activity.ThrillFactors.map(factor => factor.name);
   return item;
-}
+};
 
 export const types = {
   ENTERTAINMENT: 'entertainment'
@@ -134,8 +142,8 @@ class ActivityModel implements IActivity {
           dateModel.instance.addActivitySchedule(
             scheduleInstance,
             {
-              transaction,
-              through: { activityId: this.id }
+              through: { activityId: this.id },
+              transaction
             }
           )
         )
@@ -175,7 +183,7 @@ class ActivityModel implements IActivity {
     return { [Success]: true };
   }
 
-  async addWaitTimes(timestamp: string, waitTime: IWaitTime, transaction?) {
+  public async addWaitTimes(timestamp: string, waitTime: IWaitTime, transaction?) {
     const { WaitTime } = this.dao;
     const { Date } = this.models;
     const dateModel = new Date(this.sequelize, this.dao, this.logger, timestamp);
@@ -186,13 +194,13 @@ class ActivityModel implements IActivity {
     // just do find by activityId, dateId and groupby timestamp?
     return WaitTime.create(
       {
-        timestamp,
         activityId: this.id,
         dateId,
         fastPassAvailable: waitTime.fastPass.available,
         singleRider: waitTime.singleRider,
         status: waitTime.status,
         statusMessage: waitTime.rollUpStatus,
+        timestamp,
         wait: waitTime.postedWaitMinutes,
         waitMessage: waitTime.rollUpWaitTimeMessage
       },

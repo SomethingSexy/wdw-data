@@ -193,10 +193,6 @@ export interface IShopsModels {
   Shop: any;
 }
 
-export interface IShopModels {
-  Locations: ILocationsConstructor;
-}
-
 export interface ILocationModels {
   Date: any;
 }
@@ -207,17 +203,29 @@ export interface ILocationsModels {
 }
 
 export interface IRestaurant {
-
+  data: IRestaurantItem;
+  load: (include?: any[]) => Promise<boolean> ;
+  upsert: (item: IRestaurantItem, transaction?) => Promise<string>;
 }
 
 export interface IRestaurants {
-  
+  findAll: (where?: { [key: string]: string | boolean }) => Promise<IRestaurant[]>;
+}
+
+export interface IRestaurantModels {
+  Locations: ILocationsConstructor;
+}
+
+export interface IRestaurantsModels {
+  Location: any;
+  Locations: ILocationsConstructor;
+  Restaurant: any;
 }
 
 export interface IWaitTime {
   fastPass: {
     available: boolean;
-  }
+  };
   postedWaitMinutes: string;
   rollUpStatus: string;
   rollUpWaitTimeMessage: string;
