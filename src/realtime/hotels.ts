@@ -159,23 +159,25 @@ const totalOccupancy = description => {
 
 /**
  * Retrieves detailed information about a hotel, internal for processing list.
- * @param {string} url
+ * @param {object} url
  */
-const get = async (extUrl, logger) => {
-  if (!extUrl) {
+const get = async ({ url, extId }, logger) => {
+  if (!url) {
     // if it doesn't have a url, don't bother getting anything for now other than super basics
-    logger('info', `No url for hotel ${extUrl}, cannot get details.`);
+    logger('info', `No url for hotel ${extId}, cannot get details.`);
     return null;
   }
 
   // need to massage url here
-  const url = extUrl.substring(0, extUrl.indexOf('/rates-rooms/'));
-  const extRefName = url.substring(path.length, url.length);
+  const fetchUrl = url.substring(0, url.indexOf('rates-rooms/'));
+  const extRefName = fetchUrl.substring(path.length, fetchUrl.length);
 
-  logger('info', `Getting screen for ${url}.`);
-  const response = await screen(url);
-  logger('info', `Grabbed screen for ${url} with length ${response.length}.`);
+  logger('info', `Getting screen for ${fetchUrl}`);
+  const response = await screen(fetchUrl);
+  logger('info', `Grabbed screen for ${fetchUrl} with length ${response.length}.`);
 
+  // TODO: check if we did not get the correct HTML back, if so, fail the request then
+  // we only want to update when we get good data.
   const $ = cheerio(response);
   const $page = $.find('.resortsPage');
   const name = $page.find('h1').text();
@@ -192,12 +194,12 @@ const get = async (extUrl, logger) => {
     extRefName,
     name,
     tier,
-    url,
+    url: fetchUrl,
     address: parseAddress.parseLocation(`${addressLineOne}, ${addressRest} `) // tslint:disable-line
   };
 
   // grab room information now
-  const roomsScreem = await screen(extUrl);
+  const roomsScreem = await screen(url);
   const rooms = cheerio(roomsScreem)
     .find('.roomType')
     .map(({}, el) => {
@@ -229,7 +231,7 @@ const get = async (extUrl, logger) => {
       };
     }).get();
 
-  logger('info', `Finished processing data for screen for ${url}.`);
+  logger('info', `Finished processing data for screen for ${fetchUrl}.`);
 
   return {
     ...hotel,
@@ -306,7 +308,7 @@ export const list = async (logger: ILogger) => {
   // one at a time instead of blasting the server
   const modifiedItems: any[] = [];
   for (const item of items) {
-    const diningItem = await get(item.url, logger);
+    const diningItem = await get(item, logger);
     if (typeof diningItem === 'object') {
       modifiedItems.push({
         ...item,

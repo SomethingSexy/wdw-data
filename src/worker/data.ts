@@ -20,7 +20,7 @@ export default async (options: IOptions = {
   const models = await createModels(
     {
       database: 'wdw',
-      logging: false,
+      logging: true,
       pool: {
         max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
       },
@@ -39,7 +39,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(parks, null, 4));
-      await models.location.addUpdate(parks);
+      await models.location.bulkAddUpdate(parks);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -52,7 +52,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(hotels, null, 4));
-      await models.location.addUpdate(hotels);
+      await models.location.bulkAddUpdate(hotels);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -65,7 +65,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(attractions, null, 4));
-      await models.activity.addUpdate(attractions);
+      await models.activity.bulkAddUpdate(attractions);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -78,7 +78,7 @@ export default async (options: IOptions = {
         .list();
 
       logger.log('info', JSON.stringify(entertainment, null, 4));
-      await models.activity.addUpdate(entertainment);
+      await models.activity.bulkAddUpdate(entertainment);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -90,7 +90,7 @@ export default async (options: IOptions = {
         .dining
         .list({ max: 50 });
       logger.log('info', JSON.stringify(dining, null, 4));
-      await models.dining.addUpdate(dining);
+      await models.dining.bulkAddUpdate(dining);
     } catch (e) {
       logger.log('error', e.toString());
     }
@@ -100,9 +100,9 @@ export default async (options: IOptions = {
     try {
       const shops = await realtimeModels
         .shops
-        .list({ max: 60 });
+        .list({ max: 5 });
       logger.log('info', JSON.stringify(shops, null, 4));
-      await models.shop.addUpdate(shops);
+      await models.shop.bulkAddUpdate(shops);
     } catch (e) {
       logger.log('error', e.toString());
     }

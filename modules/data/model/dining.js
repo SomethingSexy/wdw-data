@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
 const pick_1 = __importDefault(require("lodash/pick")); // tslint:disable-line
 const utils_1 = require("../utils");
-const location_1 = __importDefault(require("./location"));
+const Location_1 = __importDefault(require("./Location"));
 // Note: returning extId for jobs
 const RAW_DINING_ATTRIBUTES = [
     'admissionRequired',
@@ -116,7 +116,7 @@ exports.validateAllDining = (items) => {
 exports.default = (sequelize, access, logger) => {
     const api = {
         async addUpdate(items = []) {
-            const Location = location_1.default(sequelize, access, logger);
+            const Location = Location_1.default(sequelize, access, logger);
             return utils_1.syncTransaction(sequelize, items, async (item, transaction) => {
                 const dining = await addUpdateDining(item, Location, access, transaction, logger);
                 return api.get(dining);

@@ -21,7 +21,7 @@ export default async () => {
   );
 
   const realtimeModels = realtime(logger);
-
+  // gran wait times per park, fasta.
   const parks = await models.location.list();
   // save the same timestamp for all
   const timeStamp = moment.utc().format();
@@ -39,7 +39,7 @@ export default async () => {
   );
 
   for (const waitTime of responses) {
-    await models.activity.addWaitTimes(
+    await models.activity.bulkAddWaitTimes(
       timeStamp,
       waitTime
     );

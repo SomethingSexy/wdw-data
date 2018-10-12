@@ -1,4 +1,4 @@
-export interface IDining {
+export interface IRestaurantItem {
   admissionRequired: boolean;
   area: string;
   costDescription: string;
@@ -47,7 +47,7 @@ export interface IShop {
   wheelchairAccessible: boolean;
 }
 
-export interface IActivity {
+export interface IActivityItem {
   admissionRequired: boolean;
   ages?: string[];
   allowServiceAnimals: boolean;
@@ -69,7 +69,7 @@ export interface IActivity {
   name: string;
   riderSwapAvailable: boolean;
   tags?: string[];
-  thrillFactor?: string[];
+  thrills?: string[];
   type: string;
   url: string;
   wheelchairTransfer: boolean;
@@ -81,13 +81,16 @@ export interface IDate {
   holiday?: string;
 }
 
-export interface ILocation {
+export interface ILocationItem {
   address?: any;
+  areas?: any[];
   busStops?: string[];
+  description: string;
   // internal id
   id?: string;
   extId: string;
   extRefName: string;
+  fetchSchedule?: boolean;
   name: string;
   rooms?: any[];
   tier?: string;
@@ -134,3 +137,103 @@ export interface IConnection {
 export interface ILogType { log: (type: string, message: string) => void; }
 
 export type ILogger = (type: string, message: string) => void;
+
+interface ILocationsConstructor {
+  new (sequelize: any, access: any, logger: ILogger, models: ILocationsModels): ILocations;
+}
+
+export interface ILocations {
+  findByName: (name: string, transaction?: any) => Promise<ILocation | null>;
+}
+
+interface ILocationConstructor {
+  new (sequelize: any, access: any, logger: ILogger, models: ILocationModels, id: any): ILocation;
+}
+
+export interface ILocation {
+  data: ILocationItem;
+  instance: any;
+  addArea: (name: string, transaction?: any) => Promise<any | null>;
+  bulkAddSchedules: (parkSchedules: {[date: string]: ISchedule[]}) => {};
+  findAreaByName: (name: string, transaction?: any) => Promise<any | null>;
+}
+
+export interface IActivities {
+  findAll: (where?: { [key: string]: string | boolean }) => Promise<IActivity[]>;
+}
+
+export interface IActivitiesModels {
+  Activity: any;
+  Date: any;
+  Location: any;
+  Locations: ILocationsConstructor;
+}
+
+export interface IActivityModels {
+  Date: any;
+  Location: any;
+  Locations: ILocationsConstructor;
+}
+
+export interface IActivity {
+  addWaitTimes: (timeStamp: string, waitTime: IWaitTime, transaction?) => Promise<{}>;
+  bulkAddSchedules: (schedules: {[date: string]: ISchedule[]}) => {};
+  data: IActivityItem;
+  load: (include?: any[]) => Promise<boolean> ;
+  upsert: (item: IActivityItem, transaction?) => Promise<string>;
+}
+
+export interface IShopModels {
+  Locations: ILocationsConstructor;
+}
+
+export interface IShopsModels {
+  Location: any;
+  Locations: ILocationsConstructor;
+  Shop: any;
+}
+
+export interface ILocationModels {
+  Date: any;
+}
+
+export interface ILocationsModels {
+  Date: any;
+  Location: ILocationConstructor;
+}
+
+export interface IRestaurant {
+  data: IRestaurantItem;
+  load: (include?: any[]) => Promise<boolean> ;
+  upsert: (item: IRestaurantItem, transaction?) => Promise<string>;
+}
+
+export interface IRestaurants {
+  findAll: (where?: { [key: string]: string | boolean }) => Promise<IRestaurant[]>;
+}
+
+export interface IRestaurantModels {
+  Locations: ILocationsConstructor;
+}
+
+export interface IRestaurantsModels {
+  Location: any;
+  Locations: ILocationsConstructor;
+  Restaurant: any;
+}
+
+export interface IWaitTime {
+  fastPass: {
+    available: boolean;
+  };
+  postedWaitMinutes: string;
+  rollUpStatus: string;
+  rollUpWaitTimeMessage: string;
+  singleRider: boolean;
+  status: string;
+}
+
+export interface IActivityWaitTime {
+  extId: 'string';
+  waitTime: IWaitTime;
+}

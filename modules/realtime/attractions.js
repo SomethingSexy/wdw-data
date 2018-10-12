@@ -39,7 +39,7 @@ exports.get = async (attraction, logger) => {
     const tags = interests && interests.map(interest => interest.value);
     const ages = age && facets.age.map(a => a.value);
     const height = facets.height && facets.height[0].value;
-    const thrillFactor = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
+    const thrills = facets.thrillFactor && facets.thrillFactor.map(thrill => thrill.value);
     const description = descriptions.shortDescriptionMobile
         ? descriptions.shortDescriptionMobile.text : '';
     logger('info', `Finished processing data for ${url}.`);
@@ -50,7 +50,7 @@ exports.get = async (attraction, logger) => {
         description,
         height,
         tags,
-        thrillFactor,
+        thrills,
         wheelchairTransfer, 
         // disneyOperated: response.disneyOperated,
         // disneyOwned: response.disneyOwned,

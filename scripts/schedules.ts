@@ -1,3 +1,3 @@
 import schedules from '../src/worker/schedules';
 
-schedules(2).then(() => process.exit);
+schedules(10).then(() => process.exit);

@@ -28,7 +28,7 @@ exports.default = async (options = {
                 .parks
                 .list();
             log_1.default.log('info', JSON.stringify(parks, null, 4));
-            await models.location.addUpdate(parks);
+            await models.location.bulkAddUpdate(parks);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
@@ -40,7 +40,7 @@ exports.default = async (options = {
                 .hotels
                 .list();
             log_1.default.log('info', JSON.stringify(hotels, null, 4));
-            await models.location.addUpdate(hotels);
+            await models.location.bulkAddUpdate(hotels);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
@@ -52,7 +52,7 @@ exports.default = async (options = {
                 .attractions
                 .list();
             log_1.default.log('info', JSON.stringify(attractions, null, 4));
-            await models.activity.addUpdate(attractions);
+            await models.activity.bulkAddUpdate(attractions);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
@@ -64,7 +64,7 @@ exports.default = async (options = {
                 .entertainment
                 .list();
             log_1.default.log('info', JSON.stringify(entertainment, null, 4));
-            await models.activity.addUpdate(entertainment);
+            await models.activity.bulkAddUpdate(entertainment);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
@@ -86,9 +86,9 @@ exports.default = async (options = {
         try {
             const shops = await realtimeModels
                 .shops
-                .list({ max: 10 });
+                .list({ max: 5 });
             log_1.default.log('info', JSON.stringify(shops, null, 4));
-            // await models.activity.addUpdate(entertainment);
+            await models.shop.bulkAddUpdate(shops);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
