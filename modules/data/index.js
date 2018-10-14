@@ -10,6 +10,10 @@ const Activity_1 = __importDefault(require("./model/Activity"));
 const Date_1 = __importDefault(require("./model/Date"));
 const Location_1 = __importDefault(require("./model/Location"));
 const Locations_1 = __importDefault(require("./model/Locations"));
+const Park_1 = __importDefault(require("./model/Park"));
+const Parks_1 = __importDefault(require("./model/Parks"));
+const Resort_1 = __importDefault(require("./model/Resort"));
+const Resorts_1 = __importDefault(require("./model/Resorts"));
 const Restaurant_1 = __importDefault(require("./model/Restaurant"));
 const Restaurants_1 = __importDefault(require("./model/Restaurants"));
 const Shop_1 = __importDefault(require("./model/Shop"));
@@ -39,14 +43,19 @@ exports.default = async (connection, logger) => {
     // around the data access objects,
     // for now we are creating a single instance here, turn into factory methods if we want
     // to create instances outside of here
+    const locationModels = { Date: Date_1.default, Location: Location_1.default, Park: Park_1.default, Resort: Resort_1.default };
     const activity = new Activities_1.default(sequelize, accessObjects, logger, { Activity: Activity_1.default, Date: Date_1.default, Location: Location_1.default, Locations: Locations_1.default });
     const dining = new Restaurants_1.default(sequelize, accessObjects, logger, { Location: Location_1.default, Locations: Locations_1.default, Restaurant: Restaurant_1.default });
-    const location = new Locations_1.default(sequelize, accessObjects, logger, { Date: Date_1.default, Location: Location_1.default });
+    const location = new Locations_1.default(sequelize, accessObjects, logger, locationModels);
+    const park = new Parks_1.default(sequelize, accessObjects, logger, locationModels);
+    const resort = new Resorts_1.default(sequelize, accessObjects, logger, locationModels);
     const shop = new Shops_1.default(sequelize, accessObjects, logger, { Location: Location_1.default, Locations: Locations_1.default, Shop: Shop_1.default });
     return {
         activity,
         dining,
         location,
+        park,
+        resort,
         shop
     };
 };

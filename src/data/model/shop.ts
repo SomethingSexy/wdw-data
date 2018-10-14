@@ -1,7 +1,6 @@
 import invariant from 'invariant';
 import isUUID from 'is-uuid';
-import differenceWith from 'lodash/differenceWith'; // tslint:disable-line
-import pick from 'lodash/pick'; // tslint:disable-line
+import { differenceWith, pick } from 'lodash';
 import moment from 'moment';
 import { ILocations, ILogger, IShop, IShopModels } from '../../types';
 import { upsert } from '../utils';

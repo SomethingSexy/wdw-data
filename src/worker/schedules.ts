@@ -24,7 +24,7 @@ export default async (days?: number) => {
   const startDate = moment().format('YYYY-MM-DD');
   const endDate = days ? moment().add(days, 'days').format('YYYY-MM-DD') : startDate;
   // fetch all locations that can add schedules
-  const parks = await models.location.findAll({ fetchSchedule: true });
+  const parks = await models.park.findAll({ fetchSchedule: true });
   const responses: any[] = await Promise.all(
     parks.reduce(
       (all: any[], park) => {

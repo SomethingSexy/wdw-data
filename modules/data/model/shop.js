@@ -5,8 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
 const is_uuid_1 = __importDefault(require("is-uuid"));
-const differenceWith_1 = __importDefault(require("lodash/differenceWith")); // tslint:disable-line
-const pick_1 = __importDefault(require("lodash/pick")); // tslint:disable-line
+const lodash_1 = require("lodash");
 const moment_1 = __importDefault(require("moment"));
 const utils_1 = require("../utils");
 // Note: returning extId for jobs
@@ -22,7 +21,7 @@ exports.RAW_SHOP_ATTRIBUTES = [
     'areaId',
     'wheelchairAccessible'
 ];
-exports.normalizeShop = shop => (Object.assign({}, pick_1.default(shop, exports.RAW_SHOP_ATTRIBUTES), { tags: shop.ShopTags.map(tag => tag.name) }));
+exports.normalizeShop = shop => (Object.assign({}, lodash_1.pick(shop, exports.RAW_SHOP_ATTRIBUTES), { tags: shop.ShopTags.map(tag => tag.name) }));
 /**
  * Validates a single shop.  The following fields are considered
  * required: type and extId.
@@ -111,7 +110,7 @@ class ShopModel {
     static async updateDiscounts(Model, discounts, transaction) {
         return Promise.all(discounts.map(async (discount) => {
             const instance = await Model.findById(discount.id, { transaction });
-            return instance.update(pick_1.default(discount, ['discount', 'description']));
+            return instance.update(lodash_1.pick(discount, ['discount', 'description']));
         }));
     }
     set id(id) {
@@ -233,7 +232,7 @@ class ShopModel {
                 // find the ones that do not exist, close them down
                 // find the ones that still eixst, ignore
                 // add new ones
-                const add = differenceWith_1.default(item.discounts, activeDiscounts, (incoming, active) => {
+                const add = lodash_1.differenceWith(item.discounts, activeDiscounts, (incoming, active) => {
                     if (incoming.type !== active.type && incoming.discount !== active.discount) {
                         return false;
                     }

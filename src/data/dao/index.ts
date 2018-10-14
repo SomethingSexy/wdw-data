@@ -53,9 +53,9 @@ export default sequelize => {
   LocationSchedule.belongsTo(Date);
 
   Hotel.belongsTo(Location);
-  Room.hasMany(RoomConfiguration);
+  Room.hasMany(RoomConfiguration, { as: 'roomConfigurations' });
   Hotel.hasMany(Room);
-  Hotel.hasMany(BusStop);
+  Hotel.hasMany(BusStop, { as: 'busStops' });
   Location.belongsTo(Address);
   Location.hasMany(Area);
 

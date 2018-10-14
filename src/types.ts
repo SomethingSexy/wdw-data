@@ -154,7 +154,7 @@ export interface ILocation {
   data: ILocationItem;
   instance: any;
   addArea: (name: string, transaction?: any) => Promise<any | null>;
-  bulkAddSchedules: (parkSchedules: {[date: string]: ISchedule[]}) => {};
+  bulkAddSchedules: (parkSchedules: {[date: string]: ISchedule[]}) => {} | void;
   findAreaByName: (name: string, transaction?: any) => Promise<any | null>;
 }
 
@@ -200,6 +200,8 @@ export interface ILocationModels {
 export interface ILocationsModels {
   Date: any;
   Location: ILocationConstructor;
+  Park: any;
+  Resort: any;
 }
 
 export interface IRestaurant {

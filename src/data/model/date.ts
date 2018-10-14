@@ -41,7 +41,7 @@ class DateModel {
       .findOne({ where: { date: localDate } }, { transaction })
       .then(d => {
         if (!d) {
-          this.logger('debug', `${localDate} does not exist, creating.`)
+          this.logger('debug', `${localDate} does not exist, creating.`);
           const holiday = mDate.isHoliday();
           return Date.create(
             {

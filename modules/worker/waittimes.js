@@ -22,7 +22,7 @@ exports.default = async () => {
     }, log_1.default);
     const realtimeModels = index_1.realtime(log_1.default);
     // gran wait times per park, fasta.
-    const parks = await models.location.list();
+    const parks = await models.park.list();
     // save the same timestamp for all
     const timeStamp = moment_1.default.utc().format();
     const responses = await Promise.all(parks.reduce((all, park) => {

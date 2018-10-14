@@ -1,5 +1,12 @@
 import invariant from 'invariant';
-import { IActivities, IActivitiesModels, IActivity, IActivityItem, ILogger, IActivityWaitTime } from '../../types';
+import {
+  IActivities,
+  IActivitiesModels,
+  IActivity,
+  IActivityItem,
+  IActivityWaitTime,
+  ILogger
+} from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
 import { RAW_ACTIVITY_ATTRIBUTES } from './Activity';
 
@@ -87,7 +94,7 @@ class Activities implements IActivities {
       }
 
       const activity = await this.createActivity(activityInstance);
-      
+
       return activity.addWaitTimes(timestamp, waitTime, transaction);
     });
   }

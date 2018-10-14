@@ -28,7 +28,7 @@ exports.default = async (options = {
                 .parks
                 .list();
             log_1.default.log('info', JSON.stringify(parks, null, 4));
-            await models.location.bulkAddUpdate(parks);
+            await models.park.bulkAddUpdate(parks);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
@@ -40,7 +40,7 @@ exports.default = async (options = {
                 .hotels
                 .list();
             log_1.default.log('info', JSON.stringify(hotels, null, 4));
-            await models.location.bulkAddUpdate(hotels);
+            await models.resort.bulkAddUpdate(hotels);
         }
         catch (e) {
             log_1.default.log('error', e.toString());
