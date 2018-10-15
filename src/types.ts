@@ -82,6 +82,7 @@ export interface IDate {
 }
 
 export interface ILocationItem {
+  activities?: any[];
   address?: any;
   areas?: any[];
   busStops?: string[];

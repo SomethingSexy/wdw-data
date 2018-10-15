@@ -93,13 +93,13 @@ class Parks {
         return this.create(instance);
     }
     /**
-     * Searches for a location instance by id
-     * @param name
-     * @param transaction
+     *
+     * @param id
+     * @param include - include additional data when finding location.
      */
-    async findById(id) {
+    async findById(id, include) {
         const location = this.create(id);
-        const found = await location.load();
+        const found = await location.load(include);
         if (!found) {
             return null;
         }

@@ -126,7 +126,6 @@ class ResortModel {
         // if no instance, throw an error
         invariant_1.default(this.instance, 'An instance is required to retrieve data, call load first.');
         const raw = this.instance.get({ plain: true });
-        console.log(raw);
         return exports.normalizeLocation(raw);
     }
     /**

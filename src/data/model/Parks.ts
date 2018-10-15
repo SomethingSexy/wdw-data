@@ -1,7 +1,7 @@
 import invariant from 'invariant';
 import { ILocation, ILocationItem, ILocations, ILocationsModels, ILogger } from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
-import { RAW_LOCATION_ATTRIBUTES } from './Park';
+import { GetTypes, RAW_LOCATION_ATTRIBUTES } from './Park';
 
 const PARK_TYPE = 'theme-park';
 const ENTERTAINMENT_TYPE = 'entertainment-venue';
@@ -115,13 +115,13 @@ class Parks implements ILocations {
   }
 
   /**
-   * Searches for a location instance by id
-   * @param name
-   * @param transaction
+   *
+   * @param id
+   * @param include - include additional data when finding location.
    */
-  public async findById(id: string): Promise<ILocation | null> {
+  public async findById(id: string, include?: GetTypes[]): Promise<ILocation | null> {
     const location = this.create(id);
-    const found = await location.load();
+    const found = await location.load(include);
 
     if (!found) {
       return null;

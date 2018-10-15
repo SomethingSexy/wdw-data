@@ -22,6 +22,7 @@ var GetTypes;
 })(GetTypes = exports.GetTypes || (exports.GetTypes = {}));
 exports.normalizeLocation = (location) => {
     const core = {
+        activities: location.activities,
         address: location.Address || null,
         areas: location.areas ? location.areas.map(area => area.name) : [],
         description: location.description,
@@ -201,10 +202,8 @@ class ParkModel {
             include.forEach(i => {
                 if (i === GetTypes.Activities) {
                     queryInclude.push({
-                        as: 'Activities',
                         attributes: RAW_ACTIVITIES_ATTRIBUTES,
                         include: [{
-                                as: 'Area',
                                 attributes: ['name'],
                                 model: Area
                             }],

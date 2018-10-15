@@ -21,6 +21,7 @@ export enum GetTypes {
 
 export const normalizeLocation = (location: any): ILocationItem => {
   const core: ILocationItem = {
+    activities: location.activities,
     address: location.Address || null,
     areas: location.areas ? location.areas.map(area => area.name) : [],
     description: location.description,
@@ -224,6 +225,7 @@ class ParkModel implements ILocation {
       { where: { locationId, name } }, { transaction }
     );
   }
+
   /**
    * Returns a raw location by id.
    * @param id
@@ -243,10 +245,8 @@ class ParkModel implements ILocation {
       include.forEach(i => {
         if (i === GetTypes.Activities) {
           queryInclude.push({
-            as: 'Activities',
             attributes: RAW_ACTIVITIES_ATTRIBUTES,
             include: [{
-              as: 'Area',
               attributes: ['name'],
               model: Area
             }],
