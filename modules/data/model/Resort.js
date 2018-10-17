@@ -26,7 +26,7 @@ const RAW_ROOM_ATTRIBUTES = [
 exports.RAW_LOCATION_ATTRIBUTES = [
     'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
 ];
-const HOTEL_TYPE = 'resort';
+// const HOTEL_TYPE = 'resort';
 var GetTypes;
 (function (GetTypes) {
     GetTypes["Activities"] = "activities";
@@ -244,7 +244,7 @@ class ResortModel {
     async upsert(item, transaction) {
         const { Address, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
         this.logger('debug', `Adding/updating location ${this.id}.`);
-        const data = Object.assign({}, item, { fetchSchedule: item.type !== 'entertainment-venue' && item.type !== HOTEL_TYPE });
+        const data = Object.assign({}, item, { fetchSchedule: false });
         const locationInstance = await utils_1.upsert(Location, data, { [this.idKey]: this.id }, transaction, item.address ? [Address] : null);
         this.logger('debug', `Finished adding/updating location ${this.id}.`);
         const hotelInstance = await utils_1.upsert(Hotel, { tier: item.tier, locationId: locationInstance.get('id') }, { locationId: locationInstance.get('id') }, transaction);

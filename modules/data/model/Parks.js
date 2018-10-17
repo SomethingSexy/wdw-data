@@ -127,8 +127,9 @@ class Parks {
             }
         };
         if (where) {
+            this.logger('debug', `${JSON.stringify(where)}`);
             invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for locations.');
-            query = Object.assign({}, query, { where: Object.assign({}, query.where, { where }) });
+            query = Object.assign({}, query, { where: Object.assign({}, query.where, where) });
         }
         const found = await Location.findAll(query);
         // create new locations objects then parse the data

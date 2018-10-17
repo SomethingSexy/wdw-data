@@ -1,6 +1,7 @@
 import invariant from 'invariant';
 import { ILocation, ILocationItem, ILocations, ILocationsModels, ILogger } from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
+import { GetTypes } from './Resort';
 
 const RESORT_TYPE = 'resort';
 
@@ -117,9 +118,9 @@ class Resorts implements ILocations {
    * @param name
    * @param transaction
    */
-  public async findById(id: string): Promise<ILocation | null> {
+  public async findById(id: string, include?: GetTypes[]): Promise<ILocation | null> {
     const location = this.createLocation(id);
-    const found = await location.load();
+    const found = await location.load(include);
 
     if (!found) {
       return null;

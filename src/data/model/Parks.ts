@@ -153,6 +153,7 @@ class Parks implements ILocations {
     };
 
     if (where) {
+      this.logger('debug', `${JSON.stringify(where)}`);
       invariant(
         Object.keys(where).length, 'Conditions are required when searching for locations.'
       );
@@ -160,7 +161,7 @@ class Parks implements ILocations {
         ...query,
         where: {
           ...query.where,
-          where
+          ...where
         }
       };
     }

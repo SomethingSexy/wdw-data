@@ -34,9 +34,9 @@ class DateModel {
    */
   public async load(transaction?: any) {
     const { Date } = this.dao;
-    const mDate = moment(this.date);
+    const mDate = moment(this.date, 'YYYY-MM-DD');
     const localDate = mDate.format('YYYY-MM-DD');
-
+    this.logger('debug', `${this.date} ${localDate}`);
     const instance = await Date
       .findOne({ where: { date: localDate } }, { transaction })
       .then(d => {

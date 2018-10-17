@@ -10,6 +10,9 @@ const RAW_ADDRESS_ATTRIBUTES = [
 const RAW_AREA_ATTRIBUTES = ['name'];
 const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
 
+const THEME_PARK = 'theme-park';
+const WATER_PARK = 'water-park';
+
 // Note: extId is on here right now for the jobs
 export const RAW_LOCATION_ATTRIBUTES = [
   'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
@@ -187,12 +190,13 @@ class ParkModel implements ILocation {
       this.logger('error', `Location ${this.id} does not support schedules.`);
       return null;
     }
-
+    this.logger('debug', `park schedule ${JSON.stringify(parkSchedules, null, 4)}`);
     await Promise.all(
       Object
         .entries(parkSchedules)
         .map(([key, value]) => {
           return this.sequelize.transaction(t => {
+            this.logger('debug', `${key}, ${value}`);
             return this.addSchedule(key, value, t);
           });
         })
@@ -334,7 +338,7 @@ class ParkModel implements ILocation {
 
     const data = {
       ...item,
-      fetchSchedule: true
+      fetchSchedule: item.type === THEME_PARK || item.type === WATER_PARK
     };
     const locationInstance = await upsert(
       Location, data, {  [this.idKey]: this.id  }, transaction, item.address ? [Address] : null

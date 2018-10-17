@@ -24,7 +24,7 @@ export const RAW_LOCATION_ATTRIBUTES = [
   'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
 ];
 
-const HOTEL_TYPE = 'resort';
+// const HOTEL_TYPE = 'resort';
 
 export enum GetTypes {
   Activities = 'activities'
@@ -32,6 +32,7 @@ export enum GetTypes {
 
 export const normalizeLocation = (resort: any): ILocationItem => {
   const core: ILocationItem = {
+    activities: resort.location.activities,
     address: resort.location.address || null,
     areas: resort.location.areas ? resort.location.areas.map(area => area.name) : [],
     busStops: resort.busStops,
@@ -243,10 +244,8 @@ class ResortModel implements ILocation {
       include.forEach(i => {
         if (i === GetTypes.Activities) {
           queryInclude.push({
-            as: 'Activities',
             attributes: RAW_ACTIVITIES_ATTRIBUTES,
             include: [{
-              as: 'Area',
               attributes: ['name'],
               model: Area
             }],
@@ -285,7 +284,7 @@ class ResortModel implements ILocation {
 
     const data = {
       ...item,
-      fetchSchedule: item.type !== 'entertainment-venue' && item.type !== HOTEL_TYPE
+      fetchSchedule: false
     };
     const locationInstance = await upsert(
       Location, data, {  [this.idKey]: this.id  }, transaction, item.address ? [Address] : null
