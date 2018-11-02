@@ -14,6 +14,45 @@ const path = 'https://disneyworld.disney.go.com/destinations/';
 const PARK_REGION = 'us';
 // const TIME_ZONE = 'America/New_York';
 // const DATE_FORMAT = 'YYYY-MM-DD';
+const additionalData = {
+    '80008033;entityType=Entertainment-Venue': {
+        // tslint:disable-next-line:max-line-length
+        description: 'Play at the next level at ESPN Wide World of Sports Complex. These 230 acres of professionally run, state-of-the-art facilities host over 60 sports and thousands of events for athletes of all ages and abilities. Train and compete with your team—or catch the excitement as a spectator—in this grand sports setting where classic athletic ideals meet contemporary innovation.',
+    },
+    // tslint:disable-next-line:object-literal-sort-keys
+    '10460;entityType=Entertainment-Venue': {
+        // tslint:disable-next-line:max-line-length
+        description: 'Welcome to Disney Springs—a truly amazing place featuring an eclectic mix of unique boutiques, one-of-a-kind eateries and jaw-dropping entertainment that will have you wondering where the day went. '
+    },
+    '80008259;entityType=Entertainment-Venue': {
+        // tslint:disable-next-line:max-line-length
+        description: 'Experience the timeless charm of Disney’s BoardWalk, a quarter-mile promenade of exquisite dining, unique shops and exciting nightlife. Stroll along the water’s edge, play afternoon midway games and discover evening street performers. Evoking turn-of-the-century boardwalks in such coastal cities as Coney Island and Atlantic City, Disney’s BoardWalk is a short stroll to Epcot and a breezy boat ride to Disney’s Hollywood Studios.'
+    },
+    '80007823;entityType=theme-park': {
+        description: 'Behold the Magic of Nature with Rare Animals and World-Class Entertainment',
+        image: 'animal-kingdom'
+    },
+    '80007834;entityType=water-park': {
+        // tslint:disable-next-line:max-line-length
+        description: 'Discover frosty fun for the whole family at Disney’s Blizzard Beach water park, a one-time ski resort that has melted into a watery wonderland. Zip down the slushy slopes of Mount Gushmore on one of the world’s tallest and fastest waterslides. Float down the tranquil river and sunbathe on the white-sand beach. Children under 48 inches tall can even splash around in their own water play area with a snow-castle fountain and kid-sized waterslides.'
+    },
+    '80007998;entityType=theme-park': {
+        description: 'Take Center Stage in the Worlds of Movies, Television, Music & Theater',
+        image: 'hollywood-studios'
+    },
+    '80007838;entityType=theme-park': {
+        description: 'Travel Around the Globe, Under the Sea, into Outer Space… and Beyond!',
+        image: 'epcot'
+    },
+    '80007944;entityType=theme-park': {
+        description: 'Explore Lands of Endless Enchantment, Where Your Fantasy Becomes a Reality',
+        image: 'magic-kingdom'
+    },
+    '80007981;entityType=water-park': {
+        // tslint:disable-next-line:max-line-length
+        description: 'Soak up a storm of fun under the Florida sun—plunge down rushing rapids, sunbathe on a sandy beach, glide down a lazy river, and enjoy the thrills and spills of the whitewater journey called Miss Adventure Falls!'
+    }
+};
 exports.list = async (logger) => {
     logger('info', `Grabbing park screen for ${path}.`);
     const response = await request_1.screen(path);
@@ -53,7 +92,7 @@ exports.list = async (logger) => {
             location = fullLocation.location;
             area = fullLocation.area;
         }
-        items.push({
+        let park = {
             area,
             extId,
             extRefName,
@@ -61,7 +100,11 @@ exports.list = async (logger) => {
             name,
             type,
             url
-        });
+        };
+        if (additionalData[park.extId]) {
+            park = Object.assign({}, park, additionalData[park.extId]);
+        }
+        items.push(park);
     }
     return items;
 };

@@ -95,9 +95,9 @@ class Resorts {
      * @param name
      * @param transaction
      */
-    async findById(id) {
+    async findById(id, include) {
         const location = this.createLocation(id);
-        const found = await location.load();
+        const found = await location.load(include);
         if (!found) {
             return null;
         }

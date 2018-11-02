@@ -1,10 +1,7 @@
 import invariant from 'invariant';
 import { ILocation, ILocationItem, ILocations, ILocationsModels, ILogger } from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
-import { GetTypes, RAW_LOCATION_ATTRIBUTES } from './Park';
-
-const PARK_TYPE = 'theme-park';
-const ENTERTAINMENT_TYPE = 'entertainment-venue';
+import Park, { ENTERTAINMENT_TYPE, GetTypes, THEME_PARK } from './Park';
 
 /**
  * Validates a single location.  The following fields are considered
@@ -88,8 +85,8 @@ class Parks implements ILocations {
   public create(id: string) {
     invariant(id, 'Id is required to create a shop.');
     // TODO: figure out why I need any here
-    const Park: any = this.models.Park;
-    return new Park(this.sequelize, this.dao, this.logger, this.models, id);
+    const ParkModel: any = this.models.Park;
+    return new ParkModel(this.sequelize, this.dao, this.logger, this.models, id);
   }
 
   /**
@@ -102,7 +99,7 @@ class Parks implements ILocations {
     const instance = await this.dao.Location.findOne(
       {
         attributes: ['id', 'type'],
-        where: { name, type: [PARK_TYPE, ENTERTAINMENT_TYPE] }
+        where: { name, type: [THEME_PARK, ENTERTAINMENT_TYPE] }
       },
       { transaction }
     );
@@ -136,35 +133,16 @@ class Parks implements ILocations {
    * @param where - search parameters
    */
   public async findAll(where?: { [key: string]: string | boolean }): Promise<ILocation[]> {
-    const { Address, Area, Location } = this.dao;
-    // TODO: We should probably pull this from Location so the query is all standard
-    let query: { attributes: string[], include: any[], where?: any } = {
-      attributes: RAW_LOCATION_ATTRIBUTES,
-      include: [{
-        attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
-        model: Address
-      }, {
-        attributes: ['name'],
-        model: Area
-      }],
-      where: {
-        type: [PARK_TYPE, ENTERTAINMENT_TYPE]
-      }
-    };
-
-    if (where) {
-      this.logger('debug', `${JSON.stringify(where)}`);
-      invariant(
-        Object.keys(where).length, 'Conditions are required when searching for locations.'
-      );
-      query = {
-        ...query,
+    const { Location } = this.dao;
+    const query = Park.buildQuery(
+      this.sequelize,
+      this.dao, {
         where: {
-          ...query.where,
+          type: [THEME_PARK],
           ...where
         }
-      };
-    }
+      }
+    );
 
     const found = await Location.findAll(query);
 

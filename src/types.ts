@@ -83,12 +83,14 @@ export interface IDate {
 
 export interface ILocationItem {
   activities?: any[];
+  activitiesCount?: number;
   address?: any;
   areas?: any[];
   busStops?: string[];
   description: string;
   // internal id
   id?: string;
+  image?: string;
   extId: string;
   extRefName: string;
   fetchSchedule?: boolean;

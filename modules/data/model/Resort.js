@@ -33,6 +33,7 @@ var GetTypes;
 })(GetTypes = exports.GetTypes || (exports.GetTypes = {}));
 exports.normalizeLocation = (resort) => {
     const core = {
+        activities: resort.location.activities,
         address: resort.location.address || null,
         areas: resort.location.areas ? resort.location.areas.map(area => area.name) : [],
         busStops: resort.busStops,
@@ -209,10 +210,8 @@ class ResortModel {
             include.forEach(i => {
                 if (i === GetTypes.Activities) {
                     queryInclude.push({
-                        as: 'Activities',
                         attributes: RAW_ACTIVITIES_ATTRIBUTES,
                         include: [{
-                                as: 'Area',
                                 attributes: ['name'],
                                 model: Area
                             }],

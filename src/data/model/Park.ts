@@ -10,12 +10,13 @@ const RAW_ADDRESS_ATTRIBUTES = [
 const RAW_AREA_ATTRIBUTES = ['name'];
 const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
 
-const THEME_PARK = 'theme-park';
-const WATER_PARK = 'water-park';
+export const THEME_PARK = 'theme-park';
+export const WATER_PARK = 'water-park';
+export const ENTERTAINMENT_TYPE = 'entertainment-venue';
 
 // Note: extId is on here right now for the jobs
 export const RAW_LOCATION_ATTRIBUTES = [
-  'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
+  'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule', 'image'
 ];
 
 export enum GetTypes {
@@ -25,6 +26,7 @@ export enum GetTypes {
 export const normalizeLocation = (location: any): ILocationItem => {
   const core: ILocationItem = {
     activities: location.activities,
+    activitiesCount: location.activitiesCount,
     address: location.Address || null,
     areas: location.areas ? location.areas.map(area => area.name) : [],
     description: location.description,
@@ -32,6 +34,7 @@ export const normalizeLocation = (location: any): ILocationItem => {
     extRefName: location.extRefName,
     fetchSchedule: location.fetchSchedule,
     id: location.id,
+    image: location.image,
     name: location.name,
     type: location.type,
     url: location.url
@@ -41,6 +44,49 @@ export const normalizeLocation = (location: any): ILocationItem => {
 };
 
 class ParkModel implements ILocation {
+  public static buildQuery(
+    sequelize: any, dao, { where }: { where?: {}}
+  ): { attributes: string | any[], group: string[], include: any[], where?: any } {
+    const { Activity, Address, Area } = dao;
+    let query: {
+      attributes: string | any[], group: string[], include: any[], where?: any
+    } = {
+      attributes: [
+        ...RAW_LOCATION_ATTRIBUTES,
+        [sequelize.fn('COUNT', sequelize.col('activities.id')), 'activitiesCount']
+      ],
+      group: ['address.id', 'areas.id', 'location.id'],
+      include: [{
+        attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+        model: Address
+      }, {
+        attributes: ['name'],
+        model: Area
+      }, {
+        attributes: [],
+        model: Activity
+      }],
+      where: {
+        type: [THEME_PARK, ENTERTAINMENT_TYPE]
+      }
+    };
+
+    if (where) {
+      invariant(
+        Object.keys(where).length, 'Conditions are required when searching for locations.'
+      );
+      query = {
+        ...query,
+        where: {
+          ...query.where,
+          ...where
+        }
+      };
+    }
+
+    return query;
+  }
+
   public instance: any = null;
 
   private sequelize: any;
@@ -261,7 +307,10 @@ class ParkModel implements ILocation {
     }
 
     const query = {
-      attributes: RAW_LOCATION_ATTRIBUTES,
+      attributes: [
+        ...RAW_LOCATION_ATTRIBUTES,
+        [this.sequelize.fn('COUNT', this.sequelize.col('activities.id')), 'activitiesCount']
+      ],
       include: queryInclude,
       where: { [this.idKey]: this.id  }
     };

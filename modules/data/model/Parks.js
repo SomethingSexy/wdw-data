@@ -2,12 +2,17 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
 const utils_1 = require("../utils");
-const Park_1 = require("./Park");
-const PARK_TYPE = 'theme-park';
-const ENTERTAINMENT_TYPE = 'entertainment-venue';
+const Park_1 = __importStar(require("./Park"));
 /**
  * Validates a single location.  The following fields are considered
  * required: type and extId.
@@ -73,8 +78,8 @@ class Parks {
     create(id) {
         invariant_1.default(id, 'Id is required to create a shop.');
         // TODO: figure out why I need any here
-        const Park = this.models.Park;
-        return new Park(this.sequelize, this.dao, this.logger, this.models, id);
+        const ParkModel = this.models.Park;
+        return new ParkModel(this.sequelize, this.dao, this.logger, this.models, id);
     }
     /**
      * Searches for a location instance by name
@@ -85,7 +90,7 @@ class Parks {
         // find the instance of the model
         const instance = await this.dao.Location.findOne({
             attributes: ['id', 'type'],
-            where: { name, type: [PARK_TYPE, ENTERTAINMENT_TYPE] }
+            where: { name, type: [Park_1.THEME_PARK, Park_1.ENTERTAINMENT_TYPE] }
         }, { transaction });
         if (!instance) {
             return null;
@@ -111,26 +116,10 @@ class Parks {
      * @param where - search parameters
      */
     async findAll(where) {
-        const { Address, Area, Location } = this.dao;
-        // TODO: We should probably pull this from Location so the query is all standard
-        let query = {
-            attributes: Park_1.RAW_LOCATION_ATTRIBUTES,
-            include: [{
-                    attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
-                    model: Address
-                }, {
-                    attributes: ['name'],
-                    model: Area
-                }],
-            where: {
-                type: [PARK_TYPE, ENTERTAINMENT_TYPE]
-            }
-        };
-        if (where) {
-            this.logger('debug', `${JSON.stringify(where)}`);
-            invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for locations.');
-            query = Object.assign({}, query, { where: Object.assign({}, query.where, where) });
-        }
+        const { Location } = this.dao;
+        const query = Park_1.default.buildQuery(this.sequelize, this.dao, {
+            where: Object.assign({ type: [Park_1.THEME_PARK] }, where)
+        });
         const found = await Location.findAll(query);
         // create new locations objects then parse the data
         return found.map(item => this.create(item));

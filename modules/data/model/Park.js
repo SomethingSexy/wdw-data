@@ -12,11 +12,12 @@ const RAW_ADDRESS_ATTRIBUTES = [
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
 const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
-const THEME_PARK = 'theme-park';
-const WATER_PARK = 'water-park';
+exports.THEME_PARK = 'theme-park';
+exports.WATER_PARK = 'water-park';
+exports.ENTERTAINMENT_TYPE = 'entertainment-venue';
 // Note: extId is on here right now for the jobs
 exports.RAW_LOCATION_ATTRIBUTES = [
-    'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
+    'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule', 'image'
 ];
 var GetTypes;
 (function (GetTypes) {
@@ -25,6 +26,7 @@ var GetTypes;
 exports.normalizeLocation = (location) => {
     const core = {
         activities: location.activities,
+        activitiesCount: location.activitiesCount,
         address: location.Address || null,
         areas: location.areas ? location.areas.map(area => area.name) : [],
         description: location.description,
@@ -32,6 +34,7 @@ exports.normalizeLocation = (location) => {
         extRefName: location.extRefName,
         fetchSchedule: location.fetchSchedule,
         id: location.id,
+        image: location.image,
         name: location.name,
         type: location.type,
         url: location.url
@@ -68,6 +71,34 @@ class ParkModel {
             this.instance = id;
             this.id = this.instance.get('id');
         }
+    }
+    static buildQuery(sequelize, dao, { where }) {
+        const { Activity, Address, Area } = dao;
+        let query = {
+            attributes: [
+                ...exports.RAW_LOCATION_ATTRIBUTES,
+                [sequelize.fn('COUNT', sequelize.col('activities.id')), 'activitiesCount']
+            ],
+            group: ['address.id', 'areas.id', 'location.id'],
+            include: [{
+                    attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+                    model: Address
+                }, {
+                    attributes: ['name'],
+                    model: Area
+                }, {
+                    attributes: [],
+                    model: Activity
+                }],
+            where: {
+                type: [exports.THEME_PARK, exports.ENTERTAINMENT_TYPE]
+            }
+        };
+        if (where) {
+            invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for locations.');
+            query = Object.assign({}, query, { where: Object.assign({}, query.where, where) });
+        }
+        return query;
     }
     set id(id) {
         this._id = id;
@@ -156,7 +187,7 @@ class ParkModel {
             this.logger('error', `Location ${this.id} does not support schedules.`);
             return null;
         }
-        this.logger('debug', `${JSON.stringify(parkSchedules, null, 4)}`);
+        this.logger('debug', `park schedule ${JSON.stringify(parkSchedules, null, 4)}`);
         await Promise.all(Object
             .entries(parkSchedules)
             .map(([key, value]) => {
@@ -217,7 +248,10 @@ class ParkModel {
             });
         }
         const query = {
-            attributes: exports.RAW_LOCATION_ATTRIBUTES,
+            attributes: [
+                ...exports.RAW_LOCATION_ATTRIBUTES,
+                [this.sequelize.fn('COUNT', this.sequelize.col('activities.id')), 'activitiesCount']
+            ],
             include: queryInclude,
             where: { [this.idKey]: this.id }
         };
@@ -280,7 +314,7 @@ class ParkModel {
     async upsert(item, transaction) {
         const { Address, Location } = this.dao;
         this.logger('debug', `Adding/updating location ${this.id}.`);
-        const data = Object.assign({}, item, { fetchSchedule: item.type === THEME_PARK || item.type === WATER_PARK });
+        const data = Object.assign({}, item, { fetchSchedule: item.type === exports.THEME_PARK || item.type === exports.WATER_PARK });
         const locationInstance = await utils_1.upsert(Location, data, { [this.idKey]: this.id }, transaction, item.address ? [Address] : null);
         this.logger('debug', `Finished adding/updating location ${this.id}.`);
         // set the instance after we created,

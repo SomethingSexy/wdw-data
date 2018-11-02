@@ -20,6 +20,7 @@ export default sequelize => {
         primaryKey: true,
         type: Sequelize.UUID,
       },
+      image: Sequelize.STRING,
       name: Sequelize.STRING,
       type: Sequelize.STRING,
       url: Sequelize.STRING,
