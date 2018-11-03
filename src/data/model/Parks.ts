@@ -1,7 +1,9 @@
 import invariant from 'invariant';
-import { ILocation, ILocationItem, ILocations, ILocationsModels, ILogger } from '../../types';
+import {
+  GetTypes, ILocation, ILocationItem, ILocations, ILocationsModels, ILogger
+} from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
-import Park, { ENTERTAINMENT_TYPE, GetTypes, THEME_PARK } from './Park';
+import { ENTERTAINMENT_TYPE, THEME_PARK } from './Park';
 
 /**
  * Validates a single location.  The following fields are considered
@@ -134,20 +136,25 @@ class Parks implements ILocations {
    */
   public async findAll(where?: { [key: string]: string | boolean }): Promise<ILocation[]> {
     const { Location } = this.dao;
-    const query = Park.buildQuery(
-      this.sequelize,
-      this.dao, {
-        where: {
-          type: [THEME_PARK],
-          ...where
-        }
+    const query = {
+      attributes: ['id'],
+      where: {
+        type: [THEME_PARK],
+        ...where
       }
+    };
+
+    // There is additional data we might need to fetch per location that we
+    // cannot easily fetch in a single request.  So just offload it to the model
+    const found: any[] = await Location.findAll(query);
+
+    return Promise.all(
+      found.map(async item => {
+        const model: ILocation = this.create(item.get('id'));
+        await model.load();
+        return model;
+      })
     );
-
-    const found = await Location.findAll(query);
-
-    // create new locations objects then parse the data
-    return found.map(item => this.create(item));
   }
 
   /**

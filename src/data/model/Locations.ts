@@ -70,7 +70,7 @@ class Locations implements ILocations {
     const instance = await this.dao.Location.findOne(
       {
         attributes: ['id', 'type'],
-        where: { name, type: [PARK_TYPE, ENTERTAINMENT_TYPE] }
+        where: { name }
       },
       { transaction }
     );

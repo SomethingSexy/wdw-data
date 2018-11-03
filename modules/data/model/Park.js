@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
 const is_uuid_1 = __importDefault(require("is-uuid"));
 const pick_1 = __importDefault(require("lodash/pick")); // tslint:disable-line
+const types_1 = require("../../types");
 const utils_1 = require("../utils");
 const RAW_ADDRESS_ATTRIBUTES = [
     'city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'
@@ -19,14 +20,9 @@ exports.ENTERTAINMENT_TYPE = 'entertainment-venue';
 exports.RAW_LOCATION_ATTRIBUTES = [
     'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule', 'image'
 ];
-var GetTypes;
-(function (GetTypes) {
-    GetTypes["Activities"] = "activities";
-})(GetTypes = exports.GetTypes || (exports.GetTypes = {}));
-exports.normalizeLocation = (location) => {
+exports.normalizeLocation = (location, counts) => {
     const core = {
         activities: location.activities,
-        activitiesCount: location.activitiesCount,
         address: location.Address || null,
         areas: location.areas ? location.areas.map(area => area.name) : [],
         description: location.description,
@@ -39,6 +35,10 @@ exports.normalizeLocation = (location) => {
         type: location.type,
         url: location.url
     };
+    if (counts) {
+        core.activitiesCount = counts.activity;
+        core.diningCount = counts.dining;
+    }
     return core;
 };
 class ParkModel {
@@ -55,6 +55,7 @@ class ParkModel {
         this._id = '';
         this.isExt = false;
         this.idKey = 'id';
+        this.counts = null;
         invariant_1.default(id, 'Internal or external id is required to create a Location.');
         this.sequelize = sequelize;
         this.dao = access;
@@ -72,24 +73,21 @@ class ParkModel {
             this.id = this.instance.get('id');
         }
     }
-    static buildQuery(sequelize, dao, { where }) {
-        const { Activity, Address, Area } = dao;
+    static buildQuery(_, dao, { where }) {
+        const { Address, Area } = dao;
         let query = {
             attributes: [
                 ...exports.RAW_LOCATION_ATTRIBUTES,
-                [sequelize.fn('COUNT', sequelize.col('activities.id')), 'activitiesCount']
             ],
-            group: ['address.id', 'areas.id', 'location.id'],
+            // group: ['address.id', 'areas.id', 'location.id'],
             include: [{
                     attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
                     model: Address
                 }, {
                     attributes: ['name'],
                     model: Area
-                }, {
-                    attributes: [],
-                    model: Activity
-                }],
+                },
+            ],
             where: {
                 type: [exports.THEME_PARK, exports.ENTERTAINMENT_TYPE]
             }
@@ -112,7 +110,7 @@ class ParkModel {
         // if no instance, throw an error
         invariant_1.default(this.instance, 'An instance is required to retrieve data, call load first.');
         const raw = this.instance.get({ plain: true });
-        return exports.normalizeLocation(raw);
+        return exports.normalizeLocation(raw, this.counts);
     }
     /**
      * Adds area and returns the instance for now.
@@ -224,7 +222,7 @@ class ParkModel {
      * @param id
      */
     async load(include) {
-        const { Activity, Address, Area, Location } = this.dao;
+        const { Activity, Address, Area, Dining, Location } = this.dao;
         const queryInclude = [{
                 attributes: RAW_ADDRESS_ATTRIBUTES,
                 model: Address
@@ -235,7 +233,7 @@ class ParkModel {
         // check to see if we are including different associations
         if (include) {
             include.forEach(i => {
-                if (i === GetTypes.Activities) {
+                if (i === types_1.GetTypes.Activities) {
                     queryInclude.push({
                         attributes: RAW_ACTIVITIES_ATTRIBUTES,
                         include: [{
@@ -248,10 +246,7 @@ class ParkModel {
             });
         }
         const query = {
-            attributes: [
-                ...exports.RAW_LOCATION_ATTRIBUTES,
-                [this.sequelize.fn('COUNT', this.sequelize.col('activities.id')), 'activitiesCount']
-            ],
+            attributes: exports.RAW_LOCATION_ATTRIBUTES,
             include: queryInclude,
             where: { [this.idKey]: this.id }
         };
@@ -268,6 +263,11 @@ class ParkModel {
         }
         // lets reset the id to the internal one
         this.id = this.instance.get('id');
+        // We need to handle counts separately, there is currently a bug with sequelize
+        // where you cannot make multiple counts in a single fetch
+        const activityCount = await Activity.count({ where: { locationId: this.id } });
+        const diningCount = await Dining.count({ where: { locationId: this.id } });
+        this.counts = { activity: activityCount, dining: diningCount };
         return true;
     }
     /**

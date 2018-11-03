@@ -1,7 +1,9 @@
 import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import pick from 'lodash/pick'; // tslint:disable-line
-import { ILocation, ILocationItem, ILocationModels, ILogger, ISchedule } from '../../types';
+import {
+  GetTypes, ILocation, ILocationItem, ILocationModels, ILogger, ISchedule
+} from '../../types';
 import { Success, upsert } from '../utils';
 
 const RAW_ADDRESS_ATTRIBUTES = [
@@ -19,14 +21,14 @@ export const RAW_LOCATION_ATTRIBUTES = [
   'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule', 'image'
 ];
 
-export enum GetTypes {
-  Activities = 'activities'
+interface ICounts {
+  activity: number;
+  dining: number;
 }
 
-export const normalizeLocation = (location: any): ILocationItem => {
+export const normalizeLocation = (location: any, counts: ICounts | null): ILocationItem => {
   const core: ILocationItem = {
     activities: location.activities,
-    activitiesCount: location.activitiesCount,
     address: location.Address || null,
     areas: location.areas ? location.areas.map(area => area.name) : [],
     description: location.description,
@@ -40,32 +42,44 @@ export const normalizeLocation = (location: any): ILocationItem => {
     url: location.url
   };
 
+  if (counts) {
+    core.activitiesCount = counts.activity;
+    core.diningCount = counts.dining;
+  }
+
   return core;
 };
 
 class ParkModel implements ILocation {
   public static buildQuery(
-    sequelize: any, dao, { where }: { where?: {}}
-  ): { attributes: string | any[], group: string[], include: any[], where?: any } {
-    const { Activity, Address, Area } = dao;
+    _: any, dao, { where }: { where?: {}}
+  ): { attributes: string | any[], group?: string[], include: any[], where?: any } {
+    const { Address, Area } = dao;
     let query: {
-      attributes: string | any[], group: string[], include: any[], where?: any
+      attributes: string | any[], group?: string[], include: any[], where?: any
     } = {
       attributes: [
         ...RAW_LOCATION_ATTRIBUTES,
-        [sequelize.fn('COUNT', sequelize.col('activities.id')), 'activitiesCount']
+        // [sequelize.fn('COUNT', sequelize.col('activities.id')), 'activitiesCount'],
+        // TODO: this doesn't work, I think this is a known bug but it is nultiplying them together
+        // [sequelize.fn('COUNT', sequelize.col('dinings.id')), 'diningCount'],
       ],
-      group: ['address.id', 'areas.id', 'location.id'],
+      // group: ['address.id', 'areas.id', 'location.id'],
       include: [{
         attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
         model: Address
       }, {
         attributes: ['name'],
         model: Area
-      }, {
-        attributes: [],
-        model: Activity
-      }],
+      },
+      // {
+      //   attributes: [],
+      //   model: Activity
+      // }, {
+      //   attributes: [],
+      //   model: Dining
+      // }
+      ],
       where: {
         type: [THEME_PARK, ENTERTAINMENT_TYPE]
       }
@@ -96,6 +110,7 @@ class ParkModel implements ILocation {
   private _id: string = '';
   private isExt: boolean = false;
   private idKey: string = 'id';
+  private counts: ICounts | null = null;
 
   public set id(id: string) {
     this._id = id;
@@ -138,7 +153,7 @@ class ParkModel implements ILocation {
     // if no instance, throw an error
     invariant(this.instance, 'An instance is required to retrieve data, call load first.');
     const raw = this.instance.get({ plain: true });
-    return normalizeLocation(raw);
+    return normalizeLocation(raw, this.counts);
   }
 
   /**
@@ -281,7 +296,7 @@ class ParkModel implements ILocation {
    * @param id
    */
   public async load(include?: GetTypes[]): Promise<boolean> {
-    const { Activity, Address, Area, Location } = this.dao;
+    const { Activity, Address, Area, Dining, Location } = this.dao;
     const queryInclude: any[] = [{
       attributes: RAW_ADDRESS_ATTRIBUTES,
       model: Address
@@ -307,10 +322,7 @@ class ParkModel implements ILocation {
     }
 
     const query = {
-      attributes: [
-        ...RAW_LOCATION_ATTRIBUTES,
-        [this.sequelize.fn('COUNT', this.sequelize.col('activities.id')), 'activitiesCount']
-      ],
+      attributes: RAW_LOCATION_ATTRIBUTES,
       include: queryInclude,
       where: { [this.idKey]: this.id  }
     };
@@ -329,6 +341,14 @@ class ParkModel implements ILocation {
 
     // lets reset the id to the internal one
     this.id = this.instance.get('id');
+
+    // We need to handle counts separately, there is currently a bug with sequelize
+    // where you cannot make multiple counts in a single fetch
+    const activityCount = await Activity.count({ where: { locationId: this.id } });
+    const diningCount = await Dining.count({ where: { locationId: this.id } });
+
+    this.counts = { activity: activityCount, dining: diningCount };
+
     return true;
   }
 

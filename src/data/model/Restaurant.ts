@@ -139,6 +139,8 @@ class Restaurant implements IRestaurant {
 
           await instance.setArea(areaInst, { transaction });
         }
+      } else {
+        this.logger('error', `Item ${item.name} has location ${item.location} but it cannot be found.`);
       }
     }
 

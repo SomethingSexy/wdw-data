@@ -88,6 +88,7 @@ export interface ILocationItem {
   areas?: any[];
   busStops?: string[];
   description: string;
+  diningCount?: number;
   // internal id
   id?: string;
   image?: string;
@@ -153,8 +154,13 @@ interface ILocationConstructor {
   new (sequelize: any, access: any, logger: ILogger, models: ILocationModels, id: any): ILocation;
 }
 
+export enum GetTypes {
+  Activities = 'activities'
+}
+
 export interface ILocation {
   data: ILocationItem;
+  load: (include?: GetTypes[]) => Promise<boolean>;
   instance: any;
   addArea: (name: string, transaction?: any) => Promise<any | null>;
   bulkAddSchedules: (parkSchedules: {[date: string]: ISchedule[]}) => {} | void;

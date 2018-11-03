@@ -2,17 +2,10 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
 const utils_1 = require("../utils");
-const Park_1 = __importStar(require("./Park"));
+const Park_1 = require("./Park");
 /**
  * Validates a single location.  The following fields are considered
  * required: type and extId.
@@ -117,12 +110,18 @@ class Parks {
      */
     async findAll(where) {
         const { Location } = this.dao;
-        const query = Park_1.default.buildQuery(this.sequelize, this.dao, {
+        const query = {
+            attributes: ['id'],
             where: Object.assign({ type: [Park_1.THEME_PARK] }, where)
-        });
+        };
+        // There is additional data we might need to fetch per location that we
+        // cannot easily fetch in a single request.  So just offload it to the model
         const found = await Location.findAll(query);
-        // create new locations objects then parse the data
-        return found.map(item => this.create(item));
+        return Promise.all(found.map(async (item) => {
+            const model = this.create(item.get('id'));
+            await model.load();
+            return model;
+        }));
     }
     /**
      * Returns a list of raw locations.
