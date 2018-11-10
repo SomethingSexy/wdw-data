@@ -155,7 +155,8 @@ interface ILocationConstructor {
 }
 
 export enum GetTypes {
-  Activities = 'activities'
+  Activities = 'activities',
+  Dining = 'dining'
 }
 
 export interface ILocation {

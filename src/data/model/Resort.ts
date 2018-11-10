@@ -1,14 +1,16 @@
 import invariant from 'invariant';
 import isUUID from 'is-uuid';
 import pick from 'lodash/pick'; // tslint:disable-line
-import { ILocation, ILocationItem, ILocationModels, ILogger, ISchedule } from '../../types';
+import {
+  GetTypes, ILocation, ILocationItem, ILocationModels, ILogger, ISchedule
+} from '../../types';
 import { upsert } from '../utils';
 
 const RAW_ADDRESS_ATTRIBUTES = [
   'city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
-const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+// const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
 const RAW_ROOM_ATTRIBUTES = [
   'bedsDescription',
   'occupancy',
@@ -24,13 +26,12 @@ export const RAW_LOCATION_ATTRIBUTES = [
   'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
 ];
 
-// const HOTEL_TYPE = 'resort';
-
-export enum GetTypes {
-  Activities = 'activities'
+interface ICounts {
+  activity: number;
+  dining: number;
 }
 
-export const normalizeLocation = (resort: any): ILocationItem => {
+export const normalizeLocation = (resort: any, counts: ICounts | null): ILocationItem => {
   const core: ILocationItem = {
     activities: resort.location.activities,
     address: resort.location.address || null,
@@ -48,23 +49,29 @@ export const normalizeLocation = (resort: any): ILocationItem => {
     url: resort.location.url
   };
 
+  if (counts) {
+    core.activitiesCount = counts.activity;
+    core.diningCount = counts.dining;
+  }
+
   return core;
 };
 
 class ResortModel implements ILocation {
   public static buildQuery(
-    dao, { where }: { where?: {}}
+    dao, { where }: { where?: {}}, _: boolean
   ): { attributes: string[], include: any[], where?: any } {
     const { Address, Area, BusStop, Location, Room, RoomConfiguration } = dao;
+
     let query: { attributes: string[], include: any[], where?: any } = {
-      attributes: ['tier'],
+      attributes: ['id', 'locationId', 'tier'],
       include: [{
         attributes: RAW_LOCATION_ATTRIBUTES,
         include: [{
-          attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+          attributes: RAW_ADDRESS_ATTRIBUTES,
           model: Address
         }, {
-          attributes: ['name'],
+          attributes: RAW_AREA_ATTRIBUTES,
           model: Area
         }],
         model: Location,
@@ -91,7 +98,7 @@ class ResortModel implements ILocation {
         ...query,
         where: {
           ...query.where,
-          where
+          ...where
         }
       };
     }
@@ -106,6 +113,7 @@ class ResortModel implements ILocation {
   private _id: string = '';
   private isExt: boolean = false;
   private idKey: string = 'id';
+  private counts: ICounts | null = null;
 
   public set id(id: string) {
     this._id = id;
@@ -148,7 +156,7 @@ class ResortModel implements ILocation {
     // if no instance, throw an error
     invariant(this.instance, 'An instance is required to retrieve data, call load first.');
     const raw = this.instance.get({ plain: true });
-    return normalizeLocation(raw);
+    return normalizeLocation(raw, this.counts);
   }
 
   /**
@@ -212,59 +220,63 @@ class ResortModel implements ILocation {
    * @param id
    */
   public async load(include?: GetTypes[]): Promise<boolean> {
-    const { Activity, Address, Area, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
+    const {
+      Activity, Dining, Hotel
+    } = this.dao;
+
+    const query = ResortModel.buildQuery(this.dao, { where: { [this.idKey]: this.id  } }, false);
     // setting to any because I am not gonna repeat sequelize's api
-    const queryInclude: any[] = [{
-      attributes: RAW_ADDRESS_ATTRIBUTES,
-      model: Address
-    }, {
-      attributes: RAW_AREA_ATTRIBUTES,
-      model: Area
-    }, {
-      attributes: ['tier'],
-      include: [{
-        // as: 'BusStops',
-        attributes: ['name'],
-        model: BusStop
-      }],
-      model: Hotel
-    }, {
-      // as: 'Rooms',
-      attributes: RAW_ROOM_ATTRIBUTES,
-      include: [{
-        // as: 'RoomConfigurations',
-        attributes: ['count', 'description'],
-        model: RoomConfiguration
-      }],
-      model: Room
-    }];
+    // const queryInclude: any[] = [{
+    //   attributes: RAW_ADDRESS_ATTRIBUTES,
+    //   model: Address
+    // }, {
+    //   attributes: RAW_AREA_ATTRIBUTES,
+    //   model: Area
+    // }, {
+    //   attributes: ['tier'],
+    //   include: [{
+    //     // as: 'BusStops',
+    //     attributes: ['name'],
+    //     model: BusStop
+    //   }],
+    //   model: Hotel
+    // }, {
+    //   // as: 'Rooms',
+    //   attributes: RAW_ROOM_ATTRIBUTES,
+    //   include: [{
+    //     // as: 'RoomConfigurations',
+    //     attributes: ['count', 'description'],
+    //     model: RoomConfiguration
+    //   }],
+    //   model: Room
+    // }];
 
     // check to see if we are including different associations
     if (include) {
-      include.forEach(i => {
-        if (i === GetTypes.Activities) {
-          queryInclude.push({
-            attributes: RAW_ACTIVITIES_ATTRIBUTES,
-            include: [{
-              attributes: ['name'],
-              model: Area
-            }],
-            model: Activity
-          });
-        }
-      });
+      // include.forEach(i => {
+      //   if (i === GetTypes.Activities) {
+      //     queryInclude.push({
+      //       attributes: RAW_ACTIVITIES_ATTRIBUTES,
+      //       include: [{
+      //         attributes: ['name'],
+      //         model: Area
+      //       }],
+      //       model: Activity
+      //     });
+      //   }
+      // });
     }
 
-    const query = {
-      attributes: RAW_LOCATION_ATTRIBUTES,
-      include: queryInclude,
-      where: { [this.idKey]: this.id  }
-    };
-
+    // const query = {
+    //   attributes: RAW_LOCATION_ATTRIBUTES,
+    //   include: queryInclude,
+    //   where: { [this.idKey]: this.id  }
+    // };
+    console.log(query);
     if (this.instance) {
       await this.instance.reload(query);
     } else {
-      this.instance = await Location.findOne(query);
+      this.instance = await Hotel.findOne(query);
     }
 
     if (!this.instance) {
@@ -275,6 +287,17 @@ class ResortModel implements ILocation {
 
     // lets reset the id to the internal one
     this.id = this.instance.get('id');
+
+    // We need to handle counts separately, there is currently a bug with sequelize
+    // where you cannot make multiple counts in a single fetch
+    const activityCount = await Activity.count(
+      { where: { locationId: this.instance.get('locationId') } }
+    );
+    const diningCount = await Dining.count(
+      { where: { locationId: this.instance.get('locationId')  } }
+    );
+
+    this.counts = { activity: activityCount, dining: diningCount };
     return true;
   }
 

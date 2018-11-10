@@ -13,6 +13,7 @@ const RAW_ADDRESS_ATTRIBUTES = [
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
 const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+const RAW_DINING_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
 exports.THEME_PARK = 'theme-park';
 exports.WATER_PARK = 'water-park';
 exports.ENTERTAINMENT_TYPE = 'entertainment-venue';
@@ -241,6 +242,16 @@ class ParkModel {
                                 model: Area
                             }],
                         model: Activity
+                    });
+                }
+                else if (i === types_1.GetTypes.Dining) {
+                    queryInclude.push({
+                        attributes: RAW_DINING_ATTRIBUTES,
+                        include: [{
+                                attributes: ['name'],
+                                model: Area
+                            }],
+                        model: Dining
                     });
                 }
             });

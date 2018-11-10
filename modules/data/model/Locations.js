@@ -4,8 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const invariant_1 = __importDefault(require("invariant"));
-const PARK_TYPE = 'theme-park';
-const ENTERTAINMENT_TYPE = 'entertainment-venue';
+// const PARK_TYPE = 'theme-park';
+// const ENTERTAINMENT_TYPE = 'entertainment-venue';
 /**
  * Validates a single location.  The following fields are considered
  * required: type and extId.
@@ -59,7 +59,7 @@ class Locations {
         // find the instance of the model
         const instance = await this.dao.Location.findOne({
             attributes: ['id', 'type'],
-            where: { name, type: [PARK_TYPE, ENTERTAINMENT_TYPE] }
+            where: { name }
         }, { transaction });
         if (!instance) {
             return null;

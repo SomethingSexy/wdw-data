@@ -1,7 +1,8 @@
 import invariant from 'invariant';
-import { ILocation, ILocationItem, ILocations, ILocationsModels, ILogger } from '../../types';
+import {
+  GetTypes, ILocation, ILocationItem, ILocations, ILocationsModels, ILogger
+} from '../../types';
 import { Error, Success, syncTransaction } from '../utils';
-import { GetTypes } from './Resort';
 
 const RESORT_TYPE = 'resort';
 
@@ -69,7 +70,7 @@ class Resorts implements ILocations {
 
     const locations = await syncTransaction(this.sequelize, items, async (item, transaction) => {
       // create a model for this shop,
-      const location = this.createLocation(item.id || item.extId);
+      const location = this.create(item.id || item.extId);
       // update it with the latest coming in
       await location.upsert(item, transaction);
       // then retrieve the data
@@ -84,7 +85,7 @@ class Resorts implements ILocations {
    * Factory for creating a location model.
    * @param item
    */
-  public createLocation(id: string) {
+  public create(id: string) {
     invariant(id, 'Id is required to create a shop.');
     // TODO: figure out why I need any here
     const Resort: any = this.models.Resort;
@@ -110,7 +111,7 @@ class Resorts implements ILocations {
       return null;
     }
 
-    return this.createLocation(instance);
+    return this.create(instance);
   }
 
   /**
@@ -119,7 +120,7 @@ class Resorts implements ILocations {
    * @param transaction
    */
   public async findById(id: string, include?: GetTypes[]): Promise<ILocation | null> {
-    const location = this.createLocation(id);
+    const location = this.create(id);
     const found = await location.load(include);
 
     if (!found) {
@@ -136,13 +137,30 @@ class Resorts implements ILocations {
    */
   public async findAll(where?: { [key: string]: string | boolean }): Promise<ILocation[]> {
     const { Hotel } = this.dao;
-    const { Resort } = this.models;
-    const query = Resort.buildQuery(this.dao, { attributes: ['tier'], where });
+    let query: { attributes: string[], where?: {} } = {
+      attributes: ['id']
+    };
 
-    const found = await Hotel.findAll(query);
+    if (where) {
+      query = {
+        ...query,
+        where: {
+          ...where
+        }
+      };
+    }
 
-    // create new locations objects then parse the data
-    return found.map(item => this.createLocation(item));
+    // There is additional data we might need to fetch per location that we
+    // cannot easily fetch in a single request.  So just offload it to the model
+    const found: any[] = await Hotel.findAll(query);
+
+    return Promise.all(
+      found.map(async item => {
+        const model: ILocation = this.create(item.get('id'));
+        await model.load();
+        return model;
+      })
+    );
   }
 
   /**

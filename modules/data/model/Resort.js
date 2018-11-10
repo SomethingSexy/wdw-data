@@ -11,7 +11,7 @@ const RAW_ADDRESS_ATTRIBUTES = [
     'city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
-const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+// const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
 const RAW_ROOM_ATTRIBUTES = [
     'bedsDescription',
     'occupancy',
@@ -26,12 +26,7 @@ const RAW_ROOM_ATTRIBUTES = [
 exports.RAW_LOCATION_ATTRIBUTES = [
     'id', 'name', 'description', 'type', 'url', 'extId', 'fetchSchedule'
 ];
-// const HOTEL_TYPE = 'resort';
-var GetTypes;
-(function (GetTypes) {
-    GetTypes["Activities"] = "activities";
-})(GetTypes = exports.GetTypes || (exports.GetTypes = {}));
-exports.normalizeLocation = (resort) => {
+exports.normalizeLocation = (resort, counts) => {
     const core = {
         activities: resort.location.activities,
         address: resort.location.address || null,
@@ -48,6 +43,10 @@ exports.normalizeLocation = (resort) => {
         type: resort.location.type,
         url: resort.location.url
     };
+    if (counts) {
+        core.activitiesCount = counts.activity;
+        core.diningCount = counts.dining;
+    }
     return core;
 };
 class ResortModel {
@@ -64,6 +63,7 @@ class ResortModel {
         this._id = '';
         this.isExt = false;
         this.idKey = 'id';
+        this.counts = null;
         invariant_1.default(id, 'Internal or external id is required to create a Location.');
         // this.sequelize = sequelize;
         this.dao = access;
@@ -81,17 +81,17 @@ class ResortModel {
             this.id = this.instance.get('id');
         }
     }
-    static buildQuery(dao, { where }) {
+    static buildQuery(dao, { where }, _) {
         const { Address, Area, BusStop, Location, Room, RoomConfiguration } = dao;
         let query = {
-            attributes: ['tier'],
+            attributes: ['id', 'locationId', 'tier'],
             include: [{
                     attributes: exports.RAW_LOCATION_ATTRIBUTES,
                     include: [{
-                            attributes: ['city', 'number', 'state', 'plus4', 'prefix', 'street', 'type', 'zip'],
+                            attributes: RAW_ADDRESS_ATTRIBUTES,
                             model: Address
                         }, {
-                            attributes: ['name'],
+                            attributes: RAW_AREA_ATTRIBUTES,
                             model: Area
                         }],
                     model: Location,
@@ -111,7 +111,7 @@ class ResortModel {
         };
         if (where) {
             invariant_1.default(Object.keys(where).length, 'Conditions are required when searching for locations.');
-            query = Object.assign({}, query, { where: Object.assign({}, query.where, { where }) });
+            query = Object.assign({}, query, { where: Object.assign({}, query.where, where) });
         }
         return query;
     }
@@ -127,7 +127,7 @@ class ResortModel {
         // if no instance, throw an error
         invariant_1.default(this.instance, 'An instance is required to retrieve data, call load first.');
         const raw = this.instance.get({ plain: true });
-        return exports.normalizeLocation(raw);
+        return exports.normalizeLocation(raw, this.counts);
     }
     /**
      * Adds area and returns the instance for now.
@@ -179,57 +179,59 @@ class ResortModel {
      * @param id
      */
     async load(include) {
-        const { Activity, Address, Area, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
+        const { Activity, Dining, Hotel } = this.dao;
+        const query = ResortModel.buildQuery(this.dao, { where: { [this.idKey]: this.id } }, false);
         // setting to any because I am not gonna repeat sequelize's api
-        const queryInclude = [{
-                attributes: RAW_ADDRESS_ATTRIBUTES,
-                model: Address
-            }, {
-                attributes: RAW_AREA_ATTRIBUTES,
-                model: Area
-            }, {
-                attributes: ['tier'],
-                include: [{
-                        // as: 'BusStops',
-                        attributes: ['name'],
-                        model: BusStop
-                    }],
-                model: Hotel
-            }, {
-                // as: 'Rooms',
-                attributes: RAW_ROOM_ATTRIBUTES,
-                include: [{
-                        // as: 'RoomConfigurations',
-                        attributes: ['count', 'description'],
-                        model: RoomConfiguration
-                    }],
-                model: Room
-            }];
+        // const queryInclude: any[] = [{
+        //   attributes: RAW_ADDRESS_ATTRIBUTES,
+        //   model: Address
+        // }, {
+        //   attributes: RAW_AREA_ATTRIBUTES,
+        //   model: Area
+        // }, {
+        //   attributes: ['tier'],
+        //   include: [{
+        //     // as: 'BusStops',
+        //     attributes: ['name'],
+        //     model: BusStop
+        //   }],
+        //   model: Hotel
+        // }, {
+        //   // as: 'Rooms',
+        //   attributes: RAW_ROOM_ATTRIBUTES,
+        //   include: [{
+        //     // as: 'RoomConfigurations',
+        //     attributes: ['count', 'description'],
+        //     model: RoomConfiguration
+        //   }],
+        //   model: Room
+        // }];
         // check to see if we are including different associations
         if (include) {
-            include.forEach(i => {
-                if (i === GetTypes.Activities) {
-                    queryInclude.push({
-                        attributes: RAW_ACTIVITIES_ATTRIBUTES,
-                        include: [{
-                                attributes: ['name'],
-                                model: Area
-                            }],
-                        model: Activity
-                    });
-                }
-            });
+            // include.forEach(i => {
+            //   if (i === GetTypes.Activities) {
+            //     queryInclude.push({
+            //       attributes: RAW_ACTIVITIES_ATTRIBUTES,
+            //       include: [{
+            //         attributes: ['name'],
+            //         model: Area
+            //       }],
+            //       model: Activity
+            //     });
+            //   }
+            // });
         }
-        const query = {
-            attributes: exports.RAW_LOCATION_ATTRIBUTES,
-            include: queryInclude,
-            where: { [this.idKey]: this.id }
-        };
+        // const query = {
+        //   attributes: RAW_LOCATION_ATTRIBUTES,
+        //   include: queryInclude,
+        //   where: { [this.idKey]: this.id  }
+        // };
+        console.log(query);
         if (this.instance) {
             await this.instance.reload(query);
         }
         else {
-            this.instance = await Location.findOne(query);
+            this.instance = await Hotel.findOne(query);
         }
         if (!this.instance) {
             // let the caller handle not found
@@ -238,6 +240,11 @@ class ResortModel {
         }
         // lets reset the id to the internal one
         this.id = this.instance.get('id');
+        // We need to handle counts separately, there is currently a bug with sequelize
+        // where you cannot make multiple counts in a single fetch
+        const activityCount = await Activity.count({ where: { locationId: this.instance.get('locationId') } });
+        const diningCount = await Dining.count({ where: { locationId: this.instance.get('locationId') } });
+        this.counts = { activity: activityCount, dining: diningCount };
         return true;
     }
     async upsert(item, transaction) {

@@ -28,7 +28,7 @@ logTransports.push(new transports.Console({
 
 const logger = createLogger({
   format: logFormat,
-  level: 'debug',
+  level: 'error',
   transports: logTransports,
 });
 

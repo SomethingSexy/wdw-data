@@ -55,7 +55,7 @@ class Resorts {
         this.logger('debug', `Adding and updating ${items.length} locations.`);
         const locations = await utils_1.syncTransaction(this.sequelize, items, async (item, transaction) => {
             // create a model for this shop,
-            const location = this.createLocation(item.id || item.extId);
+            const location = this.create(item.id || item.extId);
             // update it with the latest coming in
             await location.upsert(item, transaction);
             // then retrieve the data
@@ -68,7 +68,7 @@ class Resorts {
      * Factory for creating a location model.
      * @param item
      */
-    createLocation(id) {
+    create(id) {
         invariant_1.default(id, 'Id is required to create a shop.');
         // TODO: figure out why I need any here
         const Resort = this.models.Resort;
@@ -88,7 +88,7 @@ class Resorts {
         if (!instance) {
             return null;
         }
-        return this.createLocation(instance);
+        return this.create(instance);
     }
     /**
      * Searches for a location instance by id
@@ -96,7 +96,7 @@ class Resorts {
      * @param transaction
      */
     async findById(id, include) {
-        const location = this.createLocation(id);
+        const location = this.create(id);
         const found = await location.load(include);
         if (!found) {
             return null;
@@ -110,11 +110,20 @@ class Resorts {
      */
     async findAll(where) {
         const { Hotel } = this.dao;
-        const { Resort } = this.models;
-        const query = Resort.buildQuery(this.dao, { attributes: ['tier'], where });
+        let query = {
+            attributes: ['id']
+        };
+        if (where) {
+            query = Object.assign({}, query, { where: Object.assign({}, where) });
+        }
+        // There is additional data we might need to fetch per location that we
+        // cannot easily fetch in a single request.  So just offload it to the model
         const found = await Hotel.findAll(query);
-        // create new locations objects then parse the data
-        return found.map(item => this.createLocation(item));
+        return Promise.all(found.map(async (item) => {
+            const model = this.create(item.get('id'));
+            await model.load();
+            return model;
+        }));
     }
     /**
      * Returns a list of raw locations.

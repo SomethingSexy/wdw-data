@@ -16,7 +16,7 @@ logTransports.push(new winston_1.transports.Console({
 }));
 const logger = winston_1.createLogger({
     format: logFormat,
-    level: 'debug',
+    level: 'error',
     transports: logTransports,
 });
 /**

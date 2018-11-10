@@ -14,7 +14,7 @@ exports.default = async (options = {
     // setup our database connection
     const models = await index_1.createModels({
         database: 'wdw',
-        logging: true,
+        logging: false,
         pool: {
             max: 100 // TODO: only here because we are kicking off a shit ton of async inserts
         },
@@ -74,7 +74,7 @@ exports.default = async (options = {
         try {
             const dining = await realtimeModels
                 .dining
-                .list({ max: 50 });
+                .list();
             log_1.default.log('info', JSON.stringify(dining, null, 4));
             await models.dining.bulkAddUpdate(dining);
         }

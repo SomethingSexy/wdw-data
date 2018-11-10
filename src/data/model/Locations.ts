@@ -1,8 +1,8 @@
 import invariant from 'invariant';
 import { ILocation, ILocationItem, ILocations, ILocationsModels, ILogger } from '../../types';
 
-const PARK_TYPE = 'theme-park';
-const ENTERTAINMENT_TYPE = 'entertainment-venue';
+// const PARK_TYPE = 'theme-park';
+// const ENTERTAINMENT_TYPE = 'entertainment-venue';
 
 /**
  * Validates a single location.  The following fields are considered

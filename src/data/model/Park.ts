@@ -11,6 +11,7 @@ const RAW_ADDRESS_ATTRIBUTES = [
 ];
 const RAW_AREA_ATTRIBUTES = ['name'];
 const RAW_ACTIVITIES_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
+const RAW_DINING_ATTRIBUTES = ['id', 'name', 'description', 'type', 'url'];
 
 export const THEME_PARK = 'theme-park';
 export const WATER_PARK = 'water-park';
@@ -316,6 +317,15 @@ class ParkModel implements ILocation {
               model: Area
             }],
             model: Activity
+          });
+        } else if (i === GetTypes.Dining) {
+          queryInclude.push({
+            attributes: RAW_DINING_ATTRIBUTES,
+            include: [{
+              attributes: ['name'],
+              model: Area
+            }],
+            model: Dining
           });
         }
       });
