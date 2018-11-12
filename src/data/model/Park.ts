@@ -412,7 +412,7 @@ class ParkModel implements ILocation {
   }
 
   public async upsert (item: ILocationItem, transaction?): Promise<string> {
-    const { Address, Location } = this.dao;
+    const { Location } = this.dao;
     this.logger('debug', `Adding/updating location ${this.id}.`);
 
     const data = {
@@ -420,7 +420,7 @@ class ParkModel implements ILocation {
       fetchSchedule: item.type === THEME_PARK || item.type === WATER_PARK
     };
     const locationInstance = await upsert(
-      Location, data, {  [this.idKey]: this.id  }, transaction, item.address ? [Address] : null
+      Location, data, {  [this.idKey]: this.id  }, transaction
     );
 
     this.logger('debug', `Finished adding/updating location ${this.id}.`);

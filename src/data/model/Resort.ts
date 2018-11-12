@@ -224,32 +224,11 @@ class ResortModel implements ILocation {
       Activity, Dining, Hotel
     } = this.dao;
 
-    const query = ResortModel.buildQuery(this.dao, { where: { [this.idKey]: this.id  } }, false);
-    // setting to any because I am not gonna repeat sequelize's api
-    // const queryInclude: any[] = [{
-    //   attributes: RAW_ADDRESS_ATTRIBUTES,
-    //   model: Address
-    // }, {
-    //   attributes: RAW_AREA_ATTRIBUTES,
-    //   model: Area
-    // }, {
-    //   attributes: ['tier'],
-    //   include: [{
-    //     // as: 'BusStops',
-    //     attributes: ['name'],
-    //     model: BusStop
-    //   }],
-    //   model: Hotel
-    // }, {
-    //   // as: 'Rooms',
-    //   attributes: RAW_ROOM_ATTRIBUTES,
-    //   include: [{
-    //     // as: 'RoomConfigurations',
-    //     attributes: ['count', 'description'],
-    //     model: RoomConfiguration
-    //   }],
-    //   model: Room
-    // }];
+    const query = ResortModel.buildQuery(
+      this.dao,
+      { where: { [this.idKey]: this.id  } },
+      false
+    );
 
     // check to see if we are including different associations
     if (include) {
@@ -267,12 +246,6 @@ class ResortModel implements ILocation {
       // });
     }
 
-    // const query = {
-    //   attributes: RAW_LOCATION_ATTRIBUTES,
-    //   include: queryInclude,
-    //   where: { [this.idKey]: this.id  }
-    // };
-    console.log(query);
     if (this.instance) {
       await this.instance.reload(query);
     } else {
@@ -312,6 +285,15 @@ class ResortModel implements ILocation {
     const locationInstance = await upsert(
       Location, data, {  [this.idKey]: this.id  }, transaction, item.address ? [Address] : null
     );
+
+    // manually check address, in case we are updating the location but creating the address
+    if (item.address) {
+      const addressInstance = await upsert(
+        Address, item.address, {  id: locationInstance.get('id')  }, transaction
+      );
+
+      await locationInstance.setAddress(addressInstance, { transaction });
+    }
 
     this.logger('debug', `Finished adding/updating location ${this.id}.`);
 
@@ -362,11 +344,12 @@ class ResortModel implements ILocation {
       }
     }
 
-    // set the instance after we created,
-    // TODO: Should we call update on existing instance if we already have it?
-    this.instance = locationInstance;
-
-    return locationInstance.get('id');
+    // set the id, just in case we are doing an update
+    this.id = hotelInstance.get('id');
+    // load the new instance
+    await this.load();
+    // return the id that was created/updated
+    return this.id;
   }
 }
 
