@@ -5,6 +5,7 @@ import proxyquire from 'proxyquire';
 import sinon, { fake, spy, stub } from 'sinon';
 import uuid from 'uuid/v4'; // tslint:disable-line
 import LocationModel, { GetTypes } from '../../../src/data/model/Location';
+import ResortModel from '../../../src/data/model/Resort';
 import { Success } from '../../../src/data/utils';
 import { ILocation, ILocationItem } from '../../../src/types';
 import {
@@ -89,7 +90,7 @@ describe('model - location', () => {
         Date: null
       };
 
-      const location = new LocationModel({}, access, mockLogger, models, '123');
+      const location = new ResortModel({}, access, mockLogger, models, '123');
       expect(location.id).to.equal('123');
 
       const found = await location.load();

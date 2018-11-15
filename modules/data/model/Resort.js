@@ -181,31 +181,6 @@ class ResortModel {
     async load(include) {
         const { Activity, Dining, Hotel } = this.dao;
         const query = ResortModel.buildQuery(this.dao, { where: { [this.idKey]: this.id } }, false);
-        // setting to any because I am not gonna repeat sequelize's api
-        // const queryInclude: any[] = [{
-        //   attributes: RAW_ADDRESS_ATTRIBUTES,
-        //   model: Address
-        // }, {
-        //   attributes: RAW_AREA_ATTRIBUTES,
-        //   model: Area
-        // }, {
-        //   attributes: ['tier'],
-        //   include: [{
-        //     // as: 'BusStops',
-        //     attributes: ['name'],
-        //     model: BusStop
-        //   }],
-        //   model: Hotel
-        // }, {
-        //   // as: 'Rooms',
-        //   attributes: RAW_ROOM_ATTRIBUTES,
-        //   include: [{
-        //     // as: 'RoomConfigurations',
-        //     attributes: ['count', 'description'],
-        //     model: RoomConfiguration
-        //   }],
-        //   model: Room
-        // }];
         // check to see if we are including different associations
         if (include) {
             // include.forEach(i => {
@@ -221,12 +196,6 @@ class ResortModel {
             //   }
             // });
         }
-        // const query = {
-        //   attributes: RAW_LOCATION_ATTRIBUTES,
-        //   include: queryInclude,
-        //   where: { [this.idKey]: this.id  }
-        // };
-        console.log(query);
         if (this.instance) {
             await this.instance.reload(query);
         }
@@ -247,11 +216,22 @@ class ResortModel {
         this.counts = { activity: activityCount, dining: diningCount };
         return true;
     }
+    /**
+     *
+     * @param item
+     * @param transaction
+     */
     async upsert(item, transaction) {
         const { Address, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
         this.logger('debug', `Adding/updating location ${this.id}.`);
         const data = Object.assign({}, item, { fetchSchedule: false });
+        // So this uses location id to start but we store instance as hotel
         const locationInstance = await utils_1.upsert(Location, data, { [this.idKey]: this.id }, transaction, item.address ? [Address] : null);
+        // manually check address, in case we are updating the location but creating the address
+        if (item.address) {
+            const addressInstance = await utils_1.upsert(Address, item.address, { id: locationInstance.get('id') }, transaction);
+            await locationInstance.setAddress(addressInstance, { transaction });
+        }
         this.logger('debug', `Finished adding/updating location ${this.id}.`);
         const hotelInstance = await utils_1.upsert(Hotel, { tier: item.tier, locationId: locationInstance.get('id') }, { locationId: locationInstance.get('id') }, transaction);
         // need to handle adding rooms separately because we want to update
@@ -279,10 +259,12 @@ class ResortModel {
                 });
             }
         }
-        // set the instance after we created,
-        // TODO: Should we call update on existing instance if we already have it?
-        this.instance = locationInstance;
-        return locationInstance.get('id');
+        // set the id, just in case we are doing an update
+        this.id = hotelInstance.get('id');
+        // load the new instance
+        await this.load();
+        // return the id that was created/updated
+        return this.id;
     }
 }
 exports.default = ResortModel;

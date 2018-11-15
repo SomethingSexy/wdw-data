@@ -274,6 +274,11 @@ class ResortModel implements ILocation {
     return true;
   }
 
+  /**
+   *
+   * @param item
+   * @param transaction
+   */
   public async upsert (item: ILocationItem, transaction?): Promise<string> {
     const { Address, BusStop, Hotel, Location, Room, RoomConfiguration } = this.dao;
     this.logger('debug', `Adding/updating location ${this.id}.`);
@@ -282,6 +287,7 @@ class ResortModel implements ILocation {
       ...item,
       fetchSchedule: false
     };
+    // So this uses location id to start but we store instance as hotel
     const locationInstance = await upsert(
       Location, data, {  [this.idKey]: this.id  }, transaction, item.address ? [Address] : null
     );

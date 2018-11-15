@@ -323,10 +323,10 @@ class ParkModel {
         });
     }
     async upsert(item, transaction) {
-        const { Address, Location } = this.dao;
+        const { Location } = this.dao;
         this.logger('debug', `Adding/updating location ${this.id}.`);
         const data = Object.assign({}, item, { fetchSchedule: item.type === exports.THEME_PARK || item.type === exports.WATER_PARK });
-        const locationInstance = await utils_1.upsert(Location, data, { [this.idKey]: this.id }, transaction, item.address ? [Address] : null);
+        const locationInstance = await utils_1.upsert(Location, data, { [this.idKey]: this.id }, transaction);
         this.logger('debug', `Finished adding/updating location ${this.id}.`);
         // set the instance after we created,
         // TODO: Should we call update on existing instance if we already have it?

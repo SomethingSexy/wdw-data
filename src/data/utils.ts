@@ -15,7 +15,6 @@ export const upsert = async (Model, values, condition, transaction, include?) =>
       if (obj) {
         return obj.update(values, options);
       }
-
       return Model.create(values, options);
     });
 };
